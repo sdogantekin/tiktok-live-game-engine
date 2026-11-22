@@ -44,8 +44,15 @@ export const RoundResultSchema = z.object({
 });
 export type RoundResult = z.infer<typeof RoundResultSchema>;
 
-/** Complete authoritative state sent on connect/reconnect. Clients derive remaining time from `phaseEndsAt - serverNow`. */
-export const PublicSnapshotSchema = z.object({
+/** Event provider connectivity. `none` means no provider has attached yet. */
+export const ProviderStatusSchema = z.enum(['none', 'connected', 'disconnected']);
+export type ProviderStatus = z.infer<typeof ProviderStatusSchema>;
+
+/**
+ * Everything except the roster. Small, so it is re-sent whole whenever it changes.
+ * Clients derive remaining time from `phaseEndsAt - serverNow`.
+ */
+export const HudStateSchema = z.object({
   modeId: ModeIdSchema,
   serverNow: z.number().int().nonnegative(),
   phase: PhaseSchema,
@@ -55,9 +62,15 @@ export const PublicSnapshotSchema = z.object({
   phaseEndsAt: z.number().int().nonnegative().nullable(),
   /** Time left in the frozen phase while paused; null otherwise. */
   remainingMs: z.number().int().nonnegative().nullable(),
+  providerStatus: ProviderStatusSchema,
   teams: z.array(TeamStandingSchema),
-  players: z.array(PublicPlayerSchema),
   lastResult: RoundResultSchema.nullable(),
+});
+export type HudState = z.infer<typeof HudStateSchema>;
+
+/** Complete authoritative state sent on connect and reconnect. */
+export const PublicSnapshotSchema = HudStateSchema.extend({
+  players: z.array(PublicPlayerSchema),
 });
 export type PublicSnapshot = z.infer<typeof PublicSnapshotSchema>;
 

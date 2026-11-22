@@ -19,11 +19,15 @@ const FIRST_NAMES = [
   'Seda', 'Can', 'Deniz', 'Ece', 'Kaan', 'Gül', 'Onur', 'İpek', 'Barış', 'Şeyma',
 ];
 
-export function createViewers(count: number, rng: Rng): SimViewer[] {
-  return Array.from({ length: count }, (_, index) => ({
-    userId: `sim-${String(index + 1).padStart(4, '0')}`,
-    displayName: `${rng.pick(FIRST_NAMES)}${index + 1}`,
-  }));
+/** Creates `count` viewers numbered from `firstNumber` (so a growing pool never reuses ids). */
+export function createViewers(count: number, rng: Rng, firstNumber = 1): SimViewer[] {
+  return Array.from({ length: count }, (_, index) => {
+    const number = firstNumber + index;
+    return {
+      userId: `sim-${String(number).padStart(4, '0')}`,
+      displayName: `${rng.pick(FIRST_NAMES)}${number}`,
+    };
+  });
 }
 
 /** Builds valid normalized events with unique, session-scoped ids. */

@@ -1,11 +1,16 @@
 import { loadConfig } from './config';
-import { createGameServer } from './server';
+import { getGameMode } from './game-modes/registry';
+import { generateOperatorToken } from './operator/auth';
+import { createGameServer } from './realtime/socket-server';
 
 const config = loadConfig();
-const server = createGameServer();
+const operatorToken = config.operatorToken ?? generateOperatorToken();
+
+const server = createGameServer({ mode: getGameMode('mahalle-halayi'), operatorToken });
 
 server.http.listen(config.port, config.host, () => {
   console.log(`[server] listening on http://${config.host}:${config.port}`);
+  if (!config.operatorToken) console.log(`[server] operator token (this run only): ${operatorToken}`);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

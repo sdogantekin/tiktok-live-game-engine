@@ -96,7 +96,7 @@ export interface ChaosOptions extends ScenarioOptions {
   episodes: number;
 }
 
-const MALFORMED_PAYLOADS: readonly unknown[] = [
+export const MALFORMED_PAYLOADS: readonly unknown[] = [
   null,
   42,
   'halay',

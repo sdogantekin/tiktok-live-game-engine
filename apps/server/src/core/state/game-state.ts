@@ -1,4 +1,11 @@
-import type { ModeId, PublicSnapshot, RoundResult, TeamDefinition } from '@live-game/contracts';
+import type {
+  HudState,
+  ModeId,
+  ProviderStatus,
+  PublicSnapshot,
+  RoundResult,
+  TeamDefinition,
+} from '@live-game/contracts';
 import type { Clock } from '../clock';
 import { type AssignResult, type Player, PlayerService } from '../players/player-service';
 import {
@@ -30,6 +37,7 @@ export class GameState {
   readonly scoring: ScoringService;
   readonly rounds: RoundService;
   private _lastResult: RoundResult | null = null;
+  private _providerStatus: ProviderStatus = 'none';
 
   constructor(private readonly options: GameStateOptions) {
     this.players = new PlayerService(
@@ -87,7 +95,16 @@ export class GameState {
     this.rounds.tick();
   }
 
-  snapshot(): PublicSnapshot {
+  get providerStatus(): ProviderStatus {
+    return this._providerStatus;
+  }
+
+  setProviderStatus(status: ProviderStatus): void {
+    this._providerStatus = status;
+  }
+
+  /** Everything except the roster; cheap enough to build several times per second. */
+  hud(): HudState {
     return {
       modeId: this.options.modeId,
       serverNow: this.options.clock.now(),
@@ -96,7 +113,15 @@ export class GameState {
       round: this.rounds.round,
       phaseEndsAt: this.rounds.phaseEndsAt,
       remainingMs: this.rounds.remainingMs,
+      providerStatus: this._providerStatus,
       teams: this.standings(),
+      lastResult: this._lastResult,
+    };
+  }
+
+  snapshot(): PublicSnapshot {
+    return {
+      ...this.hud(),
       players: this.players.list().map((player) => ({
         id: player.id,
         name: player.name,
@@ -104,7 +129,6 @@ export class GameState {
         joinedAt: player.joinedAt,
         lastActiveAt: player.lastActiveAt,
       })),
-      lastResult: this._lastResult,
     };
   }
 
