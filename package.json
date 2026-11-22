@@ -12,7 +12,8 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "assets:build": "node scripts/build-assets.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

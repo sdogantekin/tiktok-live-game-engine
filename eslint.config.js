@@ -20,6 +20,11 @@ export default defineConfig(
     extends: [reactHooks.configs.flat.recommended],
   },
 
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
+  },
+
   // Boundaries from ARCHITECTURE.md / PLAN.md §4
   boundary(
     ['packages/contracts/src/**'],

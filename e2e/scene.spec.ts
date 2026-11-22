@@ -9,6 +9,7 @@ interface Perf {
   effectsStarted: number;
   cuesReceived: number;
   drawCalls: number;
+  clipStarts: Record<string, number>;
   pixelStats?: () => { distinctColors: number; meanLuma: number };
 }
 
@@ -47,6 +48,7 @@ test('200 participants are tracked while only a bounded number of avatars is ani
     expect(counts.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(200);
   }).toPass();
   await expect.poll(async () => (await perf(broadcast)).avatarsVisible).toBe(24);
+  await expect.poll(async () => (await perf(broadcast)).clipStarts.halay ?? 0, { timeout: 10_000 }).toBeGreaterThan(0); // the halay clip really plays
   const stats = await perf(broadcast);
   expect(stats.crowdVisible).toBeGreaterThan(0);
   expect(stats.crowdVisible).toBeLessThanOrEqual(60);
@@ -77,6 +79,7 @@ test('gifts trigger effects and never change the score', async ({ context }, tes
     await expect(operator.getByTestId('last-result')).toHaveText('sim_gift: ok');
   }
   await expect.poll(async () => (await perf(broadcast)).effectsStarted).toBeGreaterThanOrEqual(started + 3);
+  await expect.poll(async () => (await perf(broadcast)).clipStarts.jump ?? 0).toBeGreaterThan(0); // gg/big_celebration make everyone hop
   await broadcast.screenshot({ path: testInfo.outputPath('scene-gift.png') });
   expect(await scores(operator)).toEqual(before);
 });
@@ -97,4 +100,21 @@ test('the scene recovers after the WebGL context is lost and restored', async ({
   const framesAfterRestore = (await perf(broadcast)).frames;
   await expect.poll(async () => (await perf(broadcast)).frames, { timeout: 10_000 }).toBeGreaterThan(framesAfterRestore + 20);
   expect((await pixels(broadcast)).distinctColors).toBeGreaterThan(40);
+});
+
+test('the modelled assets load with no errors or missing files', async ({ context }, testInfo) => {
+  const problems: string[] = [];
+  const page = await context.newPage();
+  page.on('console', (message) => message.type() === 'error' && problems.push(`console: ${message.text()}`));
+  page.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
+  page.on('response', (response) => response.status() >= 400 && problems.push(`${response.status()} ${response.url()}`));
+  await page.goto('/broadcast/?probe=1');
+  await expect(page.locator('canvas')).toBeVisible();
+
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __perf: { modelsLoaded: unknown } }).__perf.modelsLoaded), { timeout: 20_000 })
+    .toEqual({ avatars: true, crowd: true, courtyard: true });
+  await expect.poll(async () => (await perf(page)).frames).toBeGreaterThan(30);
+  expect(problems).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('scene-models.png') });
 });

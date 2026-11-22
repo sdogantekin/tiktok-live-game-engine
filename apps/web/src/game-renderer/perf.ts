@@ -13,6 +13,10 @@ export interface PerfStats {
 }
 
 interface PerfApi extends PerfStats {
+  /** Which modelled assets are on screen (false = primitive fallback or still loading). */
+  modelsLoaded: { avatars: boolean; crowd: boolean; courtyard: boolean };
+  /** How many times each animation clip has been started (for tests and tuning). */
+  clipStarts: Record<string, number>;
   /** Reads the canvas and summarizes it: distinct colours and mean brightness. Only with `?probe=1`. */
   pixelStats?: () => { distinctColors: number; meanLuma: number };
 }
@@ -36,6 +40,8 @@ export const perf: PerfApi = {
   crowdVisible: 0,
   effectsStarted: 0,
   cuesReceived: 0,
+  modelsLoaded: { avatars: false, crowd: false, courtyard: false },
+  clipStarts: {},
 };
 
 if (PERF_ENABLED && typeof window !== 'undefined') {

@@ -1,6 +1,8 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Avatars } from '../../game-renderer/Avatars';
+import { Boundary } from '../../game-renderer/Boundary';
+import { ModelAvatars } from '../../game-renderer/ModelAvatars';
 import { SlotsStore } from '../../game-renderer/avatar-store';
 import { Crowd } from '../../game-renderer/Crowd';
 import { EnergyMeter } from '../../game-renderer/crowd-energy';
@@ -8,8 +10,10 @@ import { EffectDirector } from '../../game-renderer/effect-director';
 import { Effects } from '../../game-renderer/Effects';
 import { perf } from '../../game-renderer/perf';
 import type { SceneProps } from '../../game-renderer/types';
-import { Courtyard } from './Courtyard';
-import { AVATAR_CAP, CROWD_CAPACITY, effectRecipes, formation, looks, TEAM_IDS } from './scene-config';
+import { Lighting, PrimitiveCourtyard } from './Courtyard';
+import { ModelCourtyard } from './ModelCourtyard';
+import { ModelCrowd } from './ModelCrowd';
+import { AVATAR_CAP, avatarModels, CROWD_CAPACITY, effectRecipes, formation, looks, TEAM_IDS } from './scene-config';
 
 const TEAMS: readonly string[] = TEAM_IDS;
 
@@ -48,11 +52,28 @@ export function Scene({ roster, teams, cues }: SceneProps) {
     perf.avatarsVisible = TEAMS.reduce((sum, teamId) => sum + store.slots.visibleCount(teamId), 0);
   });
 
+  // Modelled assets load asynchronously; the primitive versions show meanwhile and stay if loading fails.
+  const primitiveAvatars = <Avatars store={store} teamIds={TEAMS} looks={looks} />;
+  const crowdProps = { teamIds: TEAMS, teams, capacityPerTeam: CROWD_CAPACITY, store, formation, energy, looks };
+
   return (
     <>
-      <Courtyard director={director} />
-      <Avatars store={store} teamIds={TEAMS} looks={looks} />
-      <Crowd teamIds={TEAMS} teams={teams} capacityPerTeam={CROWD_CAPACITY} store={store} formation={formation} energy={energy} looks={looks} />
+      <Lighting />
+      <Boundary label="courtyard" fallback={<PrimitiveCourtyard director={director} />}>
+        <Suspense fallback={<PrimitiveCourtyard director={director} />}>
+          <ModelCourtyard director={director} />
+        </Suspense>
+      </Boundary>
+      <Boundary label="avatars" fallback={primitiveAvatars}>
+        <Suspense fallback={primitiveAvatars}>
+          <ModelAvatars store={store} teamIds={TEAMS} models={avatarModels} />
+        </Suspense>
+      </Boundary>
+      <Boundary label="crowd" fallback={<Crowd {...crowdProps} />}>
+        <Suspense fallback={<Crowd {...crowdProps} />}>
+          <ModelCrowd {...crowdProps} />
+        </Suspense>
+      </Boundary>
       <Effects director={director} store={store} />
     </>
   );

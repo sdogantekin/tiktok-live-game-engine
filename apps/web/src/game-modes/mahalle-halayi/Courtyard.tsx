@@ -40,7 +40,7 @@ function Lamp({ position }: { position: [number, number, number] }) {
 const FLAG_COLORS = ['#e0457b', '#ffd35a', '#2f6fdb', '#7bd88f', '#ffffff'];
 
 /** A string of triangular flags sagging between two points. */
-function Bunting({ from, to, count = 14 }: { from: [number, number, number]; to: [number, number, number]; count?: number }) {
+export function Bunting({ from, to, count = 14 }: { from: [number, number, number]; to: [number, number, number]; count?: number }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     const mesh = ref.current;
@@ -158,8 +158,8 @@ function Band({ director }: { director: EffectDirector }) {
   );
 }
 
-/** The wedding courtyard, built from primitives. Replaced by modelled assets in a later step. */
-export function Courtyard({ director }: { director: EffectDirector }) {
+/** The wedding courtyard built from primitives: the fallback if the modelled courtyard cannot load. */
+export function PrimitiveCourtyard({ director }: { director: EffectDirector }) {
   const tiles = useTileTexture();
   const bunting = useMemo(
     () => ({
@@ -173,23 +173,6 @@ export function Courtyard({ director }: { director: EffectDirector }) {
 
   return (
     <>
-      <color attach="background" args={['#6a4a85']} />
-      <fog attach="fog" args={['#6a4a85', 30, 60]} />
-      <hemisphereLight args={['#ffe6c4', '#5b4036', 1.15]} />
-      <directionalLight
-        position={[7, 14, 8]}
-        intensity={2.2}
-        color="#ffe2b0"
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={12}
-        shadow-camera-bottom={-12}
-        shadow-camera-near={1}
-        shadow-camera-far={40}
-      />
-
       {/* ground and tiles */}
       <mesh position={[0, -0.2, -2]} receiveShadow>
         <boxGeometry args={[40, 0.4, 44]} />
@@ -232,6 +215,30 @@ export function Courtyard({ director }: { director: EffectDirector }) {
 
       <Banner x={-3.2} color={looks.gelin!.bodyColor} />
       <Banner x={3.2} color={looks.damat!.bodyColor} />
+    </>
+  );
+}
+
+/** Sky colour, fog and lights, shared by the modelled and primitive courtyards. */
+export function Lighting() {
+  return (
+    <>
+      <color attach="background" args={['#6a4a85']} />
+      <fog attach="fog" args={['#6a4a85', 30, 60]} />
+      <hemisphereLight args={['#ffe6c4', '#5b4036', 1.15]} />
+      <directionalLight
+        position={[7, 14, 8]}
+        intensity={2.2}
+        color="#ffe2b0"
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-12}
+        shadow-camera-near={1}
+        shadow-camera-far={40}
+      />
     </>
   );
 }

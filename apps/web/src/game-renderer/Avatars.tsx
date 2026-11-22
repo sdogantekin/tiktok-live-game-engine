@@ -54,6 +54,8 @@ function pose(anim: Anim | undefined, now: number, idle: number): Pose {
       return { x: 0, y: 0.25 * arc, rotY: Math.PI * 2 * p, squash: 1 };
     case 'wiggle':
       return { x: 0.1 * Math.sin(p * Math.PI * 8), y: 0.08 * arc, rotY: 0.35 * Math.sin(p * Math.PI * 6), squash: 1 + 0.1 * Math.sin(p * Math.PI * 8) };
+    case 'rose':
+      return { x: 0, y: 0.25 * arc, rotY: Math.PI * 2 * p, squash: 1 };
     case 'hop':
       return { x: 0, y: 0.6 * Math.abs(Math.sin(p * Math.PI * 2)) * (1 - p * 0.3), rotY: 0, squash: 1 };
   }

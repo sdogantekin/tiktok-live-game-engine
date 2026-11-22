@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Component, type ReactNode, useLayoutEffect, useState } from 'react';
+import { type ReactNode, useLayoutEffect, useState } from 'react';
+import { Boundary } from './Boundary';
 import { PERF_ENABLED, PROBE_ENABLED, perf, pixelStatsOf, recordFrame } from './perf';
 import type { CameraConfig } from './types';
 
@@ -32,20 +33,6 @@ function PerfProbe() {
   return null;
 }
 
-/** If 3D fails (no WebGL, a crash), the HUD above it keeps working. */
-class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  override state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  override componentDidCatch(error: unknown) {
-    console.error('[renderer] scene crashed; continuing without 3D', error);
-  }
-  override render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
-
 const RESTORE_TIMEOUT_MS = 3000;
 
 /** The 3D viewport: a fixed camera over a mode-supplied scene, filling its parent. */
@@ -54,7 +41,7 @@ export function Stage({ camera, children }: { camera: CameraConfig; children: Re
   const [generation, setGeneration] = useState(0);
 
   return (
-    <SceneBoundary>
+    <Boundary label="3D scene">
       <Canvas
         key={generation}
         className="scene-canvas"
@@ -75,6 +62,6 @@ export function Stage({ camera, children }: { camera: CameraConfig; children: Re
         {PERF_ENABLED && <PerfProbe />}
         {children}
       </Canvas>
-    </SceneBoundary>
+    </Boundary>
   );
 }

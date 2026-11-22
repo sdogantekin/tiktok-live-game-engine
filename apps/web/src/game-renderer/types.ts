@@ -50,6 +50,18 @@ export interface EffectRecipe {
   musicians?: 'bounce';
 }
 
+export type AnimKind = 'halay' | 'zipla' | 'spin' | 'wiggle' | 'hop' | 'rose';
+
+/** Rigged character models for the avatars: one GLB per team (same rig and clips, different colours). */
+export interface AvatarModels {
+  /** GLB url by team id. */
+  urls: Readonly<Record<string, string>>;
+  /** Clip name for each animation kind, plus the default. */
+  clips: Readonly<Record<AnimKind | 'idle', string>>;
+  /** Clips that loop while their animation lasts; the rest play once. */
+  looping: readonly string[];
+}
+
 export interface RosterEntry {
   id: string;
   teamId: string | null;

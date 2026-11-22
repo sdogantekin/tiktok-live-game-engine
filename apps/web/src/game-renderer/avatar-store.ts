@@ -1,9 +1,7 @@
 import { AvatarSlots, type SlotRosterEntry } from './avatar-slots';
 import type { Cue } from './cue-bus';
 import type { EffectStart } from './effect-director';
-import type { Formation, Vec3 } from './types';
-
-export type AnimKind = 'halay' | 'zipla' | 'spin' | 'wiggle' | 'hop';
+import type { AnimKind, Formation, Vec3 } from './types';
 
 export interface Anim {
   kind: AnimKind;
@@ -13,7 +11,7 @@ export interface Anim {
   phase: number;
 }
 
-const DURATIONS: Record<AnimKind, number> = { halay: 1200, zipla: 700, spin: 1100, wiggle: 900, hop: 900 };
+const DURATIONS: Record<AnimKind, number> = { halay: 1200, zipla: 750, spin: 1400, wiggle: 900, hop: 750, rose: 1250 };
 
 export interface SlotsStoreOptions {
   teamIds: readonly string[];
@@ -68,7 +66,7 @@ export class SlotsStore {
         for (const id of this.slots.slots(teamId)) if (id) this.play(id, 'hop', start.at);
       }
     } else if (start.recipe.avatars === 'spin-player' && start.playerId && this.slots.slotOf(start.playerId)) {
-      this.play(start.playerId, 'spin', start.at);
+      this.play(start.playerId, 'rose', start.at);
     }
   }
 

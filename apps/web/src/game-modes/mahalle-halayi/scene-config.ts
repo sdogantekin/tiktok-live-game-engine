@@ -1,4 +1,5 @@
-import type { AvatarLook, CameraConfig, EffectRecipe, Formation } from '../../game-renderer/types';
+import type { AvatarLook, AvatarModels, CameraConfig, EffectRecipe, Formation, Vec3 } from '../../game-renderer/types';
+import { MODEL_URLS } from './assets.manifest';
 
 /** Everything visual about the Mahalle Halayı scene that is data: swap these (and the assets) to restyle the mode. */
 export const TEAM_IDS = ['gelin', 'damat'] as const;
@@ -69,3 +70,55 @@ export const effectRecipes: Readonly<Record<string, EffectRecipe>> = {
     musicians: 'bounce',
   },
 };
+
+/** Which character GLB and clips each team's avatars use. */
+export const avatarModels: AvatarModels = {
+  urls: { gelin: MODEL_URLS.characters.gelin, damat: MODEL_URLS.characters.damat },
+  clips: { idle: 'idle', halay: 'halay', zipla: 'jump', spin: 'dance_a', wiggle: 'dance_b', hop: 'jump', rose: 'rose_special' },
+  looping: ['idle', 'halay'],
+};
+
+/** The band on the stage plays idle, and dance_b while a big celebration is on. */
+export const bandModels: AvatarModels = {
+  urls: { band: MODEL_URLS.characters.band },
+  clips: { idle: 'idle', halay: 'idle', zipla: 'idle', spin: 'idle', wiggle: 'dance_b', hop: 'dance_b', rose: 'idle' },
+  looping: ['idle', 'dance_b'],
+};
+
+export interface Placed {
+  piece: string;
+  position: Vec3;
+  rotationY?: number;
+  castShadow?: boolean;
+}
+
+/** Where each courtyard kit piece stands (three.js coordinates: +x right, +z toward the camera). */
+export const courtyardLayout: readonly Placed[] = [
+  { piece: 'Floor_Plaza', position: [0, 0, 2] },
+  { piece: 'Floor_Dance', position: [0, 0, FLOOR_CENTER_Z] },
+  { piece: 'House_A', position: [-5, 0, -11.5] },
+  { piece: 'House_B', position: [0.5, 0, -11.5] },
+  { piece: 'House_C', position: [5.4, 0, -11.5] },
+  { piece: 'Stage', position: [0, 0, -7.6], castShadow: true },
+  { piece: 'Davul', position: [0, 0.5, -6.3], castShadow: true },
+  { piece: 'Zurna', position: [-2.1, 0.5, -7.0], castShadow: true },
+  { piece: 'Zurna', position: [2.1, 0.5, -7.0], castShadow: true },
+  { piece: 'Arch', position: [0, 0, -4.9] },
+  { piece: 'Lamp', position: [-5.2, 0, -3.5] },
+  { piece: 'Lamp', position: [5.2, 0, -3.5] },
+  { piece: 'Lamp', position: [-5.2, 0, 5.5] },
+  { piece: 'Lamp', position: [5.2, 0, 5.5] },
+  { piece: 'Banner_Gelin', position: [-3.4, 0, -4.9] },
+  { piece: 'Banner_Damat', position: [3.4, 0, -4.9], rotationY: Math.PI },
+  { piece: 'Planter', position: [-3.9, 0, -6.2], castShadow: true },
+  { piece: 'Planter', position: [3.9, 0, -6.2], castShadow: true },
+  { piece: 'Planter', position: [-5.6, 0, -8.4], castShadow: true },
+  { piece: 'Planter', position: [5.6, 0, -8.4], castShadow: true },
+];
+
+/** Band members on the stage: x offsets from the stage centre. */
+export const bandPositions: readonly Vec3[] = [
+  [-1.7, 0.5, -7.5],
+  [0, 0.5, -7.5],
+  [1.7, 0.5, -7.5],
+];
