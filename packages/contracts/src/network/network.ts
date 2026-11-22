@@ -42,6 +42,8 @@ export const PresentationBatchSchema = z.object({
   events: z.array(PresentationEventSchema).max(2000),
   /** Per-team count of `player_action` events beyond the per-batch cap, folded into crowd energy. */
   crowd: z.array(z.object({ teamId: TeamIdSchema, actions: z.number().int().positive() })),
+  /** Server clock time (epoch ms) at which the oldest input behind this batch was ingested; lets clients measure latency to the screen. */
+  oldestIngestedAt: z.number().int().nonnegative().optional(),
 });
 export type PresentationBatch = z.infer<typeof PresentationBatchSchema>;
 

@@ -8,6 +8,7 @@ import {
 import { type Clock, systemClock } from './clock';
 import { normalizeComment } from './events/comment-normalizer';
 import { KeyedRateLimiter, type RateSpec, TokenBucket } from './events/rate-limit';
+import { Histogram } from './metrics';
 import { RecentIdCache } from './events/recent-ids';
 import type { CommandConfig, GameMode, ModeContext, ModeEffect } from './mode';
 import type { Player } from './players/player-service';
@@ -33,8 +34,11 @@ export interface EngineOptions {
   mode: GameMode;
   clock?: Clock;
   config?: Partial<EngineConfig>;
-  /** Receives transient visual cues; best-effort, never required for state correctness. */
-  onPresentation?: (event: PresentationEvent) => void;
+  /**
+   * Receives transient visual cues; best-effort, never required for state correctness. `ingestedAt` is the engine
+   * clock time of the input that caused the cue, so latency to the screen can be measured end to end.
+   */
+  onPresentation?: (event: PresentationEvent, meta: { ingestedAt: number }) => void;
   /** Receives unexpected errors thrown while processing a single queued item. */
   onError?: (error: unknown) => void;
 }
@@ -61,7 +65,7 @@ type ViewerItem =
   | { type: 'comment'; playerId: string; displayName: string; command: string; droppable: boolean }
   | { type: 'gift'; playerId: string; giftKey: string; count: number; droppable: true };
 type OperatorItem = { type: 'operator'; command: OperatorCommand; result?: OperatorResult; droppable: false };
-type QueueItem = ViewerItem | OperatorItem;
+type QueueItem = (ViewerItem | OperatorItem) & { ingestedAt: number; enqueuedPerf: number };
 
 /**
  * Single serialized dispatch loop: validate → classify → dedupe → rate-limit → bounded queue →
@@ -81,6 +85,9 @@ export class GameEngine {
   private readonly globalCooldowns = new Map<string, number>();
   private readonly queue: QueueItem[] = [];
   private draining = false;
+  private currentIngestedAt = 0;
+  /** Time from `ingest()` to the item being processed, in ms (queue wait plus processing). */
+  readonly latency = new Histogram();
   private readonly _stats: EngineStats = {
     received: 0,
     invalid: 0,
@@ -173,7 +180,7 @@ export class GameEngine {
       return 'rate_limited';
     }
 
-    return this.enqueueViewerItem(item);
+    return this.enqueueViewerItem(this.stamp(item));
   }
 
   /**
@@ -184,7 +191,7 @@ export class GameEngine {
     const parsed = OperatorCommandSchema.safeParse(raw);
     if (!parsed.success) return { ok: false, reason: 'invalid_command' };
 
-    const item: OperatorItem = { type: 'operator', command: parsed.data, droppable: false };
+    const item = this.stamp<OperatorItem>({ type: 'operator', command: parsed.data, droppable: false });
     this.push(item);
     this.drain();
     return item.result ?? { ok: false, reason: 'busy' };
@@ -197,8 +204,10 @@ export class GameEngine {
     try {
       for (let item = this.queue.shift(); item !== undefined; item = this.queue.shift()) {
         try {
+          this.currentIngestedAt = item.ingestedAt;
           this.process(item);
           this._stats.processed++;
+          this.latency.record(performance.now() - item.enqueuedPerf);
         } catch (error) {
           this._stats.errors++;
           this.options.onError?.(error);
@@ -209,7 +218,11 @@ export class GameEngine {
     }
   }
 
-  private enqueueViewerItem(item: ViewerItem): IngestOutcome {
+  private stamp<T extends ViewerItem | OperatorItem>(item: T): T & { ingestedAt: number; enqueuedPerf: number } {
+    return { ...item, ingestedAt: this.clock.now(), enqueuedPerf: performance.now() };
+  }
+
+  private enqueueViewerItem(item: QueueItem): IngestOutcome {
     if (this.queue.length >= this.config.queueCapacity) {
       const oldestDroppable = this.queue.findIndex((queued) => queued.droppable);
       this._stats.overflowDropped++;
@@ -353,6 +366,6 @@ export class GameEngine {
   }
 
   private emit(event: PresentationEvent): void {
-    this.options.onPresentation?.(event);
+    this.options.onPresentation?.(event, { ingestedAt: this.currentIngestedAt });
   }
 }

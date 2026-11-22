@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { CueBus, cuesFromBatch } from '../game-renderer/cue-bus';
 import { TagBoard } from '../game-renderer/name-tags';
 import { NameTags } from '../game-renderer/NameTags';
-import { PERF_OVERLAY } from '../game-renderer/perf';
+import { markCueOrigin, PERF_OVERLAY } from '../game-renderer/perf';
 import { PerfOverlay } from '../game-renderer/PerfOverlay';
 import { Stage } from '../game-renderer/Stage';
 import { getPresentation } from '../game-modes/registry';
@@ -37,6 +37,7 @@ export function BroadcastApp() {
     () =>
       client.onPresentation((batch) => {
         for (const cue of cuesFromBatch(batch)) cues.emit(cue);
+        if (batch.oldestIngestedAt !== undefined) markCueOrigin(batch.oldestIngestedAt);
       }),
     [client, cues],
   );

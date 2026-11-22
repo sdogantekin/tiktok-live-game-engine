@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GameMode } from '../src/core/mode';
+import { ManualClock } from '../src/core/clock';
+import { GameEngine } from '../src/core/engine';
 import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules';
 import { createTestEngine } from './helpers';
 
@@ -441,5 +443,30 @@ describe('construction', () => {
       config: { ...real.config, commands: { zıpla: { droppable: true }, ZIPLA: { droppable: true } } },
     };
     expect(() => createTestEngine({ mode })).toThrow(/duplicate/i);
+  });
+});
+
+describe('latency instrumentation', () => {
+  it('records ingest-to-processed latency and tells presentation cues when their input arrived', () => {
+    const clock = new ManualClock();
+    const seen: { type: string; ingestedAt: number }[] = [];
+    const engine = new GameEngine({
+      mode: createMahalleHalayiMode(),
+      clock,
+      onPresentation: (event, meta) => seen.push({ type: event.type, ingestedAt: meta.ingestedAt }),
+    });
+
+    const ingestTime = clock.now();
+    engine.ingest({ kind: 'comment.received', eventId: 'e1', provider: 'test', userId: 'u', displayName: 'U', receivedAt: 1, payload: { text: 'gelin' } });
+    clock.advance(40); // the event waits in the queue
+    engine.drain();
+
+    expect(seen).toEqual([{ type: 'player_joined', ingestedAt: ingestTime }]);
+    const latency = engine.latency.summary();
+    expect(latency.count).toBe(1);
+    expect(latency.max).toBeGreaterThanOrEqual(0);
+
+    engine.operator({ type: 'trigger_celebration', effect: 'gg' });
+    expect(seen.at(-1)).toEqual({ type: 'celebration', ingestedAt: clock.now() });
   });
 });

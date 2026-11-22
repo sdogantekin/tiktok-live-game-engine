@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  // Performance runs need a headed browser and a production build; they have their own config (`pnpm perf:browser`).
+  testIgnore: '**/perf/**',
   // Every test drives the same running server, so files and tests must not overlap.
   workers: 1,
   fullyParallel: false,

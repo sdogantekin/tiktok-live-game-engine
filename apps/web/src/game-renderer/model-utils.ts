@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { perf } from './perf';
+import { addMixerMs, PERF_ENABLED, perf } from './perf';
 import type { AnimKind, AvatarModels } from './types';
 
 const FADE_SECONDS = 0.12;
@@ -59,7 +59,13 @@ export function useClipPlayer(gltf: Gltf, models: AvatarModels) {
       }
       current.current = { name, start: marker };
     }
-    model.mixer.update(delta);
+    if (PERF_ENABLED) {
+      const t = performance.now();
+      model.mixer.update(delta);
+      addMixerMs(performance.now() - t);
+    } else {
+      model.mixer.update(delta);
+    }
   };
 
   return { object: model.object, update };

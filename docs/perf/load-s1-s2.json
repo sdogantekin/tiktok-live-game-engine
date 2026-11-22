@@ -1,0 +1,166 @@
+{
+  "seconds": 60,
+  "heartbeatMs": 50,
+  "results": [
+    {
+      "scenario": "S1 steady (200 viewers, ~25 ev/s)",
+      "seconds": 60.8,
+      "events": {
+        "received": 1552,
+        "processed": 1424,
+        "invalid": 0,
+        "ignored": 130,
+        "duplicate": 0,
+        "rateLimited": 0,
+        "overflowDropped": 0,
+        "errors": 0,
+        "maxQueueDepth": 4
+      },
+      "ingestToProcessedMs": {
+        "count": 1424,
+        "mean": 0.3297858960673738,
+        "p50": 0.2687500000001819,
+        "p95": 0.5897499999999809,
+        "p99": 1.5430409999999029,
+        "max": 12.280624999999418
+      },
+      "heartbeatMs": {
+        "tick": {
+          "count": 1200,
+          "mean": 0.008876178333297654,
+          "p50": 0.007375000001047738,
+          "p95": 0.014208000000508036,
+          "p99": 0.02800000000570435,
+          "max": 0.3706250000000182
+        },
+        "flush": {
+          "count": 1200,
+          "mean": 0.3466040400000323,
+          "p50": 0.38520799999969313,
+          "p95": 0.7818330000009155,
+          "p99": 1.49158300000272,
+          "max": 4.275040999993507
+        },
+        "publish": {
+          "count": 588,
+          "mean": 0.3561949438775237,
+          "p50": 0.2739159999982803,
+          "p95": 0.8794170000001031,
+          "p99": 1.4757080000053975,
+          "max": 3.7064160000008997
+        }
+      },
+      "eventLoopDelayMs": {
+        "mean": 10.76,
+        "p95": 11.49,
+        "p99": 12.58,
+        "max": 32.92
+      },
+      "memoryMB": {
+        "rssStart": 119,
+        "rssMax": 120,
+        "heapMax": 28
+      },
+      "cpuPercentOfOneCore": 4.6,
+      "perClient": {
+        "kilobytesPerSecond": 4.7,
+        "bytesByMessage": {
+          "hello": 67,
+          "state:snapshot": 330,
+          "presentation:batch": 133272,
+          "state:roster": 25472,
+          "state:hud": 135211
+        },
+        "messages": {
+          "hello": 1,
+          "state:snapshot": 1,
+          "presentation:batch": 753,
+          "state:roster": 95,
+          "state:hud": 409
+        }
+      },
+      "players": 200,
+      "snapshotKB": 23
+    },
+    {
+      "scenario": "S2 burst (200 halay in 2 s x5)",
+      "seconds": 44.3,
+      "events": {
+        "received": 1200,
+        "processed": 1202,
+        "invalid": 0,
+        "ignored": 0,
+        "duplicate": 0,
+        "rateLimited": 0,
+        "overflowDropped": 0,
+        "errors": 0,
+        "maxQueueDepth": 16
+      },
+      "ingestToProcessedMs": {
+        "count": 1202,
+        "mean": 1.0279913202992705,
+        "p50": 0.2617499999978463,
+        "p95": 1.2912079999950947,
+        "p99": 56.198832999987644,
+        "max": 56.439832999996725
+      },
+      "heartbeatMs": {
+        "tick": {
+          "count": 869,
+          "mean": 0.02064504027584833,
+          "p50": 0.00979199999710545,
+          "p95": 0.015457999994396232,
+          "p99": 0.05383299999812152,
+          "max": 8.417249999998603
+        },
+        "flush": {
+          "count": 869,
+          "mean": 0.2614513475258785,
+          "p50": 0.002833000005921349,
+          "p95": 0.6198329999970156,
+          "p99": 2.130166000002646,
+          "max": 84.59974999999395
+        },
+        "publish": {
+          "count": 429,
+          "mean": 0.3568586689975459,
+          "p50": 0.15799999999580905,
+          "p95": 0.4290000000037253,
+          "p99": 1.5002499999973224,
+          "max": 57.098500000007334
+        }
+      },
+      "eventLoopDelayMs": {
+        "mean": 10.99,
+        "p95": 11.45,
+        "p99": 14.1,
+        "max": 161.74
+      },
+      "memoryMB": {
+        "rssStart": 71,
+        "rssMax": 73,
+        "heapMax": 21
+      },
+      "cpuPercentOfOneCore": 2.1,
+      "perClient": {
+        "kilobytesPerSecond": 3.8,
+        "bytesByMessage": {
+          "hello": 67,
+          "state:snapshot": 330,
+          "presentation:batch": 106080,
+          "state:roster": 23926,
+          "state:hud": 42301
+        },
+        "messages": {
+          "hello": 1,
+          "state:snapshot": 1,
+          "presentation:batch": 255,
+          "state:roster": 30,
+          "state:hud": 128
+        }
+      },
+      "players": 200,
+      "snapshotKB": 23
+    }
+  ]
+}

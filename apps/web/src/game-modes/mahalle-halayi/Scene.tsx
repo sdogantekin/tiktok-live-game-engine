@@ -8,7 +8,7 @@ import { Crowd } from '../../game-renderer/Crowd';
 import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { EffectDirector } from '../../game-renderer/effect-director';
 import { Effects } from '../../game-renderer/Effects';
-import { perf } from '../../game-renderer/perf';
+import { perf, perfParam } from '../../game-renderer/perf';
 import { type SlotOccupant, slotKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
 import { Lighting, PrimitiveCourtyard } from './Courtyard';
@@ -20,7 +20,10 @@ const TEAMS: readonly string[] = TEAM_IDS;
 
 /** Mahalle Halayı's 3D scene: the courtyard, the halay lines, the crowd, and celebration effects. */
 export function Scene({ roster, teams, cues, tags }: SceneProps) {
-  const store = useMemo(() => new SlotsStore({ teamIds: TEAMS, capTotal: AVATAR_CAP, formation }), []);
+  // `?perf=1&cap=..&crowd=..` overrides, for performance sweeps only.
+  const avatarCap = perfParam('cap') ?? AVATAR_CAP;
+  const crowdCapacity = perfParam('crowd') ?? CROWD_CAPACITY;
+  const store = useMemo(() => new SlotsStore({ teamIds: TEAMS, capTotal: avatarCap, formation }), [avatarCap]);
   const director = useMemo(() => new EffectDirector(effectRecipes), []);
   const energy = useMemo(() => new EnergyMeter(), []);
   const teamOf = useRef(new Map<string, string | null>());
@@ -71,7 +74,7 @@ export function Scene({ roster, teams, cues, tags }: SceneProps) {
 
   // Modelled assets load asynchronously; the primitive versions show meanwhile and stay if loading fails.
   const primitiveAvatars = <Avatars store={store} teamIds={TEAMS} looks={looks} />;
-  const crowdProps = { teamIds: TEAMS, teams, capacityPerTeam: CROWD_CAPACITY, store, formation, energy, looks };
+  const crowdProps = { teamIds: TEAMS, teams, capacityPerTeam: crowdCapacity, store, formation, energy, looks };
 
   return (
     <>

@@ -132,3 +132,19 @@ describe('presentation batching', () => {
     expect(of('presentation:batch')[0]).toEqual({ events: [], crowd: [] });
   });
 });
+
+describe('presentation batch timing', () => {
+  it('carries the oldest ingest time of the cues in the batch, and starts fresh for the next one', () => {
+    const { publisher, of } = setup();
+    publisher.onPresentation({ type: 'celebration', effect: 'gg' }, 5_000);
+    publisher.onPresentation({ type: 'celebration', effect: 'gg' }, 4_200);
+    publisher.onPresentation({ type: 'celebration', effect: 'gg' }, 6_000);
+    publisher.flushPresentation();
+    publisher.onPresentation({ type: 'celebration', effect: 'gg' });
+    publisher.flushPresentation();
+
+    const [first, second] = of('presentation:batch');
+    expect(first.oldestIngestedAt).toBe(4_200);
+    expect(second).not.toHaveProperty('oldestIngestedAt');
+  });
+});

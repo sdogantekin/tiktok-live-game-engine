@@ -18,6 +18,7 @@ export interface PublisherOptions {
  */
 export class Publisher {
   private buffer: PresentationEvent[] = [];
+  private oldestIngestedAt: number | undefined;
   private lastHudKey: string | null = null;
   private readonly roster = new Map<string, { teamId: string | null; name: string }>();
   private readonly maxActions: number;
@@ -27,15 +28,20 @@ export class Publisher {
   }
 
   /** Queues a transient cue for the next batch. */
-  onPresentation(event: PresentationEvent): void {
+  onPresentation(event: PresentationEvent, ingestedAt?: number): void {
     this.buffer.push(event);
+    if (ingestedAt !== undefined && (this.oldestIngestedAt === undefined || ingestedAt < this.oldestIngestedAt)) {
+      this.oldestIngestedAt = ingestedAt;
+    }
   }
 
   /** Sends buffered cues as one batch. Cues other than `player_action` are always kept. */
   flushPresentation(): void {
     if (this.buffer.length === 0) return;
     const pending = this.buffer;
+    const oldestIngestedAt = this.oldestIngestedAt;
     this.buffer = [];
+    this.oldestIngestedAt = undefined;
 
     const events: PresentationEvent[] = [];
     const crowd = new Map<string, number>();
@@ -56,6 +62,7 @@ export class Publisher {
     const batch: PresentationBatch = {
       events,
       crowd: [...crowd].map(([teamId, count]) => ({ teamId, actions: count })),
+      ...(oldestIngestedAt === undefined ? {} : { oldestIngestedAt }),
     };
     this.options.send(SOCKET_EVENTS.presentation, batch);
   }

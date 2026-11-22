@@ -13,6 +13,7 @@ import type { GameMode } from '../core/mode';
 import { isValidOperatorToken } from '../operator/auth';
 import { handleOperatorMessage } from '../operator/commands';
 import { SimulatorProvider, type SimulatorProviderOptions } from '../providers/simulator/provider';
+import { Histogram } from '../core/metrics';
 import { Publisher } from './publisher';
 
 export interface GameServerOptions {
@@ -50,11 +51,11 @@ export function createGameServer(options: GameServerOptions) {
   const operator = io.of(SOCKET_NAMESPACES.operator);
 
   // The engine and publisher reference each other; this indirection breaks the construction cycle.
-  const cues: { forward?: (event: PresentationEvent) => void } = {};
+  const cues: { forward?: (event: PresentationEvent, ingestedAt: number) => void } = {};
   const engine = new GameEngine({
     mode: options.mode,
     clock,
-    onPresentation: (event) => cues.forward?.(event),
+    onPresentation: (event, meta) => cues.forward?.(event, meta.ingestedAt),
     onError,
   });
   const publisher = new Publisher({
@@ -65,7 +66,7 @@ export function createGameServer(options: GameServerOptions) {
       operator.emit(event, payload); // only authenticated sockets ever join this namespace
     },
   });
-  cues.forward = (event) => publisher.onPresentation(event);
+  cues.forward = (event, ingestedAt) => publisher.onPresentation(event, ingestedAt);
 
   // Provider events are queued immediately and drained once per macrotask, so a burst is one drain pass.
   let drainScheduled = false;
@@ -109,15 +110,24 @@ export function createGameServer(options: GameServerOptions) {
     greet(socket, SOCKET_NAMESPACES.operator);
   });
 
+  // How long each heartbeat's work takes (ms); read by the load test.
+  const metrics = { tickMs: new Histogram(), flushMs: new Histogram(), publishMs: new Histogram() };
+
   let lastStatePublish = 0;
   const heartbeat = setInterval(() => {
     try {
+      let t = performance.now();
       engine.tick();
+      metrics.tickMs.record(performance.now() - t);
+      t = performance.now();
       publisher.flushPresentation();
+      metrics.flushMs.record(performance.now() - t);
       const now = clock.now();
       if (now - lastStatePublish >= stateMs) {
         lastStatePublish = now;
+        t = performance.now();
         publisher.publishState();
+        metrics.publishMs.record(performance.now() - t);
       }
     } catch (error) {
       onError(error);
@@ -129,6 +139,7 @@ export function createGameServer(options: GameServerOptions) {
     io,
     engine,
     simulator,
+    metrics,
     async close() {
       clearInterval(heartbeat);
       simulator.stop();

@@ -13,7 +13,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "assets:build": "node scripts/build-assets.mjs"
+    "assets:build": "node scripts/build-assets.mjs",
+    "perf:load": "pnpm --filter @live-game/server load-test",
+    "perf:browser": "playwright test -c playwright.perf.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "tsx --env-file-if-exists=../../.env src/main.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "load-test": "tsx scripts/load-test.ts"
   },
   "dependencies": {
     "@live-game/contracts": "workspace:*",

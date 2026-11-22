@@ -10,7 +10,7 @@ A modular, real-time game engine for livestreams. Viewers become players through
 
 | | Milestone | Status |
 |---|---|---|
-| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | In progress (implementation Steps 1.0–1.4 done; performance and capture readiness remaining) |
+| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | In progress (implementation Steps 1.0–1.4 done; capture readiness and the final acceptance run remaining) |
 | **Product Phase 2** | **TikTok LIVE integration**: feasibility research first, then a TikTok event provider. Success means a public TikTok LIVE stream where real viewers can join and play through the game mechanics | Planned (starts after Product Phase 1 is accepted) |
 
 "Phase" means a product milestone; "Step" means an implementation step. Each phase has its own steps in [`PLAN.md`](PLAN.md): `Step 1.x` for Product Phase 1 and `Step 2.x` for Product Phase 2.
@@ -22,7 +22,7 @@ A modular, real-time game engine for livestreams. Viewers become players through
 - An **operator panel** for starting, pausing and ending rounds, resetting scores, triggering celebrations, managing players, and driving the simulator.
 - A **broadcast view** (2D HUD for now) with the phase, timer, team scores, join ticker, and result and status banners.
 
-Not built yet: performance tuning and everything TikTok-related. The 3D scene uses original low-poly models built from Blender scripts (see `assets/game-modes/mahalle-halayi/README.md`).
+Performance has been measured (`docs/perf-results.md`). Not built yet: everything TikTok-related. The 3D scene uses original low-poly models built from Blender scripts (see `assets/game-modes/mahalle-halayi/README.md`).
 
 ## Getting started
 
@@ -64,6 +64,8 @@ pnpm test         # Vitest unit and integration tests
 pnpm test:e2e     # Playwright browser tests (starts the dev servers itself)
 pnpm build        # production build of the web app
 pnpm assets:build # rebuild the 3D models from their Blender scripts (needs Blender)
+pnpm perf:load    # headless server load scenarios (see docs/perf-results.md)
+pnpm perf:browser # headed-Chrome performance run against the production build
 ```
 
 ## How it works

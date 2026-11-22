@@ -14,6 +14,15 @@ export default defineConfig({
       '/socket.io': { target: 'http://127.0.0.1:3001', ws: true },
     },
   },
+  // `vite preview` serves the production build; measurements must use it, not the dev server.
+  preview: {
+    host: '127.0.0.1',
+    port: 4173,
+    strictPort: true,
+    proxy: {
+      '/socket.io': { target: 'http://127.0.0.1:3001', ws: true },
+    },
+  },
   build: {
     rollupOptions: {
       input: {

@@ -1,0 +1,39 @@
+{
+  "measuredAt": "2026-11-22T23:53:05.478Z",
+  "measureSeconds": 20,
+  "results": [
+    {
+      "label": "burst (200 halay in 1.5 s x3)",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 30,
+      "frames": 2293,
+      "avgFps": 60.00198872709511,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.30000001192093,
+        "p99": 18.600000023841858,
+        "max": 22.099999994039536
+      },
+      "onePercentLowFps": 53.763440791299985,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.3048408197826347,
+      "jsHeapMB": 21.12942600250244,
+      "latencyMs": {
+        "count": 89,
+        "p50": 72,
+        "p95": 84,
+        "p99": 86,
+        "max": 86
+      },
+      "drawCalls": 95,
+      "triangles": 52032,
+      "avatars": 24,
+      "crowdVisible": 60
+    }
+  ]
+}
