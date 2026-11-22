@@ -10,7 +10,10 @@ const server = createGameServer({ mode: getGameMode('mahalle-halayi'), operatorT
 
 server.http.listen(config.port, config.host, () => {
   console.log(`[server] listening on http://${config.host}:${config.port}`);
-  if (!config.operatorToken) console.log(`[server] operator token (this run only): ${operatorToken}`);
+  if (!config.operatorToken) {
+    console.log(`[server] operator token (this run only): ${operatorToken}`);
+    console.log(`[server] operator page (dev): http://127.0.0.1:5173/operator/#token=${operatorToken}`);
+  }
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

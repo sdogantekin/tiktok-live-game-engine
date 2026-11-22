@@ -47,6 +47,7 @@ export class SimulatorProvider {
   private readonly playbacks: Playback[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
   private runCount = 0;
+  private burstCursor = 0;
   private lastEvent: unknown = null;
 
   constructor(private readonly options: SimulatorProviderOptions) {
@@ -141,11 +142,16 @@ export class SimulatorProvider {
     if (this.pool.length === 0) return { ok: false, reason: 'no_viewers' };
     if (count > this.pool.length) return { ok: false, reason: 'not_enough_viewers' };
 
+    // Rotate through the pool so back-to-back bursts hit different viewers, not the same ones still on cooldown.
+    const senders = Array.from({ length: count }, (_, i) => this.pool[(this.burstCursor + i) % this.pool.length]);
+    this.burstCursor += count; // never wrapped here, so a pool that grows later is walked in order
+
     const startedAt = this.now();
     this.play(
-      this.pool.slice(0, count).map((viewer) => {
+      senders.flatMap((viewer) => {
+        if (!viewer) return [];
         const atMs = this.rng.int(spreadMs + 1);
-        return { atMs, raw: this.manual.comment(viewer, text, startedAt + atMs) };
+        return [{ atMs, raw: this.manual.comment(viewer, text, startedAt + atMs) }];
       }),
     );
     return { ok: true };

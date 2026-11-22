@@ -94,6 +94,26 @@ describe('burst', () => {
     expect(emitted.every((e) => textOf(e) === 'halay')).toBe(true);
   });
 
+  it('rotates through the pool so consecutive bursts use different viewers', () => {
+    const { provider, emitted } = setup();
+    provider.handle({ type: 'sim_add_viewers', count: 30 });
+    vi.advanceTimersByTime(150);
+    emitted.length = 0;
+
+    const sendersOf = () => {
+      emitted.length = 0;
+      provider.handle({ type: 'sim_burst', text: 'halay', count: 10, spreadMs: 0 });
+      vi.advanceTimersByTime(50);
+      return emitted.map((e) => (e as { userId: string }).userId);
+    };
+    const first = sendersOf();
+    const second = sendersOf();
+    const third = sendersOf();
+    const fourth = sendersOf(); // wraps around to the start
+    expect(new Set([...first, ...second, ...third]).size).toBe(30);
+    expect([...fourth].sort()).toEqual([...first].sort());
+  });
+
   it('refuses without enough viewers', () => {
     const { provider } = setup();
     expect(provider.handle({ type: 'sim_burst', text: 'halay', count: 5, spreadMs: 0 })).toEqual({ ok: false, reason: 'no_viewers' });

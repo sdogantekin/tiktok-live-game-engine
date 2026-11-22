@@ -1,0 +1,183 @@
+/* All sizes are multiples of --u (1% of the 9:16 stage width), so the layout scales with the OBS source size. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: #0d0b14;
+}
+
+.viewport {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 4);
+  color: #fff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #3b1d5a 0%, #8a3f6b 45%, #e8a05a 100%);
+  text-shadow: 0 calc(var(--u) * 0.3) calc(var(--u) * 0.8) rgba(0, 0, 0, 0.45);
+}
+
+.top {
+  text-align: center;
+}
+.phase {
+  font-size: calc(var(--u) * 6);
+  font-weight: 800;
+  line-height: 1.1;
+}
+.clock {
+  font-size: calc(var(--u) * 16);
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.meta {
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--u) * 4);
+  font-size: calc(var(--u) * 4);
+  font-weight: 600;
+}
+
+.scores {
+  display: flex;
+  gap: calc(var(--u) * 3);
+}
+.team {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 2.5) calc(var(--u) * 2);
+  border: calc(var(--u) * 0.8) solid;
+  border-radius: calc(var(--u) * 3);
+  text-align: center;
+}
+.team.leading {
+  box-shadow: 0 0 calc(var(--u) * 4) rgba(255, 255, 255, 0.85);
+}
+.team-name {
+  font-size: calc(var(--u) * 4.6);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.team-score {
+  font-size: calc(var(--u) * 18);
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.team-count {
+  font-size: calc(var(--u) * 3.6);
+  font-weight: 600;
+}
+
+.arena {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+.help {
+  text-align: center;
+}
+.help-title {
+  font-size: calc(var(--u) * 4.4);
+  font-weight: 700;
+  margin-bottom: calc(var(--u) * 2);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(var(--u) * 2);
+}
+.chip {
+  padding: calc(var(--u) * 1) calc(var(--u) * 3);
+  border-radius: calc(var(--u) * 5);
+  background: rgba(0, 0, 0, 0.45);
+  font-size: calc(var(--u) * 5);
+  font-weight: 800;
+}
+
+.ticker {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.2);
+  min-height: calc(var(--u) * 22);
+  justify-content: flex-end;
+}
+.joiner {
+  align-self: flex-start;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 2.5);
+  border-left: calc(var(--u) * 1) solid;
+  border-radius: calc(var(--u) * 1.5);
+  background: rgba(0, 0, 0, 0.5);
+  font-size: calc(var(--u) * 3.8);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 5, 20, 0.6);
+}
+.banner {
+  box-sizing: border-box;
+  max-width: 90%;
+  padding: calc(var(--u) * 5) calc(var(--u) * 6);
+  border-radius: calc(var(--u) * 4);
+  background: rgba(20, 10, 40, 0.92);
+  text-align: center;
+}
+.banner-label {
+  font-size: calc(var(--u) * 5);
+  font-weight: 700;
+}
+.banner-title {
+  font-size: calc(var(--u) * 9);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.banner-scores {
+  margin-top: calc(var(--u) * 2);
+  font-size: calc(var(--u) * 10);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 3);
+  background: #b3261e;
+  text-align: center;
+  font-size: calc(var(--u) * 3.6);
+  font-weight: 700;
+}
