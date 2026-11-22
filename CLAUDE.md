@@ -9,6 +9,11 @@ Persistent working instructions for Claude Code. Keep detailed product and techn
 - `REQUIREMENTS.md` is authoritative for product behavior and MVP scope; `ARCHITECTURE.md` for technical decisions; this file for working practices.
 - If these documents conflict or omit a material decision, explain the issue and recommend a resolution. Do not silently choose or rewrite an agreed decision.
 - The product is a modular livestream game engine. **Mahalle Halayı** is the only MVP game. **Osmanlı Kuşatması** is a future example, not MVP scope.
+- **Product direction:** the purpose of this project is to run these games on real livestream platforms, starting with **TikTok LIVE**. This is a planned product goal, not an optional or abandoned idea; Product Phase 1 exists to build the foundation for it. It is delivered in two product milestones (see `REQUIREMENTS.md`):
+  - **Product Phase 1 — Standalone MVP:** the engine and first game with the Local Simulator as the only event source. This is the current work.
+  - **Product Phase 2 — TikTok LIVE integration:** begins only after Product Phase 1 is accepted and the user explicitly approves starting it, and begins with feasibility research (official vs. unofficial options, platform policies, access, reliability, limits), not with a connector. It may turn out to be infeasible or unacceptable; report that honestly rather than forcing it. The user creates and owns a dedicated TikTok account for it; never ask for, store, or commit account credentials.
+  - One provider is active per run: the simulator and TikTok LIVE are never mixed in one session, so simulated players cannot appear on a real stream.
+  - Each product phase has its own implementation steps in `PLAN.md`: `Step 1.x` for Product Phase 1 and `Step 2.x` for Product Phase 2. "Phase" always means a product phase; "Step" always means an implementation step.
 
 ## 2. Think before coding
 
@@ -27,6 +32,7 @@ Persistent working instructions for Claude Code. Keep detailed product and techn
 - Do not add microservices, a database, payment processing, cloud deployment, or runtime plugin loading to the MVP without explicit approval.
 - The documented boundaries between core services, game-mode rules, event providers, and rendering are intentional. Preserve them, but do not build a generic framework beyond current needs.
 - Prefer static game-mode registration and replaceable provider adapters over a premature plugin platform.
+- Planning for TikTok LIVE does not justify extra abstraction now. Do not add a generic provider framework, provider registry, plugin loader, or speculative TikTok-shaped code in Product Phase 1. Extract a shared provider interface only when the real second provider's needs are known.
 - Use judgment for trivial tasks. Avoid defensive code for impossible scenarios, but validate and handle failures at real external boundaries.
 
 ## 4. Make surgical changes
@@ -65,6 +71,8 @@ For substantial work, follow **Explore → Plan → Approval → Implement → V
 - Use TypeScript for application code and shared contracts. Prefer explicit types and runtime validation at external boundaries; avoid `any` where practical.
 - Keep game rules, core services, provider adapters, rendering, broadcast UI, and operator controls separate.
 - Normalize provider-specific events before they enter the core engine. The backend is authoritative for participants, teams, scores, rounds, and game state.
+- Keep the core, game modes, and views provider-independent: they never import provider code, and nothing in them may assume the simulator is the only event source (or that a platform is). Providers depend on contracts and the `ingest()` entry point only. When making a Product Phase 1 design decision, avoid choices that would force engine or game-rule changes when a real provider is added, but do not build for TikTok's unknowns in advance.
+- The Local Simulator is permanent, not scaffolding: it must stay usable on its own, with no dependency on any TikTok code, credentials, or network access.
 - Make event handling idempotent when stable IDs are available; use appropriate cooldowns and rate limits.
 - Treat comments, usernames, provider payloads, and browser commands as untrusted. Validate, length-limit, and safely render user-controlled text.
 - Keep secrets out of source control. Verify current official documentation and compatibility before choosing dependency versions; prefer stable releases and seek approval before using alpha/beta versions.
@@ -73,7 +81,8 @@ For substantial work, follow **Explore → Plan → Approval → Implement → V
 ## 8. Product and visual guardrails
 
 - Every viewer must have meaningful free participation. In the MVP, gifts trigger visual celebrations; they do not add winner points or guarantee victory.
-- Start with the local event simulator. Do not implement real TikTok integration unless explicitly approved as a later task.
+- Product Phase 1 uses the local event simulator only. Do not implement or scaffold a TikTok connector, add TikTok SDK dependencies, or request TikTok credentials until the user explicitly approves Product Phase 2, and then start with the feasibility research. Research and documentation are fine; connector code is not.
+- In Product Phase 2, gifts stay cosmetic unless the user explicitly approves a change to gift scoring; real gift values must never silently become winner points.
 - Target 100–200 participant records, not 100–200 individually rendered high-detail characters. Follow the performance approach in the project documents.
 - Initial art direction: **stylized low-poly, toy-like 3D diorama** — colorful, playful, and readable in a vertical livestream. This is replaceable art direction, not a dependency of game rules or core services.
 - Use Blender `.blend` files as editable source assets and optimized `.glb` files at runtime. Treat AI-generated assets as drafts until quality, consistency, rigging, animation, and usage rights are checked.

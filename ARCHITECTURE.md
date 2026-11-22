@@ -1,18 +1,20 @@
 # TikTok Live Game Engine — Technical Architecture
 
-**Document status:** Baseline architecture for MVP planning  
+**Document status:** Baseline architecture for MVP planning; designed so a real platform provider (TikTok LIVE, Product Phase 2) can be added without changing the engine  
 **Architecture style:** Modular monolith in a pnpm workspace  
 **Runtime model:** Local-first, server-authoritative game state
+
+> **Terminology.** "Product Phase 1/2" are product milestones defined in `REQUIREMENTS.md` (Standalone MVP; TikTok LIVE integration). Each has its own implementation steps in `PLAN.md`, numbered `Step 1.x` and `Step 2.x`.
 
 ## 1. Architectural goals
 
 1. Build the first game quickly without creating a throwaway codebase.
 2. Keep game modes modular while avoiding a premature dynamic plugin platform.
-3. Keep the engine independent from TikTok-specific payloads and connectivity.
+3. Keep the engine independent from platform-specific payloads and connectivity, so TikTok LIVE can be added as a second event provider (Product Phase 2) without touching game rules, core services, or the views.
 4. Keep server-side game rules authoritative and rendering client-side.
 5. Support 100–200 simulated participant records without rendering a full-detail avatar for every participant.
 6. Keep 3D art direction and assets replaceable without changing game rules.
-7. Make the local simulator a permanent development and testing tool.
+7. Make the local simulator a permanent development and testing tool that stays usable on its own, with no dependency on any platform integration.
 
 ## 2. Key decisions
 
@@ -42,11 +44,25 @@ Game modes are code modules registered at build time. Do not implement runtime m
 
 This is enough modularity for Mahalle Halayı and a future Osmanlı Kuşatması while keeping the MVP understandable.
 
-### ADR-006: Simulator first; TikTok provider later
+### ADR-006: Provider-independent event pipeline; Local Simulator now, TikTok LIVE planned
 
-The local simulator is the first and required event provider. A future TikTok provider must translate platform events into the shared normalized event model. The core engine must never import TikTok connector types.
+The engine consumes **normalized events only**. An *event provider* is any module that produces normalized events and hands them to the engine's single `ingest()` entry point, and that reports whether it is connected.
 
-Any unofficial TikTok connector is experimental and replaceable. Before real integration, review the current TikTok developer/partner options, permissions, platform policies, and technical constraints. Do not assume a general public LIVE comments-and-gifts API is available to this project.
+| Provider | Product phase | Status |
+|---|---|---|
+| Local Simulator | Product Phase 1 (MVP) | Built. Permanent development, test, and demo tool. |
+| TikTok LIVE | Product Phase 2 | Planned. Starts with feasibility research; not built in the MVP. |
+
+Rules that hold now and in Product Phase 2:
+- The core engine, game modes, and views never import provider code, SDKs, or connector types. Providers depend on `packages/contracts` and on the `ingest()` function they are given, not on core internals.
+- A TikTok provider translates platform payloads into the existing normalized event model. The event model, pipeline, and game rules are not reshaped around TikTok.
+- Events and players are namespaced by provider id, so events from different providers can never collide.
+- Exactly one provider is active per run, selected by configuration at startup. The simulator and a live provider are deliberately not mixed in one session (decided in `REQUIREMENTS.md` §9): simulated players must never appear on a real stream. Provider namespacing still keeps ids collision-free, but mixing is not a supported mode.
+- The simulator has no dependency on the TikTok provider: it must build, run, and pass its tests with the TikTok provider absent.
+
+What this ADR deliberately does **not** introduce: a plugin framework, runtime provider loading, a provider marketplace, dependency injection containers, or a multi-provider fan-in/orchestration layer. A provider is an ordinary TypeScript module selected by configuration at startup. A shared `EventProvider` interface should be extracted only when the TikTok provider's real needs are known from the feasibility research; until then the contract is just "emit normalized events through `ingest()` and report connection status".
+
+Any unofficial TikTok connector is experimental and replaceable. Product Phase 2 begins with feasibility research: current TikTok developer and partner options, permissions, platform policies, access requirements, and technical constraints. Do not assume a general public LIVE comments-and-gifts API is available to this project, and do not assume any approach is permitted until the research says so.
 
 ### ADR-007: In-memory state for MVP
 
@@ -106,7 +122,8 @@ tiktok-live-game-engine/
 │           │   ├── registry/
 │           │   └── mahalle-halayi/
 │           ├── providers/
-│           │   └── simulator/
+│           │   ├── simulator/       # Product Phase 1 (MVP)
+│           │   └── tiktok/          # Product Phase 2: not created until the feasibility decision
 │           ├── operator/
 │           └── realtime/
 ├── packages/
@@ -140,7 +157,7 @@ The planning phase may simplify this structure if a smaller layout better serves
 ## 5. Runtime architecture
 
 ```text
-Local Simulator (MVP)                 TikTok Provider (future)
+Local Simulator (MVP)                 TikTok LIVE Provider (Product Phase 2)
           |                                      |
           +------------------+-------------------+
                              |
@@ -175,6 +192,19 @@ The backend processes domain actions and owns the canonical state. The frontend 
 ### Provider boundary
 
 Provider adapters translate provider-specific payloads into normalized application events. The core engine must not import provider SDK or connector types.
+
+**What a provider is responsible for** (the Local Simulator today, TikTok LIVE in Product Phase 2):
+- Connecting to its source, and reconnecting with sensible backoff after a drop.
+- Validating and normalizing every payload it receives; unrecognized or malformed payloads are dropped and counted, never forwarded as-is.
+- Supplying a stable event ID where its source has one, otherwise a session-scoped ID, and a stable provider user ID.
+- Sanitizing display names and limiting text length before handing events over (the core sanitizes again).
+- Mapping the source's gift identifiers to semantic gift keys (see Gift normalization).
+- Reporting connection status (connected / disconnected, and any additional states the feasibility research shows are needed). The engine publishes this status so the operator and the broadcast view can show it, and the game continues while the provider is down.
+- Keeping credentials and session secrets in environment configuration, never in source control or logs.
+
+**What stays in the engine regardless of provider:** deduplication, per-user and global rate limits, the bounded queue, command parsing, action mapping, game rules, scoring, rounds, and state. A provider must not implement game logic, and the engine must not contain provider-specific branches.
+
+**Known provider-dependent unknowns to resolve during Product Phase 2 feasibility research, not now:** whether the source provides stable event IDs, how gift streaks and combos are reported, how late or out-of-order events appear, display-name constraints, and rate characteristics. The MVP pipeline already deduplicates by `provider:eventId` and tolerates malformed input, which is the base these questions build on.
 
 A normalized event should contain, at minimum:
 - A stable event ID when the provider supplies one; otherwise an adapter-generated session-scoped ID.
@@ -359,7 +389,8 @@ Changing from this low-poly direction to a more detailed cartoon style should pr
 - Do not persist personal viewer data in the MVP.
 - Store credentials in environment variables; do not commit secrets.
 - No payment processing or external financial actions are part of this project.
-- Any future TikTok integration must be reviewed against current platform terms, policies, and access requirements before use.
+- The TikTok LIVE integration (Product Phase 2) must be reviewed against current platform terms, policies, and access requirements before any connector is built or used.
+- With a real provider, comments and usernames come from real people: the existing untrusted-input handling (validation, length limits, safe rendering, rate limits, operator remove/ignore) applies unchanged, and raw platform payloads are not persisted.
 
 ## 14. Testing strategy
 
@@ -377,6 +408,12 @@ Changing from this low-poly direction to a more detailed cartoon style should pr
 - Operator command → validated state transition.
 - Socket connection → initial snapshot → subsequent updates.
 - Disconnect/reconnect → fresh snapshot.
+
+### Provider tests
+- Every provider's output must validate against the normalized event schema, and the engine must behave identically for the same normalized events no matter which provider produced them.
+- The simulator's fault injection (duplicates, malformed payloads, rapid repeats, disconnects) is the reference for the failure cases a real provider must also survive.
+- For Product Phase 2: a real provider is tested against recorded and sanitized payload fixtures replayed through its normalizer (no network, runs in CI), plus a manual validation session against real TikTok LIVE, which is not an automated test.
+- The simulator's tests must keep passing with the TikTok provider absent.
 
 ### Browser / visual tests
 - Broadcast view loads in 9:16 layout.

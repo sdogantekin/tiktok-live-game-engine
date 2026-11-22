@@ -1,15 +1,37 @@
 # TikTok Live Game Engine — Product Requirements
 
-**Document status:** Baseline for MVP planning  
+**Document status:** Baseline for MVP planning, including the planned post-MVP TikTok LIVE milestone  
 **Product type:** Personal side project  
 **First game mode:** Mahalle Halayı  
-**Future example mode:** Osmanlı Kuşatması
+**Future example mode:** Osmanlı Kuşatması  
+**Roadmap:** Product Phase 1 — Standalone MVP (Local Simulator) → Product Phase 2 — TikTok LIVE integration (feasibility first)
+
+> **Terminology.** "Product Phase 1/2" are product milestones. Each has its own implementation steps in `PLAN.md`, numbered `Step 1.x` (Product Phase 1) and `Step 2.x` (Product Phase 2).
 
 ## 1. Product vision
 
 Build a modular, real-time 3D game experience for livestreams. Viewers become participants through chat commands and livestream gift events. A single reusable engine should support multiple themed game modes without rebuilding player management, team management, event handling, scoring, round control, operator controls, or the livestream presentation layer for each game.
 
-The first release is a local, simulator-driven prototype of **Mahalle Halayı**. Real TikTok connectivity is a later integration milestone, not a prerequisite for proving the gameplay.
+**The purpose of this project is to run these games on real livestream platforms, starting with TikTok LIVE.** Connecting to TikTok LIVE is the product's starting point and goal; everything in Product Phase 1 exists to build a solid, testable foundation for it. The Local Simulator is the MVP event source for development, testing, and demonstrations. It is a permanent and independently useful tool, but it is not the final event source.
+
+TikTok LIVE integration is a **planned product goal**, delivered right after the standalone MVP is complete. It is deliberately not part of the MVP, and it is not guaranteed to be technically, legally, or commercially possible: it starts with feasibility research (see Product Phase 2 below).
+
+### Product roadmap
+
+**Product Phase 1 — Standalone MVP (current).**
+- Build the reusable engine and the first game mode (Mahalle Halayı).
+- Use the Local Simulator as the only event source.
+- Establish the provider-independent event pipeline: normalized events, validation, deduplication, rate limits, action mapping, server-authoritative state.
+- Keep the architecture simple; add no abstraction that Product Phase 1 does not need.
+- Deliver a fully functional standalone experience: simulator, operator panel, and OBS-ready broadcast view.
+
+**Product Phase 2 — TikTok LIVE integration (planned, begins only after Product Phase 1 is accepted and approved).**
+- Prerequisite: the product owner creates a dedicated TikTok account for this project and checks what it takes for that account to go LIVE (eligibility rules can limit or delay this, so it is worth doing early).
+- Start with feasibility research: official and unofficial integration approaches, platform policies and terms, access and approval requirements, reliability, and technical limitations.
+- Decide whether and how to proceed based on the findings (see §9). A "not feasible" or "not acceptable" outcome is a valid result and must be reported honestly.
+- If approved: select an approach, ingest comments and supported gift events, normalize them into the existing event pipeline, handle reconnects, duplicate events, errors, and connection status, and validate against a real TikTok LIVE session, subject to access and platform limitations.
+
+Product Phase 2 must not require rewriting the game rules, scoring, round flow, operator panel, or broadcast view built in Product Phase 1.
 
 ### Product promise
 
@@ -34,7 +56,8 @@ Needs:
 - Trigger predefined events when useful.
 - See player counts, team scores, and recent events.
 - Override automatic behavior when something goes wrong.
-- Test the game without a live TikTok connection.
+- Test the game without a live TikTok connection (always), and later run it against a real TikTok LIVE session (Product Phase 2).
+- See at a glance whether the event source is connected.
 
 ## 3. Product principles
 
@@ -44,10 +67,10 @@ Needs:
 4. **Short rounds:** rounds are short enough for viewers to join, participate, and see a result during a livestream.
 5. **Modular game modes:** each mode owns its theme, rules, commands, scoring configuration, and presentation assets; shared capabilities stay in the core engine.
 6. **Operator safety net:** automatic play is the default, but the operator can intervene.
-7. **Replaceable integrations:** the game engine consumes normalized events, not TikTok-specific payloads.
+7. **Replaceable integrations:** the game engine consumes normalized events, not platform-specific payloads. The Local Simulator (Product Phase 1) and the planned TikTok LIVE provider (Product Phase 2) feed the same pipeline, and the simulator stays fully usable without any platform connection.
 8. **Playful and inclusive themes:** historical or cultural settings should remain fictionalized/arcade-like and avoid targeting real-world national, ethnic, or religious groups.
 
-## 4. MVP scope
+## 4. MVP scope (Product Phase 1)
 
 ### In scope
 - One playable game mode: Mahalle Halayı.
@@ -65,7 +88,7 @@ Needs:
 - A repeatable test that simulates 100–200 participant records.
 
 ### Explicitly out of scope for the first MVP
-- Real TikTok LIVE integration.
+- Real TikTok LIVE integration. This is a **planned Product Phase 2 milestone**, not an abandoned or optional idea; it is excluded here only so that the standalone game is proven first (see §9).
 - Multiple playable game modes.
 - Public accounts, sign-in, or persistent player profiles.
 - Database and cloud deployment.
@@ -182,7 +205,16 @@ These are acceptance targets to measure, not claims that performance is already 
 
 ## 9. Event sources and integration approach
 
+The engine receives events only through provider adapters that emit normalized events (see `ARCHITECTURE.md`). There are two planned providers:
+
+| Provider | Product phase | Purpose |
+|---|---|---|
+| Local Simulator | Product Phase 1 (MVP) | Development, automated and load testing, demonstrations. Permanent; works with no network or platform account. |
+| TikTok LIVE | Product Phase 2 (planned, feasibility first) | Real comments and supported gifts from a real livestream. |
+
 ### MVP provider: Local Simulator
+
+The simulator is the only event source in Product Phase 1. It remains available after Product Phase 2 and must keep working independently of any TikTok integration, code, credentials, or network access.
 
 The simulator must be able to:
 - Create synthetic viewers.
@@ -192,11 +224,44 @@ The simulator must be able to:
 - Generate a configurable number of participants and event bursts.
 - Reproduce edge cases such as duplicate events, malformed comments, rapid repeated commands, and provider disconnects.
 
-### Future provider: TikTok LIVE
+### Planned provider (Product Phase 2): TikTok LIVE
 
-A future provider may connect to TikTok LIVE and translate supported live events into the engine's normalized event contract. This is deliberately excluded from the MVP.
+Connecting to real TikTok LIVE sessions is a planned product goal. It is excluded from the MVP and **must begin with feasibility research, not implementation**. Nothing in this document assumes that a general public LIVE comments-and-gifts API exists, that any approach is permitted by platform terms, or that access can be obtained.
 
-Before implementing it, verify the current official TikTok integration/partner options, platform terms, technical access, and any required approvals. An unofficial connector must be treated as experimental and replaceable, not as a guaranteed or officially supported API.
+**Step 1 — Feasibility research (no connector code).** Produce a written findings document covering:
+- Official options: TikTok developer and partner programs (for example the LIVE interactive-games partner registration), their eligibility, approval process, permitted event types, and terms.
+- Unofficial options: third-party connectors, what they rely on, their maintenance and breakage risk, and whether using them is compatible with the platform's terms and policies.
+- Platform policies and terms that apply to reading LIVE comments and gifts and to showing viewer data on stream.
+- Access requirements (accounts, approvals, credentials) and who must obtain them.
+- Technical characteristics: available event types, event identifiers, gift semantics (including streaks and combos), latency, rate limits, reconnection behavior, and stability.
+- A recommendation with the trade-offs, including the option **not to proceed**.
+
+**Step 2 — Decision gate.** The product owner approves the chosen approach (or stops Product Phase 2) before any connector is built. An unofficial connector, if chosen at all, is experimental and replaceable, never presented as a guaranteed or officially supported API.
+
+**Step 3 — Implementation (only after approval).** The provider must:
+- Ingest comment events and the gift events the chosen approach supports.
+- Map provider gift identifiers to the semantic gift keys the game modes use, without hard-coding real prices or coin values into the engine.
+- Normalize everything into the existing provider-independent event contract and pass it through the same pipeline (validation, deduplication, rate limits) as simulated events.
+- Handle reconnection, duplicate and out-of-order events, malformed payloads, and errors without crashing or stalling the game.
+- Report connection status to the engine so the operator and the broadcast view can show it (the broadcast view already degrades gracefully when the provider is down).
+- Keep credentials and session secrets in environment configuration, never in source control.
+
+**Step 4 — Validation.** Validate with a real TikTok LIVE session, subject to access and platform limitations. If a real session cannot be obtained, say so and document what was verified with recorded or simulated fixtures instead.
+
+**Constraints that continue to apply in Product Phase 2:**
+- Gifts remain cosmetic unless the product owner explicitly approves a change to gift scoring; real gift values must never silently become winner points.
+- Free viewers keep meaningful participation.
+- The engine, game modes, operator panel, and broadcast view stay provider-independent.
+- The Local Simulator remains usable on its own.
+
+**Decisions already made for Product Phase 2:**
+- The first real session uses a **dedicated TikTok account created by the product owner for this project**. The product owner owns the account and any approvals it needs. Whether and when that account is allowed to go LIVE is part of the feasibility research (platform eligibility rules may apply).
+- **One event provider is active per run.** The simulator and TikTok LIVE are not mixed in the same session: a real stream shows only real viewers, so simulated players can never be mistaken for, or counted alongside, real participants. The simulator remains the provider for offline development, testing, and demonstrations. During a live session the operator can already trigger celebrations and manage real players with the operator panel, so injecting fake events is not needed.
+
+**Definition of success for Product Phase 2 (decided):** a **public TikTok LIVE stream on which real viewers can join and take part in the game through its normal mechanics**: team-joining and action comments, and supported gifts triggering their cosmetic celebrations, with scores, rounds, and results computed by the server as in the MVP. A private test session is a stepping stone, not the goal. Success is always subject to what TikTok's access rules, eligibility requirements, and terms allow; if the research shows a public stream is not permitted or not achievable, that is reported as the outcome rather than worked around.
+
+**Open product question for Product Phase 2** (to be answered during or right after feasibility research; not blocking the MVP):
+- Is the target one specific access route, or "the best route the feasibility study finds"?
 
 ## 10. Privacy, safety, and moderation
 
@@ -204,12 +269,15 @@ Before implementing it, verify the current official TikTok integration/partner o
 - Store only the minimum identifiers needed to deduplicate events and maintain a live player record.
 - Do not create persistent viewer profiles.
 - Sanitize and length-limit usernames and comments before display.
-- Provide operator ability to remove or ignore disruptive simulated participants; design the same capability for a future provider.
+- Provide operator ability to remove or ignore disruptive simulated participants; the same capability must work for real participants in Product Phase 2.
+- Product Phase 2 handles real viewer identities and comments: keep them in memory for the active session, do not add persistent viewer profiles, avoid logging raw platform payloads beyond what debugging needs, and follow the platform's terms for how viewer data may be used and displayed.
 - Apply per-user and global event rate limits.
 - Do not pressure viewers to send gifts or make misleading promises about rewards.
 - Keep any future historical battle mode playful and non-graphic; avoid targeting real-world protected groups.
 
 ## 11. Success criteria / MVP acceptance
+
+MVP (Product Phase 1) acceptance does **not** require any TikTok connectivity.
 
 The MVP is ready for a first OBS test when:
 
@@ -225,6 +293,15 @@ The MVP is ready for a first OBS test when:
 10. The broadcast view can be captured by OBS in a vertical 9:16 layout.
 11. There are automated tests for game rules, scoring, cooldowns, round transitions, and event deduplication.
 12. Performance results and known limitations are documented.
+
+### Product Phase 2 acceptance (draft; refine after the feasibility findings)
+
+1. A written feasibility report exists and the product owner has made an explicit go / no-go decision.
+2. If "go": the chosen approach, its policy review, and its known risks are documented.
+3. Real comments and the supported gift events are ingested and normalized into the existing event pipeline.
+4. Reconnects, duplicate events, malformed payloads, and connection loss are handled and visible as connection status.
+5. The integration is validated with a real TikTok LIVE session, and the success definition above is met: a public stream where real viewers can join and play through the game mechanics. If any part could not be validated (or a public stream is not permitted), the document states precisely what and why.
+6. The Local Simulator, its tests, and all Product Phase 1 acceptance criteria still pass unchanged.
 
 ## 12. Future game modes
 

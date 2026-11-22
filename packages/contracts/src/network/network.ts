@@ -23,7 +23,7 @@ export const SOCKET_EVENTS = {
   operatorCommand: 'operator:command',
 } as const;
 
-/** Phase 0 handshake payload. */
+/** Step 1.0 handshake payload. */
 export const HelloSchema = z.object({
   status: z.literal('ok'),
   namespace: z.enum([SOCKET_NAMESPACES.broadcast, SOCKET_NAMESPACES.operator]),
