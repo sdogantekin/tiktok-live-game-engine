@@ -1,0 +1,28 @@
+{
+  "name": "tiktok-live-game-engine",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,green \"pnpm --filter @live-game/server dev\" \"pnpm --filter @live-game/web dev\"",
+    "build": "pnpm --filter @live-game/web build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.65.1",
+    "@types/node": "^22.20.5",
+    "concurrently": "10.0.7",
+    "eslint": "10.15.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.73.0",
+    "vitest": "5.1.1"
+  }
+}

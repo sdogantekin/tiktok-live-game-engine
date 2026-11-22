@@ -1,0 +1,266 @@
+# PLAN.md — MVP Implementation Plan
+
+**Status:** Plan approved 2026-11-22. Implementation of each phase requires a separate explicit approval.
+**Source of truth:** `REQUIREMENTS.md` (product), `ARCHITECTURE.md` (technical), `CLAUDE.md` (working practices). This plan only sequences the work; it does not change scope.
+**Environment when written:** Apple M3, 16 GB, macOS, Node 22.14.0, npm 10.9.2, pnpm not installed, Google Chrome installed, Blender 5.2.2 installed, OBS not installed, not a git repo.
+
+## 1. Summary and approach
+
+Build the smallest end-to-end playable slice first: a headless, fully tested game core (Phases 1–2), the Socket.IO server (3), a 2D operator panel + HUD broadcast that plays a whole round with the simulator (4), the 3D blockout with primitives (5), Blender assets (6), load/performance measurement (7), and OBS readiness (8).
+
+Why this order: rules, scoring and cooldowns are the highest-value, lowest-risk code and are testable without UI; the loop is playable in 2D before any 3D cost is paid; the biggest unknown (skinned-animation cost per visible avatar) is measured with real assets, not primitives.
+
+Key choices:
+- Three workspaces only: `apps/server`, `apps/web`, `packages/contracts`.
+- Vite multi-page web app (`/broadcast/`, `/operator/`) so operator code is absent from the OBS bundle.
+- Contracts are Zod schemas + inferred types consumed as TS source (no build step). Server runs with `tsx`; no server bundling for the MVP.
+- TypeScript 6.0.3 (not 7.0.2: typescript-eslint 8.73 requires TS < 6.1).
+- Node 24 LTS recommended (installed 22.14.0 satisfies every tool's engine range).
+
+## 2. Repository tree
+
+```text
+./                                   # repo root = current directory
+├── apps/
+│   ├── server/
+│   │   ├── package.json  tsconfig.json
+│   │   ├── scripts/load-test.ts     # headless scenario runner + metrics report
+│   │   └── src/
+│   │       ├── main.ts              # compose + start, binds 127.0.0.1
+│   │       ├── config.ts            # env parsing (Zod)
+│   │       ├── core/
+│   │       │   ├── engine.ts        # GameEngine: single serialized dispatch loop
+│   │       │   ├── mode.ts          # GameMode interface (data-driven config + hooks)
+│   │       │   ├── events/          # comment-normalizer, dedupe (LRU), rate-limit, bounded queue, ingest
+│   │       │   └── players/ teams/ rounds/ scoring/ state/
+│   │       ├── game-modes/
+│   │       │   ├── registry.ts      # static map: modeId -> GameMode
+│   │       │   └── mahalle-halayi/  # config.ts, rules.ts (+ tests)
+│   │       ├── providers/simulator/ # simulator.ts, viewers.ts, scenarios.ts, rng.ts (seeded)
+│   │       ├── operator/            # commands.ts (validate/authorize), auth.ts
+│   │       └── realtime/            # socket-server.ts (namespaces), snapshot/batch publisher
+│   └── web/
+│       ├── package.json  vite.config.ts  tsconfig.json
+│       ├── index.html               # landing page linking the two routes
+│       ├── broadcast/index.html     # 9:16 OBS entry
+│       ├── operator/index.html      # operator entry (no three.js)
+│       ├── public/game-modes/mahalle-halayi/models/   # exported .glb (runtime)
+│       └── src/
+│           ├── broadcast/  operator/  realtime/
+│           ├── game-renderer/       # Stage, AvatarSlots, Crowd (instanced), EffectsLayer, perf-probe
+│           └── game-modes/mahalle-halayi/  # presentation.ts, Scene.tsx, theme.ts, assets.manifest.ts
+├── packages/contracts/src/          # events/ game/ network/ index.ts
+├── e2e/                             # Playwright specs
+├── assets/game-modes/mahalle-halayi/ # source-blend/, references/
+├── docs/                            # perf-results.md, obs-setup.md (created when produced)
+├── package.json  pnpm-workspace.yaml  tsconfig.base.json
+├── vitest.config.ts  playwright.config.ts  eslint.config.js
+├── .nvmrc  .gitignore  .env.example  README.md  PLAN.md
+└── CLAUDE.md  REQUIREMENTS.md  ARCHITECTURE.md
+```
+
+Deviations from ARCHITECTURE.md §4 (simplifications): no `assets/shared/*` or empty `docs/` placeholders until needed; runtime `.glb` in `apps/web/public/…` while `.blend` sources stay in `assets/`; two Vite HTML entries instead of one routed SPA; no `app/` folders.
+
+## 3. Dependencies (checked against the npm registry on 2026-11-22)
+
+| Package | Version | Compatibility note |
+|---|---|---|
+| Node.js | 24.22.3 LTS (alt: 26.13.1 LTS, or keep 22.14.0) | Vite 8 `^20.19 \|\| >=22.12`; Vitest 5.1 `^22.12 \|\| ^24 \|\| >=26`; ESLint 10 `^20.19 \|\| ^22.13 \|\| >=24` |
+| pnpm | 12.21.0 | Pin via `packageManager`; may block dependency build scripts by default → explicit allow-list |
+| TypeScript | 6.0.3 | typescript-eslint 8.73 peers `typescript <6.1` |
+| React / react-dom | 19.3.1 | R3F 9.8.2 peers `react >=19 <19.4` |
+| three / @types/three | 0.187.0 | Pin exact; upgrade deliberately |
+| @react-three/fiber | 9.8.2 (stable) | v10 is alpha — do not use |
+| @react-three/drei | 10.7.9 (only when needed) | peers react ^19, fiber ^9 |
+| vite / @vitejs/plugin-react | 8.3.8 / 6.3.0 | plugin-react 6 peers vite ^8 |
+| socket.io / socket.io-client | 4.8.4 | At-most-once delivery → snapshot on (re)connect |
+| zod | 4.6.7 | |
+| vitest | 5.1.1 | Root `test.projects` |
+| @playwright/test | 1.65.1 | `channel: 'chrome'` (installed Chrome, no browser download) |
+| tsx, @types/node, concurrently | 4.23.15, 24.x, 10.0.7 | |
+| eslint, typescript-eslint, eslint-plugin-react-hooks | 10.15.0, 8.73.0, latest | Flat config; no Prettier |
+| zustand | 5.x (transitive R3F dep) | Client store; verify at install |
+
+Not added: react-router, any DB, queue lib, ORM, ECS lib, physics.
+References: nodejs.org/en/about/previous-releases · pnpm.io · vite.dev/guide · r3f.docs.pmnd.rs · socket.io/docs/v4/delivery-guarantees · zod.dev · vitest.dev · playwright.dev · docs.blender.org/manual/en/dev/addons/scene_gltf2.html.
+Caveat: compatibility verified from registry `engines`/`peerDependencies`, the Node release schedule, and the R3F docs banner (v9.8.2 stable / v10 alpha); not every tool's prose docs were read. Re-verify versions at Phase 0 install time.
+
+## 4. Boundaries and mode contract (no plugin framework)
+
+Dependency rules, enforced by ESLint `no-restricted-imports`:
+
+| Module | May import | Must not import |
+|---|---|---|
+| `packages/contracts` | zod only | anything else |
+| `server/core` | contracts | game-modes, providers, realtime, operator, provider SDKs |
+| `server/game-modes/<mode>` | contracts, core types | providers, realtime |
+| `server/providers/*` | contracts | core internals (emit via one `ingest()`) |
+| `server/realtime`, `operator` | contracts, core public API | game-mode internals |
+| `web/game-renderer` | contracts, three/R3F | mode-specific code, socket client |
+| `web/game-modes/<mode>` | contracts, game-renderer API | server code |
+| `web/broadcast`, `web/operator` | realtime store, contracts | each other |
+
+```ts
+interface GameMode {
+  id: ModeId;
+  config: { teams; commands; cooldowns; scoring; gifts; timings };   // plain data
+  createModeState(): ModeState;
+  handleAction(ctx: ModeContext, action: GameAction): ModeEffect[];
+  computeResult(ctx): RoundResult;
+}
+// ModeEffect = { score: team,+n } | { present: PresentationEvent } | { reject: reason }
+```
+
+- Core owns players, teams, round machine, cooldown/rate mechanics, snapshots; it never learns what `halay` means.
+- Client: `getPresentation(modeId)` (static map) returns scene, camera, palette, asset manifest, effect→animation map.
+- Provider boundary: provider → Zod `NormalizedEvent` (`comment.received | gift.received`) → one `ingest()`. Operator commands arrive on an authenticated namespace, are validated as `OperatorCommand`, share the same serialized engine queue, and bypass viewer dedupe/rate-limit.
+- Replaceability: palette, lighting, camera, models, clips, UI tokens live only in `web/game-modes/<mode>/` and `assets/`.
+
+## 5. Phases
+
+Cross-cutting: every phase ends with `pnpm typecheck && pnpm lint && pnpm test` green. Numeric defaults are provisional configuration.
+
+### Phase 0 — Toolchain and workspace skeleton
+- **Goal:** wired empty workspace; one command runs everything.
+- **Tasks:** (needs approval: pnpm install, possibly Node 24, `git init`) root `package.json` scripts (`dev`, `test`, `typecheck`, `lint`, `build`), `pnpm-workspace.yaml`, `tsconfig.base.json`, ESLint flat config with boundary rules, Vitest `projects`, Playwright config, `.nvmrc`, `.gitignore` (incl. `*.blend1`, `node_modules`, `.env`), `.env.example`, minimal README. Hello-world server (health + Socket.IO) and Vite pages `/broadcast/`, `/operator/` with `/socket.io` WS proxy.
+- **Acceptance:** clean `pnpm install`; `pnpm dev` starts server (127.0.0.1:3001) + Vite (5173); both pages load and show socket "connected"; typecheck/lint/test pass.
+- **Checks:** above + one Playwright smoke.
+- **Risks:** pnpm 12 build-script allow-list; Node version choice.
+
+### Phase 1 — Contracts and core domain (pure logic)
+- **Goal:** authoritative model, fully unit-tested.
+- **Tasks:** Zod contracts (`NormalizedEvent`, `GameAction`, `OperatorCommand`, `PublicSnapshot`, `PresentationEvent`, socket event names). Comment normalizer (NFC, strip control/zero-width/bidi, trim, collapse whitespace, `toLocaleLowerCase('tr')`, ASCII-fold ı/ş/ğ/ö/ü/ç; exact whole-comment match; 100-char cap). Display-name sanitizer (grapheme-aware, 24 max). Players, Teams, Scoring (no gift input path), Rounds (injected clock), State (`snapshot()`).
+- **Round machine:** `stopped → lobby → countdown → active → results → lobby…`; `paused` is a flag freezing the timer and rejecting score actions. Defaults: countdown 15 s, round 180 s, results 15 s, auto-next on.
+- **Acceptance:** transitions, illegal transitions, pause/resume timing, team-switch rules, cooldown math, tie → draw, round score reset all tested.
+- **Checks:** Vitest with injected clock; table-driven Turkish normalization tests (`İ/I/ı/i`, `ZIPLA`, `halay!`, `halay halay`, empty, 5 000 chars, RTL/zero-width injection); assert ICU `tr` locale.
+
+### Phase 2 — Mahalle Halayı rules and ingestion pipeline (headless playable)
+- **Goal:** full simulated round in a test, no network/UI.
+- **Tasks:** mode config + rules; pipeline `validate → dedupe (LRU 5 000 provider:eventId) → per-user + global token bucket → bounded queue (1 000; overflow drops oldest visual-only, counted; never drops operator commands) → action map → mode.handleAction → state → effects`. Seeded simulator core emitting into `ingest()`. Static `registry.ts`.
+- **Acceptance:** scripted round (join, halay spam capped by cooldown, zıpla/oyna add 0, gifts add 0 and emit presentation events, winner/draw, return to lobby, duplicates ignored, malformed events don't throw, 200 players processed).
+- **Checks:** Vitest unit + gift-never-scores property test; integration test with `steady-200`.
+- **Risks:** over-generalizing the mode contract — keep exactly §4.
+
+### Phase 3 — Realtime server and operator API
+- **Goal:** browsers can observe and control the authoritative game.
+- **Tasks:** namespaces `/broadcast` (read-only, public snapshot) and `/operator` (token auth; `OPERATOR_TOKEN` or random at boot; bind 127.0.0.1). Full snapshot on every (re)connect (with `serverNow`, `phaseEndsAt`, roster). HUD state ≤10 Hz coalesced; presentation events batched every 50 ms (cap 100; excess aggregated per-team). Operator commands: start/stop game, pause/resume, start/end round, reset score, trigger celebration, remove/ignore player, reassign team, simulator control (add N viewers, comment/gift as viewer, burst, scenario, duplicate/malformed/disconnect). `provider.status` in snapshot.
+- **Acceptance:** connect → snapshot; updates flow; reconnect → fresh snapshot; broadcast rejects commands; operator without token rejected; invalid payloads rejected without crash.
+- **Checks:** Vitest integration with real `socket.io-client` on an ephemeral port.
+
+### Phase 4 — Operator panel + 2D broadcast HUD (first end-to-end playable)
+- **Goal:** play a whole round by clicking, no 3D.
+- **Tasks:** zustand store; operator page (status, controls with reset confirm, simulator panel, scores, player list with remove/reassign, event feed); broadcast page (9:16, team names/scores/timer/phase, recent joiners, result banner, provider-status banner). React text nodes only.
+- **Acceptance:** full round from the operator page reflected on broadcast; refresh/disconnect recovers; operator UI absent from broadcast bundle.
+- **Checks:** Playwright (1080×1920 and 540×960 legibility screenshots); store unit tests.
+
+### Phase 5 — 3D blockout with primitives
+- **Goal:** diorama reacts to game events with placeholder geometry.
+- **Tasks:** R3F `Stage` (fixed ¾ camera, 9:16, DPR clamp), mode `Scene.tsx`, `AvatarSlots` (cap 24, per-team split, sticky, replace longest-idle), instanced `Crowd`, `EffectsLayer` (rose/GG/big-celebration), procedural bob/jump, HUD overlay, dev perf overlay (`?perf=1`).
+- **Acceptance:** at 200 players only ≤ cap avatars animated while counters show all; gifts trigger effects, scores untouched; context loss/reload recovers via snapshot.
+- **Checks:** Playwright headed-Chrome smoke (non-blank canvas, `window.__perf`); slot-allocator unit tests.
+- **Checkpoint (needs user):** install OBS and load `/broadcast/` as a 1080×1920 Browser Source to confirm WebGL2 + Socket.IO work before investing in art.
+
+### Phase 6 — Blender art pass (may start in parallel with Phase 4)
+- **Goal:** replace primitives with cohesive low-poly GLBs.
+- **Tasks:** concept sheet; modular courtyard kit; one shared character (~12-bone rig; clips `idle`, `halay`, `jump`, `dance_a`, `dance_b`, `rose_special`; team look via material/vertex colour); props; GLB export; `assets.manifest.ts`; `useGLTF` + `SkeletonUtils.clone`; per-asset validation.
+- **Acceptance:** assets load from manifest; clips play; initial budgets (to validate): character ≤ 1.5 k tris, scene ≤ 30 k tris, total GLB ≤ 5 MB, textures ≤ 1024².
+- **Checks:** Playwright asset-load (no 404/console errors); Blender-side scale/origin/triangle checks; phone-size visual review.
+- **Risks:** rig/clip consistency; AI-generated meshes are drafts only.
+
+### Phase 7 — Load and performance measurement
+- **Goal:** evidence for performance targets and the avatar cap.
+- **Tasks:** `scripts/load-test.ts`, browser `perf-probe`, report → `docs/perf-results.md`; tune cap, batch interval, crowd count.
+- **Acceptance:** documented numbers vs targets (≥ 30 FPS, p95 event→visible < 500 ms at 200 participants) or a documented gap with options; limitations written down.
+- **Risks:** headless Chromium uses software GL — FPS only valid from headed Chrome on a production build with OBS running.
+
+### Phase 8 — OBS readiness, docs, MVP acceptance
+- **Goal:** all 12 criteria in REQUIREMENTS §11.
+- **Tasks:** `pnpm build && pnpm start` (server serves built web), `docs/obs-setup.md`, README run instructions, final e2e, acceptance checklist, known limitations.
+- **Acceptance:** 30-minute soak with simulator + OBS capture; no memory growth trend; checklist signed off.
+
+## 6. Mahalle Halayı gameplay (smallest coherent version)
+
+- **Teams:** `gelin`, `damat`. `gelin`/`damat` assigns an unassigned viewer in any phase (contributes from that moment). Switching only in lobby/countdown; otherwise rejected with a hint. Teams persist across rounds in the session. Operator can reassign anytime.
+- **Commands (data-driven):** `halay` → +1 team energy, per-player cooldown 5 s; `zıpla` / `oyna` → visual only, 2 s visual cooldown (`oyna` clip chosen by presentation layer). Unassigned viewers get no effect plus a "type gelin or damat" hint.
+- **Rate limits:** per-user 3 events/s, global 100 events/s (token buckets); excess dropped and counted.
+- **Gifts (simulator keys):** `rose` → special dance on sender's avatar (crowd flourish if sender isn't a player); `gg` → group celebration (global cooldown 5 s); `big_celebration` → davul-zurna effect (global cooldown 10 s, queue ≤ 3). No code path from gift to score (types + property test).
+- **Round flow:** lobby → countdown 15 s → active 180 s → results 15 s (winner/draw) → lobby; auto-next on; operator may start/end/pause/reset. Winner = higher team energy; equal → draw. Scores reset each round.
+
+## 7. First 3D scene and asset checklist
+
+**Primitives first (Phase 5):** courtyard ground with 2-tone tile pattern, 3 low façades, lamp posts, bunting, dance-floor circle, stage with davul/zurna musicians, team-colour banners/arches, hemisphere + one shadowed directional light, fixed camera, avatars = capsule + sphere head in team colour, crowd = instanced capsules.
+
+| Asset | Phase 5 | Phase 6 (Blender) |
+|---|---|---|
+| Courtyard modular kit | primitives | hand-modelled, flat colours, shared material/atlas |
+| Bunting, lamps, tables, davul, zurna | primitives | simple models; musicians with idle loop |
+| Character (shared mesh, 2 colourways) | capsule | ~1.5 k tris, ~12-bone rig, 6 clips |
+| Crowd dummy | instanced capsule | instanced low-poly, no skeleton |
+| Effects | primitive particles | small meshes/quads, no large textures |
+| Team banners / UI frames | DOM/CSS | DOM/CSS |
+
+AI image tools → concept sheet and palette only. AI 3D generation → optional drafts for static props. Characters are authored in Blender. Validate every asset: scale/origin, topology, UV/material count, texture size, rig, clip names, GLB size, in-browser look at phone size.
+
+## 8. Performance and load-test approach
+
+**Scenarios (seeded):** S1 steady (200 viewers, ~25 events/s, 5 min); S2 burst (200 `halay` in 2 s ×5); S3 chaos (duplicates, malformed, 5 000-char comments, rapid repeats, provider disconnect); S4 gift storm (20 gifts in 5 s incl. 3 `big_celebration`); S5 socket reconnect mid-round (3 clients); S6 30-minute soak.
+**Server metrics:** ingest→processed latency (p50/p95/p99), queue depth/overflow, rate-limited/deduped counts, tick duration, event-loop lag, RSS/heap, bytes/s per client.
+**Browser metrics (headed Chrome, production build, 1080×1920 and 720×1280):** FPS avg and 1 % low, frame-time p95, `renderer.info`, JS heap, long tasks, mixer cost, event→visible latency (event id → first draw, same-machine clock).
+**Sweeps:** visible cap 12/24/36/48 × crowd 0/60/120; batch interval 50/100 ms; with/without OBS.
+**Pass criteria:** ≥ 30 FPS and p95 event→visible < 500 ms at 200 participants (REQUIREMENTS §8). Proposed server guard-rails (assumptions): p95 ingest→processed < 50 ms; no unbounded queue/heap growth over 30 min.
+
+## 9. Testing matrix
+
+| Phase | Unit | Integration | Browser | Load |
+|---|---|---|---|---|
+| 0 | trivial | – | pages load | – |
+| 1 | normalizer, sanitizer, round machine, players/teams/scoring | – | – | – |
+| 2 | rules, cooldowns, dedupe, queue, gift-never-scores | engine + simulator | – | 200-player scenario |
+| 3 | operator validation, auth | socket snapshot/update/reconnect | – | – |
+| 4 | store reducers | – | operator drives round; legibility shots | – |
+| 5 | slot allocator, effect queue | – | canvas non-blank, effects, context loss | – |
+| 6 | manifest schema | – | assets load, clips play | – |
+| 7 | report math | – | perf probe | S1–S6 + sweeps |
+| 8 | – | – | full e2e + OBS manual | 30-min soak |
+
+## 10. Decisions log
+
+Plan approved as written; the recommended defaults below stand unless changed. Items marked *confirm* need an explicit answer before the phase that depends on them.
+
+| # | Decision | Default | Status |
+|---|---|---|---|
+| 1 | Node version | 24.22.3 LTS (fallback: keep 22.14.0) | *confirm in Phase 0* |
+| 2 | pnpm install method | corepack + `packageManager: pnpm@12.21.0` (fallback `npm i -g`) | *confirm in Phase 0* |
+| 3 | TypeScript | 6.0.3 | default |
+| 4 | `git init` (local, no remote, no commits unless asked) | yes | *confirm in Phase 0* |
+| 5 | Vite multi-page instead of router | yes | default |
+| 6 | Unassigned viewer sends `halay` | ignore + hint | default |
+| 7 | Turkish normalization folds diacritics | yes | default |
+| 8 | Team-size fairness | raw sum; log team sizes; revisit after playtests | default |
+| 9 | Operator protection | 127.0.0.1 bind + token | default |
+| 10 | Runtime GLB location | `apps/web/public/game-modes/mahalle-halayi/models/` | default |
+| 11 | Provisional numbers (timings, cooldowns, cap 24, rate limits) | as in §5/§6 | tune in playtests |
+| 12 | Target machine | this M3/16 GB running OBS + browser | *confirm* |
+| 13 | OBS install | user installs at Phase 5 checkpoint | *needed by Phase 5* |
+
+**Document inconsistencies and proposed resolutions**
+- `operator.command` listed as a normalized event kind vs operator events kept separate → distinct validated type sharing only the serialized engine queue.
+- "Late viewer may join" vs "switching disabled" → join = first assignment, always allowed; switch = lobby/countdown only.
+- `rose` for a non-player sender → crowd flourish fallback.
+- `stopped`/`paused` as round states → `stopped` = no game; `paused` = flag over the current phase.
+
+**Risks:** skinned-animation cost for ~24 mixers on an M3 shared with OBS (measure in Phase 7; mitigate with cap/instancing/shared skeleton); OBS embedded Chromium WebGL behaviour (early checkpoint after Phase 5); Blender/AI rig consistency (one rig, reused); TikTok access remains deferred and unverified; `three` and pnpm 12 move fast (exact-pin, upgrade deliberately).
+
+## 11. Progress tracker
+
+| Phase | Status | Approved on | Notes |
+|---|---|---|---|
+| 0 Toolchain & skeleton | Done (2026-11-22) | 2026-11-22 | Node stays 22.14.0 (`engines >=22.13`, `.nvmrc` 22); pnpm 12.21.0 via `npm i -g --prefix ~/.npm-global` (corepack 0.31 can't fetch pnpm 12); `@types/node@22`; `git init` done, no commits |
+| 1 Contracts + core domain | Not started | – | |
+| 2 Rules + ingestion pipeline | Not started | – | |
+| 3 Realtime server + operator API | Not started | – | |
+| 4 Operator panel + 2D HUD | Not started | – | |
+| 5 3D blockout (+ OBS checkpoint) | Not started | – | |
+| 6 Blender art pass | Not started | – | May overlap Phase 4 |
+| 7 Load & performance | Not started | – | |
+| 8 OBS readiness & acceptance | Not started | – | |

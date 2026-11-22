@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - packages/*
+
+# esbuild (via tsx) ships prebuilt platform binaries; its install script is only an optimisation.
+allowBuilds:
+  esbuild: false
