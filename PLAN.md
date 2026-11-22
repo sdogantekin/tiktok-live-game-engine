@@ -257,7 +257,7 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 |---|---|---|---|
 | 0 Toolchain & skeleton | Done (2026-11-22) | 2026-11-22 | Node stays 22.14.0 (`engines >=22.13`, `.nvmrc` 22); pnpm 12.21.0 via `npm i -g --prefix ~/.npm-global` (corepack 0.31 can't fetch pnpm 12); `@types/node@22`; `git init` done, no commits |
 | 1 Contracts + core domain | Done (2026-11-22) | 2026-11-22 | Lobby is transient when `autoNext` is on (stopped → countdown); manual `startRound` skips the countdown; `GameState` composes the services; `decideWinner` lives in scoring; `maxPlayers` cap 1000 added |
-| 2 Rules + ingestion pipeline | Not started | – | |
+| 2 Rules + ingestion pipeline | Done (2026-11-22) | 2026-11-22 | `GameMode` has `handleCommand`/`handleGift` (gift handler can only return presentation effects); `createModeState`/`computeResult` from PLAN §4 omitted until a mode needs them; non-command chatter is dropped before dedupe/rate-limit; queue sheds oldest droppable (visual) items first; gift `queue ≤ 3` is left to the Phase 5 client effects layer; integration tests live in `apps/server/test/` (outside core/mode lint boundaries) |
 | 3 Realtime server + operator API | Not started | – | |
 | 4 Operator panel + 2D HUD | Not started | – | |
 | 5 3D blockout (+ OBS checkpoint) | Not started | – | |

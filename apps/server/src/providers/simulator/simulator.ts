@@ -1,0 +1,63 @@
+import type { NormalizedEvent } from '@live-game/contracts';
+import type { Rng } from './rng';
+
+export const SIMULATOR_PROVIDER = 'simulator';
+
+export interface SimViewer {
+  userId: string;
+  displayName: string;
+}
+
+/** One payload at an offset from the scenario start. `raw` is deliberately `unknown`: chaos scenarios send junk. */
+export interface ScheduledEvent {
+  atMs: number;
+  raw: unknown;
+}
+
+const FIRST_NAMES = [
+  'Ayşe', 'Mehmet', 'Fatma', 'Ahmet', 'Zeynep', 'Mustafa', 'Elif', 'Emre', 'Merve', 'Burak',
+  'Seda', 'Can', 'Deniz', 'Ece', 'Kaan', 'Gül', 'Onur', 'İpek', 'Barış', 'Şeyma',
+];
+
+export function createViewers(count: number, rng: Rng): SimViewer[] {
+  return Array.from({ length: count }, (_, index) => ({
+    userId: `sim-${String(index + 1).padStart(4, '0')}`,
+    displayName: `${rng.pick(FIRST_NAMES)}${index + 1}`,
+  }));
+}
+
+/** Builds valid normalized events with unique, session-scoped ids. */
+export class EventFactory {
+  private sequence = 0;
+
+  /** Use distinct prefixes when combining scenarios in one session so event ids never collide. */
+  constructor(private readonly idPrefix = SIMULATOR_PROVIDER) {}
+
+  comment(viewer: SimViewer, text: string, receivedAt: number): NormalizedEvent {
+    return {
+      kind: 'comment.received',
+      eventId: this.nextId(),
+      provider: SIMULATOR_PROVIDER,
+      userId: viewer.userId,
+      displayName: viewer.displayName,
+      receivedAt,
+      payload: { text },
+    };
+  }
+
+  gift(viewer: SimViewer, giftKey: string, receivedAt: number, count = 1): NormalizedEvent {
+    return {
+      kind: 'gift.received',
+      eventId: this.nextId(),
+      provider: SIMULATOR_PROVIDER,
+      userId: viewer.userId,
+      displayName: viewer.displayName,
+      receivedAt,
+      payload: { giftKey, count },
+    };
+  }
+
+  private nextId(): string {
+    return `${this.idPrefix}-${++this.sequence}`;
+  }
+}
