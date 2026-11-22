@@ -71,7 +71,7 @@ export function JoinTicker({ hud, presentation }: { hud: HudState; presentation:
 
   return (
     <footer className="ticker" aria-live="off">
-      {joiners.map((joiner) => (
+      {joiners.slice(0, 3).map((joiner) => (
         <div key={joiner.key} className="joiner" style={{ borderLeftColor: teamColor(presentation, joiner.teamId) }}>
           {presentation.text.joined(joiner.name, teamNames[joiner.teamId] ?? joiner.teamId)}
         </div>

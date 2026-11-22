@@ -1,6 +1,10 @@
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { CueBus, cuesFromBatch } from '../game-renderer/cue-bus';
+import { PERF_OVERLAY } from '../game-renderer/perf';
+import { PerfOverlay } from '../game-renderer/PerfOverlay';
+import { Stage } from '../game-renderer/Stage';
 import { getPresentation } from '../game-modes/registry';
-import { useRealtime } from '../realtime/react';
+import { useRealtime, useRealtimeClient } from '../realtime/react';
 import { CommandHelp, JoinTicker, PausedBanner, PhaseTimer, ResultBanner, StatusBar, TeamScores } from './hud';
 
 /** Largest 9:16 box that fits the window, so OBS (or any window) always shows the whole composition. */
@@ -21,7 +25,20 @@ function useStageSize() {
 export function BroadcastApp() {
   const hud = useRealtime((state) => state.hud);
   const connection = useRealtime((state) => state.connection);
+  const players = useRealtime((state) => state.players);
+  const client = useRealtimeClient();
   const { width, height } = useStageSize();
+
+  // Scene cues travel on a bus, not through React state, so a burst of events never causes a burst of renders.
+  const cues = useMemo(() => new CueBus(), []);
+  useEffect(
+    () =>
+      client.onPresentation((batch) => {
+        for (const cue of cuesFromBatch(batch)) cues.emit(cue);
+      }),
+    [client, cues],
+  );
+  const roster = useMemo(() => Object.values(players).map((player) => ({ id: player.id, teamId: player.teamId })), [players]);
 
   // One CSS unit = 1% of the stage width, so every size scales with the composition.
   const stageStyle = { width, height, '--u': `${width / 100}px` } as CSSProperties;
@@ -34,6 +51,12 @@ export function BroadcastApp() {
           <StatusBar text="Bağlanıyor…" />
         ) : (
           <>
+            <div className="scene-layer">
+              <Stage camera={presentation.camera}>
+                <presentation.Scene roster={roster} teams={hud.teams} cues={cues} />
+              </Stage>
+            </div>
+            {PERF_OVERLAY && <PerfOverlay />}
             {connection !== 'connected' && <StatusBar text={presentation.text.connecting} />}
             {connection === 'connected' && hud.providerStatus === 'disconnected' && (
               <StatusBar text={presentation.text.providerDown} />

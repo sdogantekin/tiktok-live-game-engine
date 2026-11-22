@@ -1,8 +1,12 @@
 import type { ModePresentation } from '../types';
+import { Scene } from './Scene';
+import { camera } from './scene-config';
 
 export const mahalleHalayiPresentation: ModePresentation = {
   id: 'mahalle-halayi',
   title: 'Mahalle Halayı',
+  camera,
+  Scene,
   teamColors: { gelin: '#e0457b', damat: '#2f6fdb' },
   text: {
     phase: {

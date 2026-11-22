@@ -305,7 +305,7 @@ The core engine knows that a game mode can receive a normalized `GameAction`; it
 ## 10. Frontend views
 
 ### Broadcast view
-- Dedicated route for OBS browser capture.
+- Dedicated route for capture by a streaming tool, designed to work in a plain browser window. An OBS Browser Source is not required, and nothing in the view depends on one.
 - Designed for a vertical 9:16 composition.
 - No operator controls or debug panels.
 - Receives state from the backend and renders the current mode.
@@ -433,7 +433,7 @@ Changing from this low-poly direction to a more detailed cartoon style should pr
 - Provide root scripts for development, tests, type checking, linting, and build.
 - Provide a single documented command to run the local simulator, backend, and frontend during development.
 - Keep environment configuration documented in `.env.example`; never include real secrets.
-- Do not add deployment infrastructure for the MVP. First prove the local game and OBS browser capture.
+- Do not add deployment infrastructure for the MVP. First prove the local game and capture of the broadcast view in a browser window.
 
 ## 16. Official and technical references
 

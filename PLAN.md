@@ -7,13 +7,13 @@
 
 ## 1. Summary and approach
 
-Build the smallest end-to-end playable slice first: a headless, fully tested game core (Steps 1.1–1.2), the Socket.IO server (Step 1.3), a 2D operator panel + HUD broadcast that plays a whole round with the simulator (Step 1.4), the 3D blockout with primitives (Step 1.5), Blender assets (Step 1.6), load/performance measurement (Step 1.7), and OBS readiness (Step 1.8).
+Build the smallest end-to-end playable slice first: a headless, fully tested game core (Steps 1.1–1.2), the Socket.IO server (Step 1.3), a 2D operator panel + HUD broadcast that plays a whole round with the simulator (Step 1.4), the 3D blockout with primitives (Step 1.5), Blender assets (Step 1.6), load/performance measurement (Step 1.7), and capture readiness (Step 1.8).
 
 Why this order: rules, scoring and cooldowns are the highest-value, lowest-risk code and are testable without UI; the loop is playable in 2D before any 3D cost is paid; the biggest unknown (skinned-animation cost per visible avatar) is measured with real assets, not primitives.
 
 Key choices:
 - Three workspaces only: `apps/server`, `apps/web`, `packages/contracts`.
-- Vite multi-page web app (`/broadcast/`, `/operator/`) so operator code is absent from the OBS bundle.
+- Vite multi-page web app (`/broadcast/`, `/operator/`) so operator code is absent from the broadcast bundle.
 - Contracts are Zod schemas + inferred types consumed as TS source (no build step). Server runs with `tsx`; no server bundling for the MVP.
 - TypeScript 6.0.3 (not 7.0.2: typescript-eslint 8.73 requires TS < 6.1).
 - Node 24 LTS recommended (installed 22.14.0 satisfies every tool's engine range).
@@ -43,7 +43,7 @@ Key choices:
 │   └── web/
 │       ├── package.json  vite.config.ts  tsconfig.json
 │       ├── index.html               # landing page linking the two routes
-│       ├── broadcast/index.html     # 9:16 OBS entry
+│       ├── broadcast/index.html     # 9:16 broadcast entry
 │       ├── operator/index.html      # operator entry (no three.js)
 │       ├── public/game-modes/mahalle-halayi/models/   # exported .glb (runtime)
 │       └── src/
@@ -53,7 +53,7 @@ Key choices:
 ├── packages/contracts/src/          # events/ game/ network/ index.ts
 ├── e2e/                             # Playwright specs
 ├── assets/game-modes/mahalle-halayi/ # source-blend/, references/
-├── docs/                            # perf-results.md, obs-setup.md (created when produced)
+├── docs/                            # perf-results.md, capture-notes.md (created when produced)
 ├── package.json  pnpm-workspace.yaml  tsconfig.base.json
 ├── vitest.config.ts  playwright.config.ts  eslint.config.js
 ├── .nvmrc  .gitignore  .env.example  README.md  PLAN.md
@@ -159,7 +159,7 @@ Cross-cutting: every phase ends with `pnpm typecheck && pnpm lint && pnpm test` 
 - **Tasks:** R3F `Stage` (fixed ¾ camera, 9:16, DPR clamp), mode `Scene.tsx`, `AvatarSlots` (cap 24, per-team split, sticky, replace longest-idle), instanced `Crowd`, `EffectsLayer` (rose/GG/big-celebration), procedural bob/jump, HUD overlay, dev perf overlay (`?perf=1`).
 - **Acceptance:** at 200 players only ≤ cap avatars animated while counters show all; gifts trigger effects, scores untouched; context loss/reload recovers via snapshot.
 - **Checks:** Playwright headed-Chrome smoke (non-blank canvas, `window.__perf`); slot-allocator unit tests.
-- **Checkpoint (needs user):** install OBS and load `/broadcast/` as a 1080×1920 Browser Source to confirm WebGL2 + Socket.IO work before investing in art.
+- **No OBS checkpoint (decided 2026-11-23):** OBS is not used in Product Phase 1 or 2 unless TikTok's route requires it. The broadcast view is verified in a normal Chrome window, which any streaming tool can capture by window capture.
 
 ### Step 1.6 — Blender art pass (may start in parallel with Step 1.4)
 - **Goal:** replace primitives with cohesive low-poly GLBs.
@@ -172,12 +172,12 @@ Cross-cutting: every phase ends with `pnpm typecheck && pnpm lint && pnpm test` 
 - **Goal:** evidence for performance targets and the avatar cap.
 - **Tasks:** `scripts/load-test.ts`, browser `perf-probe`, report → `docs/perf-results.md`; tune cap, batch interval, crowd count.
 - **Acceptance:** documented numbers vs targets (≥ 30 FPS, p95 event→visible < 500 ms at 200 participants) or a documented gap with options; limitations written down.
-- **Risks:** headless Chromium uses software GL — FPS only valid from headed Chrome on a production build with OBS running.
+- **Risks:** headless Chromium uses software GL — FPS only valid from headed Chrome on a production build (with a capture tool running if one is used later).
 
-### Step 1.8 — OBS readiness, docs, MVP acceptance
+### Step 1.8 — Capture readiness, docs, MVP acceptance
 - **Goal:** all 12 criteria in REQUIREMENTS §11.
-- **Tasks:** `pnpm build && pnpm start` (server serves built web), `docs/obs-setup.md`, README run instructions, final e2e, acceptance checklist, known limitations.
-- **Acceptance:** 30-minute soak with simulator + OBS capture; no memory growth trend; checklist signed off.
+- **Tasks:** `pnpm build && pnpm start` (server serves built web), `docs/capture-notes.md` (how to show the broadcast view full-screen at 9:16 for window capture), README run instructions, final e2e, acceptance checklist, known limitations.
+- **Acceptance:** 30-minute soak with the simulator while the broadcast page is displayed (window capture only if a tool is available); no memory growth trend; checklist signed off.
 
 ## 6. Mahalle Halayı gameplay (smallest coherent version)
 
@@ -207,7 +207,7 @@ AI image tools → concept sheet and palette only. AI 3D generation → optional
 **Scenarios (seeded):** S1 steady (200 viewers, ~25 events/s, 5 min); S2 burst (200 `halay` in 2 s ×5); S3 chaos (duplicates, malformed, 5 000-char comments, rapid repeats, provider disconnect); S4 gift storm (20 gifts in 5 s incl. 3 `big_celebration`); S5 socket reconnect mid-round (3 clients); S6 30-minute soak.
 **Server metrics:** ingest→processed latency (p50/p95/p99), queue depth/overflow, rate-limited/deduped counts, tick duration, event-loop lag, RSS/heap, bytes/s per client.
 **Browser metrics (headed Chrome, production build, 1080×1920 and 720×1280):** FPS avg and 1 % low, frame-time p95, `renderer.info`, JS heap, long tasks, mixer cost, event→visible latency (event id → first draw, same-machine clock).
-**Sweeps:** visible cap 12/24/36/48 × crowd 0/60/120; batch interval 50/100 ms; with/without OBS.
+**Sweeps:** visible cap 12/24/36/48 × crowd 0/60/120; batch interval 50/100 ms; with/without a capture tool (if one is in use).
 **Pass criteria:** ≥ 30 FPS and p95 event→visible < 500 ms at 200 participants (REQUIREMENTS §8). Proposed server guard-rails (assumptions): p95 ingest→processed < 50 ms; no unbounded queue/heap growth over 30 min.
 
 ## 9. Testing matrix
@@ -222,7 +222,7 @@ AI image tools → concept sheet and palette only. AI 3D generation → optional
 | 1.5 | slot allocator, effect queue | – | canvas non-blank, effects, context loss | – |
 | 1.6 | manifest schema | – | assets load, clips play | – |
 | 1.7 | report math | – | perf probe | S1–S6 + sweeps |
-| 1.8 | – | – | full e2e + OBS manual | 30-min soak |
+| 1.8 | – | – | full e2e + manual capture check | 30-min soak |
 
 ## 10. Decisions log
 
@@ -241,8 +241,8 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 | 9 | Operator protection | 127.0.0.1 bind + token | default |
 | 10 | Runtime GLB location | `apps/web/public/game-modes/mahalle-halayi/models/` | default |
 | 11 | Provisional numbers (timings, cooldowns, cap 24, rate limits) | as in §5/§6 | tune in playtests |
-| 12 | Target machine | this M3/16 GB running OBS + browser | *confirm* |
-| 13 | OBS install | user installs at Step 1.5 checkpoint | *needed by Step 1.5* |
+| 12 | Target machine | this M3/16 GB running the browser (and a capture tool, if used) | *confirm* |
+| 13 | OBS | not used; skipped by your decision on 2026-11-23 unless TikTok's route requires it | decided |
 | 14 | TikTok account for Product Phase 2 | dedicated account created and owned by the user; check LIVE eligibility early | *user action, before Step 2.0* |
 | 15 | Simulator during a live session | not mixed: one provider per run; simulator is for offline dev/test/demo | decided |
 
@@ -252,7 +252,7 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 - `rose` for a non-player sender → crowd flourish fallback.
 - `stopped`/`paused` as round states → `stopped` = no game; `paused` = flag over the current phase.
 
-**Risks:** skinned-animation cost for ~24 mixers on an M3 shared with OBS (measure in Step 1.7; mitigate with cap/instancing/shared skeleton); OBS embedded Chromium WebGL behaviour (early checkpoint after Step 1.5); Blender/AI rig consistency (one rig, reused); TikTok LIVE integration (Product Phase 2) is out of scope for this plan and its feasibility is still unresearched; `three` and pnpm 12 move fast (exact-pin, upgrade deliberately).
+**Risks:** skinned-animation cost for ~24 mixers on an M3 shared with a capture tool (measure in Step 1.7; mitigate with cap/instancing/shared skeleton); capture-tool compatibility (OBS skipped by decision; revisit only if TikTok's route needs a tool with an embedded browser); Blender/AI rig consistency (one rig, reused); TikTok LIVE integration (Product Phase 2) is out of scope for this plan and its feasibility is still unresearched; `three` and pnpm 12 move fast (exact-pin, upgrade deliberately).
 
 ## 11. Progress tracker
 
@@ -263,10 +263,10 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 | 1.2 Rules + ingestion pipeline | Done (2026-11-22) | 2026-11-22 | `GameMode` has `handleCommand`/`handleGift` (gift handler can only return presentation effects); `createModeState`/`computeResult` from PLAN §4 omitted until a mode needs them; non-command chatter is dropped before dedupe/rate-limit; queue sheds oldest droppable (visual) items first; gift `queue ≤ 3` is left to the Step 1.5 client effects layer; integration tests live in `apps/server/test/` (outside core/mode lint boundaries) |
 | 1.3 Realtime server + operator API | Done (2026-11-22) | 2026-11-22 | `state:hud` (no roster) + `state:roster` deltas replace repeated full snapshots; roster is sent before HUD; simulator commands are a separate contract (`SimulatorCommandSchema`) routed to the provider, not the engine; operator token travels in `auth` (web: URL fragment `#token=`) and the e2e run pins `OPERATOR_TOKEN=e2e-operator-token`; broadcast clients that send anything are disconnected; messages over 64 KB are refused; `src/server.ts` moved to `src/realtime/socket-server.ts` |
 | 1.4 Operator panel + 2D HUD | Done (2026-11-22) | 2026-11-22 | zustand 5.1.0 vanilla store + `createRealtimeClient` (validates every incoming message with the contract schemas); operator token via `#token=` with a paste prompt when missing; broadcast sizes everything in `--u` (1% of stage width, no container queries, for old OBS Chromium builds) and takes wording/colours from `game-modes/mahalle-halayi/presentation.ts`; the operator UI is only in the operator bundle, but the shared contracts chunk still carries operator command *names* (schemas); simulator burst rotates through the pool; Playwright now runs 1 worker and shuts the dev servers down (`gracefulShutdown`) |
-| 1.5 3D blockout (+ OBS checkpoint) | Not started | – | |
+| 1.5 3D blockout | Done (2026-11-23); OBS checkpoint dropped by decision | 2026-11-23 | three 0.187.0 + R3F 9.8.2 (exact pins). Renderer (`game-renderer/`) is mode-agnostic: `AvatarSlots` (cap 24, per-team split, sticky, hysteresis), `EffectDirector` + `EffectQueue` (per-effect concurrency/queue limits), instanced `Crowd`, pooled confetti/rings, `CueBus` (cues bypass React state), `?perf=1` overlay and `?probe=1` test hooks (`window.__perf`). Mahalle Halayı scene, formation, looks and effect recipes are data in `game-modes/mahalle-halayi/`. Avatars are one merged vertex-coloured mesh each; background props do not cast shadows (draw calls were 220, now under the provisional 150 budget). HUD compacted so the scene shows between the scores and the chips. Broadcast bundle is ~950 kB (253 kB gzip); the operator bundle has no three.js. Headless Chrome (software GL) is used for functional tests only; FPS is measured in Step 1.7. |
 | 1.6 Blender art pass | Not started | – | May overlap Step 1.4 |
 | 1.7 Load & performance | Not started | – | |
-| 1.8 OBS readiness & acceptance | Not started | – | |
+| 1.8 Capture readiness & acceptance | Not started | – | |
 | 2.0–2.5 TikTok LIVE integration | Not started | – | Product Phase 2; outline in §12; starts only after Product Phase 1 acceptance and your approval |
 
 ## 12. Product Phase 2 — TikTok LIVE integration (outline only)

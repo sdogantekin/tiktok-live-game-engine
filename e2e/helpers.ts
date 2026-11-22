@@ -9,9 +9,9 @@ export async function openOperator(context: BrowserContext): Promise<Page> {
   return page;
 }
 
-export async function openBroadcast(context: BrowserContext): Promise<Page> {
+export async function openBroadcast(context: BrowserContext, query = ''): Promise<Page> {
   const page = await context.newPage();
-  await page.goto('/broadcast/');
+  await page.goto(`/broadcast/${query}`);
   await expect(page.getByTestId('stage')).toBeVisible();
   await expect(page.locator('.team-name').first()).toBeVisible(); // first snapshot has arrived
   return page;

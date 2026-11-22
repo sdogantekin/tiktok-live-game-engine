@@ -1,6 +1,6 @@
 # TikTok Live Game Engine
 
-A modular, real-time game engine for livestreams. Viewers become players through chat commands and gift events, and the game is shown on stream as a vertical (9:16) broadcast view that OBS can capture. The first game is **Mahalle Halayı**, a playful Turkish wedding-courtyard dance competition between the Gelin and Damat teams.
+A modular, real-time game engine for livestreams. Viewers become players through chat commands and gift events, and the game is shown on stream as a vertical (9:16) broadcast view that any streaming tool can capture from a browser window. The first game is **Mahalle Halayı**, a playful Turkish wedding-courtyard dance competition between the Gelin and Damat teams.
 
 **Where this is going:** the purpose of the project is to run these games on real livestreams, starting with **TikTok LIVE**. Everything built so far is the foundation for that: a provider-independent event pipeline, a server-authoritative game, and a local simulator that stands in for the audience until the real connection exists. TikTok integration is a planned next milestone that starts with feasibility research; it is not built yet and is not guaranteed to be possible.
 
@@ -10,7 +10,7 @@ A modular, real-time game engine for livestreams. Viewers become players through
 
 | | Milestone | Status |
 |---|---|---|
-| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | In progress (implementation Steps 1.0–1.4 done; 3D scene, art, performance, and OBS readiness remaining) |
+| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | In progress (implementation Steps 1.0–1.4 done; art, performance, and capture readiness remaining) |
 | **Product Phase 2** | **TikTok LIVE integration**: feasibility research first, then a TikTok event provider. Success means a public TikTok LIVE stream where real viewers can join and play through the game mechanics | Planned (starts after Product Phase 1 is accepted) |
 
 "Phase" means a product milestone; "Step" means an implementation step. Each phase has its own steps in [`PLAN.md`](PLAN.md): `Step 1.x` for Product Phase 1 and `Step 2.x` for Product Phase 2.
@@ -22,7 +22,7 @@ A modular, real-time game engine for livestreams. Viewers become players through
 - An **operator panel** for starting, pausing and ending rounds, resetting scores, triggering celebrations, managing players, and driving the simulator.
 - A **broadcast view** (2D HUD for now) with the phase, timer, team scores, join ticker, and result and status banners.
 
-Not built yet: the 3D courtyard scene and characters, performance tuning, the OBS capture check, and everything TikTok-related.
+Not built yet: final 3D art (the scene uses placeholder shapes today), performance tuning, and everything TikTok-related.
 
 ## Getting started
 
@@ -37,7 +37,7 @@ pnpm dev
 
 | View | URL |
 |---|---|
-| Broadcast (for OBS) | `http://127.0.0.1:5173/broadcast/` |
+| Broadcast (9:16, for window capture) | `http://127.0.0.1:5173/broadcast/` |
 | Operator | `http://127.0.0.1:5173/operator/#token=<token>` |
 
 The server prints a one-time operator token and a ready-to-open operator URL when it starts. Without the token the operator page asks you to paste it. To use a fixed token, set `OPERATOR_TOKEN` (at least 8 characters). The token travels in the URL fragment, so it is never sent to a server in a request.

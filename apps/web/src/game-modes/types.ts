@@ -1,9 +1,15 @@
 import type { ModeId, Phase } from '@live-game/contracts';
+import type { ComponentType } from 'react';
+import type { CameraConfig, SceneProps } from '../game-renderer/types';
 
 /** Everything the web app needs to present a game mode. Visual style and wording live here, not in shared UI. */
 export interface ModePresentation {
   id: ModeId;
   title: string;
+  /** Fixed camera framing for the 3D scene. */
+  camera: CameraConfig;
+  /** The 3D scene for this mode, rendered inside the renderer's Stage. */
+  Scene: ComponentType<SceneProps>;
   /** Team accent colours by team id. */
   teamColors: Readonly<Record<string, string>>;
   text: {

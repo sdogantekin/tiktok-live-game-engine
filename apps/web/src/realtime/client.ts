@@ -4,6 +4,7 @@ import {
   type OperatorAck,
   OperatorAckSchema,
   type OperatorCommand,
+  type PresentationBatch,
   PresentationBatchSchema,
   PublicSnapshotSchema,
   RosterDeltaSchema,
@@ -17,6 +18,8 @@ export interface RealtimeClient {
   store: RealtimeStore;
   /** Operator namespace only. Never rejects: failures come back as `{ ok: false }`. */
   send(command: OperatorCommand | SimulatorCommand): Promise<OperatorAck>;
+  /** Raw presentation batches as they arrive, for the 3D scene (the store only keeps notable cues). */
+  onPresentation(listener: (batch: PresentationBatch) => void): () => void;
   close(): void;
 }
 
@@ -53,7 +56,11 @@ export function createRealtimeClient(options: { namespace: SocketNamespace; toke
   listen(SOCKET_EVENTS.snapshot, parseWith(PublicSnapshotSchema), (v) => state().applySnapshot(v));
   listen(SOCKET_EVENTS.hud, parseWith(HudStateSchema), (v) => state().applyHud(v));
   listen(SOCKET_EVENTS.roster, parseWith(RosterDeltaSchema), (v) => state().applyRoster(v));
-  listen(SOCKET_EVENTS.presentation, parseWith(PresentationBatchSchema), (v) => state().applyPresentation(v));
+  const batchListeners = new Set<(batch: PresentationBatch) => void>();
+  listen(SOCKET_EVENTS.presentation, parseWith(PresentationBatchSchema), (v) => {
+    state().applyPresentation(v);
+    for (const listener of batchListeners) listener(v);
+  });
 
   return {
     store,
@@ -65,6 +72,12 @@ export function createRealtimeClient(options: { namespace: SocketNamespace; toke
       } catch {
         return { ok: false, reason: 'timeout' };
       }
+    },
+    onPresentation(listener) {
+      batchListeners.add(listener);
+      return () => {
+        batchListeners.delete(listener);
+      };
     },
     close: () => {
       socket.close();

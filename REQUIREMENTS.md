@@ -23,7 +23,7 @@ TikTok LIVE integration is a **planned product goal**, delivered right after the
 - Use the Local Simulator as the only event source.
 - Establish the provider-independent event pipeline: normalized events, validation, deduplication, rate limits, action mapping, server-authoritative state.
 - Keep the architecture simple; add no abstraction that Product Phase 1 does not need.
-- Deliver a fully functional standalone experience: simulator, operator panel, and OBS-ready broadcast view.
+- Deliver a fully functional standalone experience: simulator, operator panel, and a capture-ready broadcast view.
 
 **Product Phase 2 — TikTok LIVE integration (planned, begins only after Product Phase 1 is accepted and approved).**
 - Prerequisite: the product owner creates a dedicated TikTok account for this project and checks what it takes for that account to go LIVE (eligibility rules can limit or delay this, so it is worth doing early).
@@ -84,7 +84,7 @@ Needs:
 - Configurable short rounds (initial default: 3 minutes).
 - Hybrid game control: automatic flow plus operator overrides.
 - A simple operator panel with a local event simulator.
-- A dedicated vertical broadcast view suitable for capture by OBS.
+- A dedicated vertical (9:16) broadcast view that works in a normal browser window and can be captured by any streaming tool through window capture. OBS is not required.
 - A repeatable test that simulates 100–200 participant records.
 
 ### Explicitly out of scope for the first MVP
@@ -177,7 +177,8 @@ Operator actions are validated by the server. The operator view is separate from
 ## 7. Livestream presentation
 
 ### Broadcast view
-- Dedicated, clean 9:16 layout for OBS browser capture.
+- Dedicated, clean 9:16 layout, designed to be shown in a plain browser window and captured by a streaming tool. It uses no tool-specific features.
+- **Decided: OBS is not part of this project** in Product Phase 1 or 2 unless TikTok's access route turns out to require it. Which tool gets the video onto TikTok is a Product Phase 2 research question.
 - The 3D wedding courtyard is the main visual area.
 - Team names and scores are always legible.
 - Round timer and phase are easy to understand.
@@ -279,7 +280,7 @@ Connecting to real TikTok LIVE sessions is a planned product goal. It is exclude
 
 MVP (Product Phase 1) acceptance does **not** require any TikTok connectivity.
 
-The MVP is ready for a first OBS test when:
+The MVP is ready for a first capture test (a streaming tool capturing the broadcast view in a browser window) when:
 
 1. It starts locally using documented commands.
 2. A viewer can join either team through the simulator.
@@ -290,7 +291,7 @@ The MVP is ready for a first OBS test when:
 7. Automatic round flow works from lobby through results.
 8. The operator can pause, resume, start, end, and trigger predefined events.
 9. The backend handles a test with 100–200 simulated participants.
-10. The broadcast view can be captured by OBS in a vertical 9:16 layout.
+10. The broadcast view displays correctly in a browser window in a vertical 9:16 layout and can be captured by window capture. OBS compatibility is not a requirement.
 11. There are automated tests for game rules, scoring, cooldowns, round transitions, and event deduplication.
 12. Performance results and known limitations are documented.
 
