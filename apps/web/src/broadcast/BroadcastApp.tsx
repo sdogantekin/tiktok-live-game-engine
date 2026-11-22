@@ -1,5 +1,7 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { CueBus, cuesFromBatch } from '../game-renderer/cue-bus';
+import { TagBoard } from '../game-renderer/name-tags';
+import { NameTags } from '../game-renderer/NameTags';
 import { PERF_OVERLAY } from '../game-renderer/perf';
 import { PerfOverlay } from '../game-renderer/PerfOverlay';
 import { Stage } from '../game-renderer/Stage';
@@ -38,23 +40,25 @@ export function BroadcastApp() {
       }),
     [client, cues],
   );
-  const roster = useMemo(() => Object.values(players).map((player) => ({ id: player.id, teamId: player.teamId })), [players]);
+  const roster = useMemo(() => Object.values(players).map((player) => ({ id: player.id, name: player.name, teamId: player.teamId })), [players]);
 
   // One CSS unit = 1% of the stage width, so every size scales with the composition.
   const stageStyle = { width, height, '--u': `${width / 100}px` } as CSSProperties;
   const presentation = hud ? getPresentation(hud.modeId) : null;
+  const tags = useMemo(() => (presentation ? new TagBoard(presentation.tagAnchors) : null), [presentation]);
 
   return (
     <div className="viewport">
       <main className="stage" style={stageStyle} data-testid="stage">
-        {!hud || !presentation ? (
+        {!hud || !presentation || !tags ? (
           <StatusBar text="Bağlanıyor…" />
         ) : (
           <>
             <div className="scene-layer">
               <Stage camera={presentation.camera}>
-                <presentation.Scene roster={roster} teams={hud.teams} cues={cues} />
+                <presentation.Scene roster={roster} teams={hud.teams} cues={cues} tags={tags} />
               </Stage>
+              <NameTags board={tags} teamColors={presentation.teamColors} />
             </div>
             {PERF_OVERLAY && <PerfOverlay />}
             {connection !== 'connected' && <StatusBar text={presentation.text.connecting} />}

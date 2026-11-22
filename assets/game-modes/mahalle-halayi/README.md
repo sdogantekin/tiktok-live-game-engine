@@ -65,5 +65,6 @@ Automated (Blender scripts and `assets.test.ts`):
 Manual (done by eye for every new or changed asset):
 - [x] Readable at 540×960 and in the 9:16 broadcast (checked on 2026-11-23 with `?probe=1` screenshots)
 - [x] Silhouette and colours consistent with the style guide (checked 2026-11-23)
+- [x] Name tags stay readable and do not overlap (browser test, 2026-11-23)
 - [ ] Animations loop and blend back into `idle` without popping (clips play in the scene; smoothness still to be judged on a live recording)
 - [ ] Licence and provenance noted (everything so far is original, authored in these scripts)

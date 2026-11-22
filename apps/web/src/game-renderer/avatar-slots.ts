@@ -15,6 +15,13 @@ export interface AvatarSlotOptions {
 }
 
 export const DEFAULT_HYSTERESIS_MS = 8_000;
+/** How long activity of a player the roster does not know yet is remembered. */
+const PENDING_ACTIVITY_MS = 30_000;
+
+/** How many avatar slots each team gets: the cap split evenly, the remainder going to the first teams. */
+export function slotCapacities(teamIds: readonly string[], capTotal: number): Record<string, number> {
+  return Object.fromEntries(teamIds.map((teamId, i) => [teamId, Math.floor(capTotal / teamIds.length) + (i < capTotal % teamIds.length ? 1 : 0)]));
+}
 
 /**
  * Decides which of the (up to 200) participants get an individually animated avatar. Everyone else
@@ -28,14 +35,13 @@ export class AvatarSlots {
   private readonly slotOfPlayer = new Map<string, { teamId: string; index: number }>();
   private readonly lastActive = new Map<string, number>();
   private readonly hysteresisMs: number;
+  private latest = 0; // newest activity time seen, used to age out activity of unknown players
 
   constructor(options: AvatarSlotOptions) {
     this.hysteresisMs = options.hysteresisMs ?? DEFAULT_HYSTERESIS_MS;
-    const teams = options.teamIds.length;
-    options.teamIds.forEach((teamId, i) => {
-      const cap = Math.floor(options.capTotal / teams) + (i < options.capTotal % teams ? 1 : 0);
+    for (const [teamId, cap] of Object.entries(slotCapacities(options.teamIds, options.capTotal))) {
       this.slotsByTeam.set(teamId, Array.from({ length: cap }, () => null));
-    });
+    }
   }
 
   slots(teamId: string): readonly (string | null)[] {
@@ -66,8 +72,10 @@ export class AvatarSlots {
         changed = true;
       }
     }
-    for (const id of this.lastActive.keys()) {
-      if (!this.members.has(id)) this.lastActive.delete(id);
+    // Forget activity of players who are gone, but keep recent activity of players the roster has not caught up
+    // with yet: a cue can arrive a moment before the roster update that adds the player.
+    for (const [id, at] of this.lastActive) {
+      if (!this.members.has(id) && this.latest - at > PENDING_ACTIVITY_MS) this.lastActive.delete(id);
     }
 
     // Fill free slots with the most recently active members (join order breaks ties).
@@ -85,6 +93,14 @@ export class AvatarSlots {
         }
       }
     }
+
+    // Members who were active before the roster knew them (or while all slots were taken) may now deserve a slot.
+    const active = [...this.members.keys()]
+      .filter((id) => !this.slotOfPlayer.has(id) && this.lastActive.has(id))
+      .sort((a, b) => this.lastActive.get(b)! - this.lastActive.get(a)!);
+    for (const id of active) {
+      if (this.promote(id, this.lastActive.get(id)!)) changed = true;
+    }
     return changed;
   }
 
@@ -93,11 +109,15 @@ export class AvatarSlots {
    * displace the longest-idle avatar on their team. Returns true if any slot changed.
    */
   noteActivity(playerId: string, at: number): boolean {
-    const teamId = this.members.get(playerId);
-    if (teamId === undefined) return false;
+    this.latest = Math.max(this.latest, at);
     this.lastActive.set(playerId, at);
-    if (this.slotOfPlayer.has(playerId)) return false;
+    if (!this.members.has(playerId) || this.slotOfPlayer.has(playerId)) return false;
+    return this.promote(playerId, at);
+  }
 
+  /** Gives an avatar-less member a free slot, or the slot of the longest-idle avatar if it has been idle long enough. */
+  private promote(playerId: string, at: number): boolean {
+    const teamId = this.members.get(playerId)!;
     const slots = this.slotsByTeam.get(teamId)!;
     const free = slots.indexOf(null);
     if (free !== -1) {
@@ -108,9 +128,9 @@ export class AvatarSlots {
     let victimIndex = -1;
     let victimActive = Number.POSITIVE_INFINITY;
     slots.forEach((occupant, index) => {
-      const active = this.lastActive.get(occupant!) ?? Number.NEGATIVE_INFINITY;
-      if (active < victimActive) {
-        victimActive = active;
+      const lastSeen = this.lastActive.get(occupant!) ?? Number.NEGATIVE_INFINITY;
+      if (lastSeen < victimActive) {
+        victimActive = lastSeen;
         victimIndex = index;
       }
     });

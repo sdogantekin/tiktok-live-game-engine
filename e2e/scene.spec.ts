@@ -118,3 +118,64 @@ test('the modelled assets load with no errors or missing files', async ({ contex
   expect(problems).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath('scene-models.png') });
 });
+
+test('every avatar gets a name tag that stays readable, does not overlap, and renders names as plain text', async ({ context }, testInfo) => {
+  const operator = await openOperator(context);
+  const broadcast = await openBroadcast(context, '?probe=1');
+  await sceneReady(broadcast);
+  await startFreshGame(operator);
+
+  // A hostile display name goes in first so it gets an avatar; it must show up as inert text.
+  const hostile = '<img src=x onerror=window.__pwned=1>';
+  await operator.getByLabel('Viewer id').fill(hostile);
+  await operator.getByLabel('Comment text').fill('gelin');
+  await button(operator, 'Send comment').click();
+  await expect(broadcast.locator('.name-tag', { hasText: '<img src=x' })).toHaveCount(1); // it joined and took an avatar
+  await operator.getByLabel('Viewer id').fill('');
+  await addViewers(operator, 100);
+
+  const tags = broadcast.locator('.name-tag');
+  await expect(tags).toHaveCount(24); // one per avatar, however many players there are
+  await expect(broadcast.locator('.name-tag', { hasText: '<img src=x' })).toHaveCount(1);
+  expect(await broadcast.locator('.name-tags img').count()).toBe(0);
+  expect(await broadcast.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined();
+
+  // Joining emphasises tags briefly; once that has faded, only quiet tags remain.
+  await expect(broadcast.locator('.name-tag.emphasized')).toHaveCount(0, { timeout: 10_000 });
+  await broadcast.waitForTimeout(400); // let the shrink transition finish before measuring
+  const layout = await broadcast.evaluate(() => {
+    const stage = document.querySelector<HTMLElement>('[data-testid="stage"]')!.getBoundingClientRect();
+    const rects = [...document.querySelectorAll<HTMLElement>('.name-tag')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { name: el.textContent, left: r.left, right: r.right, top: r.top, bottom: r.bottom, font: Number.parseFloat(getComputedStyle(el).fontSize) };
+    });
+    let overlaps = 0;
+    const pairs: string[] = [];
+    for (let i = 0; i < rects.length; i++) {
+      for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i]!;
+        const b = rects[j]!;
+        if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) {
+          overlaps++;
+          pairs.push(`${a.name} [${a.left.toFixed(0)},${a.top.toFixed(0)},${a.right.toFixed(0)},${a.bottom.toFixed(0)}] x ${b.name} [${b.left.toFixed(0)},${b.top.toFixed(0)},${b.right.toFixed(0)},${b.bottom.toFixed(0)}]`);
+        }
+      }
+    }
+    const inside = rects.every((r) => r.left >= stage.left && r.right <= stage.right && r.top >= stage.top && r.bottom <= stage.bottom);
+    return { overlaps, pairs, inside, minFont: Math.min(...rects.map((r) => r.font)), stageWidth: stage.width };
+  });
+  await broadcast.screenshot({ path: testInfo.outputPath('tags-quiet.png') });
+  expect(layout.pairs).toEqual([]);
+  expect(layout.inside).toBe(true);
+  expect(layout.minFont).toBeGreaterThanOrEqual(layout.stageWidth * 0.022);
+
+  // Acting makes that player's tag prominent, then it settles back.
+  await button(operator, 'Start round now').click();
+  await operator.getByLabel('Viewer id').fill(hostile);
+  await operator.getByLabel('Comment text').fill('halay');
+  await button(operator, 'Send comment').click();
+  const mine = broadcast.locator('.name-tag', { hasText: '<img src=x' });
+  await expect(mine).toHaveClass(/emphasized/);
+  await broadcast.screenshot({ path: testInfo.outputPath('tags-emphasized.png') });
+  await expect(mine).not.toHaveClass(/emphasized/, { timeout: 8_000 });
+});

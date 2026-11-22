@@ -1,4 +1,5 @@
 import type { CueBus } from './cue-bus';
+import type { TagBoard } from './name-tags';
 
 export type Vec3 = readonly [number, number, number];
 
@@ -64,6 +65,7 @@ export interface AvatarModels {
 
 export interface RosterEntry {
   id: string;
+  name: string;
   teamId: string | null;
 }
 
@@ -78,4 +80,6 @@ export interface SceneProps {
   teams: readonly TeamCount[];
   /** Transient cues (dances, joins, celebrations). Subscribe; do not store in React state. */
   cues: CueBus;
+  /** Receives which avatar belongs to whom, and who just acted, for the name-tag layer drawn over the scene. */
+  tags: TagBoard;
 }

@@ -1,5 +1,6 @@
 import type { ModeId, Phase } from '@live-game/contracts';
 import type { ComponentType } from 'react';
+import type { TagAnchor } from '../game-renderer/name-tags';
 import type { CameraConfig, SceneProps } from '../game-renderer/types';
 
 /** Everything the web app needs to present a game mode. Visual style and wording live here, not in shared UI. */
@@ -10,6 +11,8 @@ export interface ModePresentation {
   camera: CameraConfig;
   /** The 3D scene for this mode, rendered inside the renderer's Stage. */
   Scene: ComponentType<SceneProps>;
+  /** Screen anchors of every avatar slot, for the name-tag layer. */
+  tagAnchors: Readonly<Record<string, TagAnchor>>;
   /** Team accent colours by team id. */
   teamColors: Readonly<Record<string, string>>;
   text: {

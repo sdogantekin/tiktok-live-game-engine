@@ -1,12 +1,15 @@
 import type { ModePresentation } from '../types';
 import { Scene } from './Scene';
-import { camera } from './scene-config';
+import { computeTagAnchors } from '../../game-renderer/name-tags';
+import { slotCapacities } from '../../game-renderer/avatar-slots';
+import { AVATAR_CAP, camera, formation, TEAM_IDS } from './scene-config';
 
 export const mahalleHalayiPresentation: ModePresentation = {
   id: 'mahalle-halayi',
   title: 'Mahalle Halayı',
   camera,
   Scene,
+  tagAnchors: computeTagAnchors(camera, formation, slotCapacities(TEAM_IDS, AVATAR_CAP)),
   teamColors: { gelin: '#e0457b', damat: '#2f6fdb' },
   text: {
     phase: {

@@ -1,0 +1,151 @@
+import * as THREE from 'three';
+import type { CameraConfig, Formation, Vec3 } from './types';
+
+/** Point on the 9:16 stage as fractions of its width and height (0,0 = top-left). Independent of pixel size. */
+export interface StagePoint {
+  x: number;
+  y: number;
+}
+
+const STAGE_ASPECT = 9 / 16;
+
+/** Projects a world point through the fixed broadcast camera onto the stage. */
+export function projectToStage(camera: CameraConfig, point: Vec3): StagePoint {
+  return projector(camera)(point);
+}
+
+function projector(camera: CameraConfig) {
+  const cam = new THREE.PerspectiveCamera(camera.fov, STAGE_ASPECT, 0.5, 120);
+  cam.position.set(...camera.position);
+  cam.lookAt(...camera.lookAt);
+  cam.updateMatrixWorld();
+  return (point: Vec3): StagePoint => {
+    const projected = new THREE.Vector3(...point).project(cam);
+    return { x: (projected.x + 1) / 2, y: (1 - projected.y) / 2 };
+  };
+}
+
+export interface TagAnchor {
+  /** Quiet always-on tag: beside the avatar, on the side facing the middle of the scene. */
+  small: StagePoint;
+  /** Emphasised tag: centred above the avatar's head. */
+  big: StagePoint;
+  /** Which way the small tag's text runs from its anchor. */
+  side: 'left' | 'right';
+}
+
+const SMALL_HEIGHT = 1.1; // metres above the ground: about chest height
+const BIG_HEIGHT = 2.1; // above the head and accessory
+const INWARD_OFFSET = 0.5; // metres toward the middle of the scene
+
+/** Screen anchors for every avatar slot, computed once from the camera and the mode's formation. */
+export function computeTagAnchors(camera: CameraConfig, formation: Formation, slotCounts: Readonly<Record<string, number>>): Record<string, TagAnchor> {
+  const project = projector(camera);
+  const anchors: Record<string, TagAnchor> = {};
+  for (const [teamId, count] of Object.entries(slotCounts)) {
+    for (let index = 0; index < count; index++) {
+      const [x, , z] = formation.avatar(teamId, index, count).position;
+      const inward = x < 0 ? 1 : -1; // avatars on the left put the tag to their right, and vice versa
+      anchors[slotKey(teamId, index)] = {
+        small: project([x + inward * INWARD_OFFSET, SMALL_HEIGHT, z]),
+        big: project([x, BIG_HEIGHT, z]),
+        side: inward === 1 ? 'right' : 'left',
+      };
+    }
+  }
+  return anchors;
+}
+
+export const slotKey = (teamId: string, index: number) => `${teamId}-${index}`;
+
+export interface TagLabel {
+  key: string;
+  name: string;
+  teamId: string;
+  side: 'left' | 'right';
+  small: StagePoint;
+  big: StagePoint;
+  emphasized: boolean;
+}
+
+export interface SlotOccupant {
+  slotKey: string;
+  playerId: string | null;
+  name: string;
+  teamId: string;
+}
+
+export const DEFAULT_EMPHASIS_MS = 2500;
+
+/**
+ * What the name-tag layer shows: one label per occupied avatar slot, and which of them are currently
+ * emphasised. Plain observable state (no React), so the 3D scene can feed it and the DOM layer can read it.
+ */
+export class TagBoard {
+  private labels: readonly TagLabel[] = [];
+  private readonly emphasizedUntil = new Map<string, number>(); // player id -> time
+  private readonly listeners = new Set<() => void>();
+  private occupants: readonly SlotOccupant[] = [];
+
+  constructor(
+    private readonly anchors: Readonly<Record<string, TagAnchor>>,
+    private readonly now: () => number = () => performance.now(),
+    private readonly emphasisMs = DEFAULT_EMPHASIS_MS,
+  ) {}
+
+  /** Call whenever slot assignments or names may have changed. Only notifies if something visible changed. */
+  setOccupants(occupants: readonly SlotOccupant[]): void {
+    this.occupants = occupants;
+    this.refresh();
+  }
+
+  /** A player did something visible: show their tag prominently for a moment. */
+  emphasize(playerId: string): void {
+    this.emphasizedUntil.set(playerId, this.now() + this.emphasisMs);
+    this.refresh();
+  }
+
+  /** Expires old emphasis. Call a few times per second. */
+  tick(): void {
+    const now = this.now();
+    for (const [playerId, until] of this.emphasizedUntil) if (until <= now) this.emphasizedUntil.delete(playerId);
+    this.refresh();
+  }
+
+  subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  /** Stable between changes, as `useSyncExternalStore` requires. */
+  getSnapshot = (): readonly TagLabel[] => this.labels;
+
+  private refresh(): void {
+    const now = this.now();
+    const next: TagLabel[] = [];
+    for (const occupant of this.occupants) {
+      const anchor = this.anchors[occupant.slotKey];
+      if (!anchor || occupant.playerId === null) continue;
+      next.push({
+        key: occupant.slotKey,
+        name: occupant.name,
+        teamId: occupant.teamId,
+        side: anchor.side,
+        small: anchor.small,
+        big: anchor.big,
+        emphasized: (this.emphasizedUntil.get(occupant.playerId) ?? 0) > now,
+      });
+    }
+    const changed =
+      next.length !== this.labels.length ||
+      next.some((label, i) => {
+        const old = this.labels[i];
+        return !old || old.key !== label.key || old.name !== label.name || old.teamId !== label.teamId || old.emphasized !== label.emphasized;
+      });
+    if (!changed) return;
+    this.labels = next;
+    for (const listener of this.listeners) listener();
+  }
+}

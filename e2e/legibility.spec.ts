@@ -20,13 +20,19 @@ for (const size of [
     const stage = await broadcast.getByTestId('stage').boundingBox();
     expect(stage).toMatchObject({ x: 0, y: 0, width: size.width, height: size.height });
 
+    // Measure final sizes, not the middle of a tag's grow/shrink transition.
+    await broadcast.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
+
     // Every piece of visible text is large enough, and nothing is clipped or overflowing.
     const report = await broadcast.evaluate(() => {
       const stageEl = document.querySelector<HTMLElement>('[data-testid="stage"]')!;
       const stageWidth = stageEl.getBoundingClientRect().width;
       const smallest = { px: Infinity, text: '' };
       const clipped: string[] = [];
+      const tagSize = (selector: string) =>
+        Math.min(Infinity, ...[...stageEl.querySelectorAll<HTMLElement>(selector)].map((el) => Number.parseFloat(getComputedStyle(el).fontSize)));
       for (const el of stageEl.querySelectorAll<HTMLElement>('*')) {
+        if (el.closest('.name-tags')) continue; // name tags have their own size rules, checked below
         const hasOwnText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
         if (!hasOwnText) continue;
         const px = Number.parseFloat(getComputedStyle(el).fontSize);
@@ -38,6 +44,8 @@ for (const size of [
       }
       return {
         stageWidth,
+        quietTagPx: tagSize('.name-tag:not(.emphasized)'),
+        loudTagPx: tagSize('.name-tag.emphasized'),
         smallest,
         clipped,
         pageOverflowsX: document.documentElement.scrollWidth > window.innerWidth,
@@ -46,6 +54,9 @@ for (const size of [
     });
 
     expect(report.smallest.px, `smallest text "${report.smallest.text}"`).toBeGreaterThanOrEqual(report.stageWidth * MIN_FONT_RATIO);
+    // Always-on name tags are deliberately small (>= 2.2% of the width); the tag of a player who just acted is a readable chip.
+    expect(report.quietTagPx).toBeGreaterThanOrEqual(report.stageWidth * 0.022);
+    expect(report.loudTagPx).toBeGreaterThanOrEqual(report.stageWidth * MIN_FONT_RATIO);
     expect(report.clipped).toEqual([]);
     expect(report.pageOverflowsX).toBe(false);
     expect(report.pageOverflowsY).toBe(false);

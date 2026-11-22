@@ -108,6 +108,25 @@ describe('AvatarSlots', () => {
       expect(slots.noteActivity('a', 1)).toBe(false); // already has one
     });
 
+    it('promotes a player whose activity arrived before the roster knew them', () => {
+      const slots = new AvatarSlots({ teamIds: ['gelin'], capTotal: 1, hysteresisMs: 5_000 });
+      slots.setRoster([{ id: 'a', teamId: 'gelin' }]); // a holds the only slot, never seen active
+      expect(slots.noteActivity('late', 20_000)).toBe(false); // the roster has not caught up yet
+
+      slots.setRoster([{ id: 'a', teamId: 'gelin' }, { id: 'late', teamId: 'gelin' }]);
+      expect(slots.slots('gelin')).toEqual(['late']);
+    });
+
+    it('forgets old activity of players who never show up', () => {
+      const slots = new AvatarSlots({ teamIds: ['gelin'], capTotal: 1, hysteresisMs: 5_000 });
+      slots.setRoster([{ id: 'a', teamId: 'gelin' }]);
+      slots.noteActivity('ghost', 1_000);
+      slots.noteActivity('a', 100_000); // time moves on
+      slots.setRoster([{ id: 'a', teamId: 'gelin' }]);
+      slots.setRoster([{ id: 'a', teamId: 'gelin' }, { id: 'ghost', teamId: 'gelin' }]);
+      expect(slots.slots('gelin')).toEqual(['a']); // ghost's ancient activity no longer counts
+    });
+
     it('prefers active players when refilling after someone leaves', () => {
       const slots = new AvatarSlots({ teamIds: ['gelin'], capTotal: 1 });
       slots.setRoster([{ id: 'a', teamId: 'gelin' }, { id: 'b', teamId: 'gelin' }, { id: 'c', teamId: 'gelin' }]);

@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Avatars } from '../../game-renderer/Avatars';
 import { Boundary } from '../../game-renderer/Boundary';
 import { ModelAvatars } from '../../game-renderer/ModelAvatars';
@@ -9,6 +9,7 @@ import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { EffectDirector } from '../../game-renderer/effect-director';
 import { Effects } from '../../game-renderer/Effects';
 import { perf } from '../../game-renderer/perf';
+import { type SlotOccupant, slotKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
 import { Lighting, PrimitiveCourtyard } from './Courtyard';
 import { ModelCourtyard } from './ModelCourtyard';
@@ -18,16 +19,30 @@ import { AVATAR_CAP, avatarModels, CROWD_CAPACITY, effectRecipes, formation, loo
 const TEAMS: readonly string[] = TEAM_IDS;
 
 /** Mahalle Halayı's 3D scene: the courtyard, the halay lines, the crowd, and celebration effects. */
-export function Scene({ roster, teams, cues }: SceneProps) {
+export function Scene({ roster, teams, cues, tags }: SceneProps) {
   const store = useMemo(() => new SlotsStore({ teamIds: TEAMS, capTotal: AVATAR_CAP, formation }), []);
   const director = useMemo(() => new EffectDirector(effectRecipes), []);
   const energy = useMemo(() => new EnergyMeter(), []);
   const teamOf = useRef(new Map<string, string | null>());
+  const nameOf = useRef(new Map<string, string>());
+
+  /** Tells the name-tag layer which player currently stands in each avatar slot. */
+  const syncTags = useCallback(() => {
+    const occupants: SlotOccupant[] = [];
+    for (const teamId of TEAMS) {
+      store.slots.slots(teamId).forEach((playerId, index) => {
+        occupants.push({ slotKey: slotKey(teamId, index), playerId, name: playerId ? (nameOf.current.get(playerId) ?? '') : '', teamId });
+      });
+    }
+    tags.setOccupants(occupants);
+  }, [store, tags]);
 
   useEffect(() => {
     teamOf.current = new Map(roster.map((entry) => [entry.id, entry.teamId]));
+    nameOf.current = new Map(roster.map((entry) => [entry.id, entry.name]));
     store.setRoster(roster);
-  }, [roster, store]);
+    syncTags();
+  }, [roster, store, syncTags]);
 
   useEffect(
     () =>
@@ -35,6 +50,8 @@ export function Scene({ roster, teams, cues }: SceneProps) {
         const now = performance.now();
         perf.cuesReceived++;
         store.handleCue(cue, now);
+        syncTags(); // an active player may just have been given an avatar
+        if ('playerId' in cue && cue.playerId) tags.emphasize(cue.playerId);
         director.handle(cue, now);
         if (cue.type === 'player_action') {
           const teamId = teamOf.current.get(cue.playerId);
@@ -43,7 +60,7 @@ export function Scene({ roster, teams, cues }: SceneProps) {
           energy.bump(cue.teamId, Math.min(1, cue.actions * 0.03), now);
         }
       }),
-    [cues, store, director, energy],
+    [cues, store, director, energy, syncTags, tags],
   );
 
   useEffect(() => director.subscribe((start) => store.handleEffect(start)), [director, store]);
