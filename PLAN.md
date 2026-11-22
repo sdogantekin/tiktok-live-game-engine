@@ -271,7 +271,7 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 
 ## 12. Product Phase 2 — TikTok LIVE integration (outline only)
 
-Product Phase 2 is the project's ultimate purpose: running the games on real TikTok LIVE sessions. It is **not planned in detail yet**, on purpose: the right design depends on what the feasibility research finds. This outline only fixes the order of work and the gates, mirroring `REQUIREMENTS.md` §9. Nothing in this section is approved for implementation.
+Product Phase 2 is the project's ultimate purpose: running the games on real TikTok LIVE sessions. It is **not planned in detail yet**, on purpose: the right design depends on what the feasibility research finds. This outline only fixes the order of work and the gates, mirroring `REQUIREMENTS.md` §9. Nothing in this section is approved for implementation. Preliminary desk research is in [`docs/tiktok-live-research-notes.md`](docs/tiktok-live-research-notes.md); it is input for Step 2.0, not a substitute for it.
 
 | Step | Goal | Output | Gate |
 |---|---|---|---|
