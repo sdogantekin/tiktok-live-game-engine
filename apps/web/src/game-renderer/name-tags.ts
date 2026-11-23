@@ -75,6 +75,8 @@ export interface TagLabel {
   perMetre: TagAnchor['perMetre'];
   /** The player leading their team's line. */
   leader: boolean;
+  /** What this player just said, shown as a speech bubble for a few seconds, or null. */
+  bubble: string | null;
   emphasized: boolean;
 }
 
@@ -92,6 +94,9 @@ export interface SlotOccupant {
 }
 
 export const DEFAULT_EMPHASIS_MS = 2500;
+/** How long a speech bubble stays, and how many may be on screen at once (the oldest makes room for a new one). */
+export const BUBBLE_MS = 4500;
+export const MAX_BUBBLES = 3;
 
 /**
  * What the name-tag layer shows: one label per occupied avatar slot, and which of them are currently
@@ -100,6 +105,7 @@ export const DEFAULT_EMPHASIS_MS = 2500;
 export class TagBoard {
   private labels: readonly TagLabel[] = [];
   private readonly emphasizedUntil = new Map<string, number>(); // player id -> time
+  private readonly bubbles = new Map<string, { text: string; until: number }>(); // player id -> what they said
   private readonly listeners = new Set<() => void>();
   private occupants: readonly SlotOccupant[] = [];
   /** How far the avatar lines are from home right now (world metres); set every frame by the scene. */
@@ -127,10 +133,24 @@ export class TagBoard {
     this.refresh();
   }
 
-  /** Expires old emphasis. Call a few times per second. */
+  /** A player said something: show it as a speech bubble above their character for a few seconds. */
+  say(playerId: string, text: string, ms = BUBBLE_MS): void {
+    if (!this.occupants.some((occupant) => occupant.playerId === playerId)) return; // no avatar on stage: nothing to speak from
+    this.bubbles.delete(playerId);
+    this.bubbles.set(playerId, { text, until: this.now() + ms });
+    while (this.bubbles.size > MAX_BUBBLES) {
+      let oldest: string | null = null;
+      for (const [id, bubble] of this.bubbles) if (oldest === null || bubble.until < this.bubbles.get(oldest)!.until) oldest = id;
+      this.bubbles.delete(oldest!);
+    }
+    this.refresh();
+  }
+
+  /** Expires old emphasis and bubbles. Call a few times per second. */
   tick(): void {
     const now = this.now();
     for (const [playerId, until] of this.emphasizedUntil) if (until <= now) this.emphasizedUntil.delete(playerId);
+    for (const [playerId, bubble] of this.bubbles) if (bubble.until <= now) this.bubbles.delete(playerId);
     this.refresh();
   }
 
@@ -143,6 +163,11 @@ export class TagBoard {
 
   /** Stable between changes, as `useSyncExternalStore` requires. */
   getSnapshot = (): readonly TagLabel[] => this.labels;
+
+  private liveBubble(playerId: string | null, now: number): string | null {
+    const bubble = playerId === null ? undefined : this.bubbles.get(playerId);
+    return bubble && bubble.until > now ? bubble.text : null;
+  }
 
   private refresh(): void {
     const now = this.now();
@@ -159,6 +184,7 @@ export class TagBoard {
         big: anchor.big,
         perMetre: anchor.perMetre,
         leader: occupant.leader === true,
+        bubble: this.liveBubble(occupant.playerId, now),
         emphasized: (this.emphasizedUntil.get(occupant.playerId) ?? 0) > now,
       });
     }
@@ -166,7 +192,7 @@ export class TagBoard {
       next.length !== this.labels.length ||
       next.some((label, i) => {
         const old = this.labels[i];
-        return !old || old.key !== label.key || old.name !== label.name || old.teamId !== label.teamId || old.leader !== label.leader || old.emphasized !== label.emphasized;
+        return !old || old.key !== label.key || old.name !== label.name || old.teamId !== label.teamId || old.leader !== label.leader || old.bubble !== label.bubble || old.emphasized !== label.emphasized;
       });
     if (!changed) return;
     this.labels = next;

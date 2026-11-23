@@ -21,6 +21,8 @@ export function EventFeed() {
         return `Celebration: ${event.effect}${event.playerId ? ` (${who(event.playerId)})` : ''}`;
       case 'hint':
         return `${who(event.playerId)} ${HINT_TEXT[event.reason]}`;
+      case 'chat':
+        return `${who(event.playerId)} said: ${event.text}`; // shown on stream, so the operator can see what viewers see
     }
   };
 

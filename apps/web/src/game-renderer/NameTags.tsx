@@ -22,7 +22,7 @@ export function NameTags({ board, teamColors }: { board: TagBoard; teamColors: R
       const root = container.current;
       if (root) {
         const byKey = new Map(latest.current.map((label) => [label.key, label]));
-        for (const el of root.querySelectorAll<HTMLElement>('.name-tag')) {
+        for (const el of root.querySelectorAll<HTMLElement>('.name-tag, .chat-bubble')) {
           const label = byKey.get(el.dataset.key ?? '');
           if (!label) continue;
           const shift = tagShift(label.perMetre, board.travel);
@@ -43,10 +43,10 @@ export function NameTags({ board, teamColors }: { board: TagBoard; teamColors: R
 
   return (
     <div className="name-tags" aria-hidden="true" ref={container}>
-      {labels.map((label) => {
+      {labels.flatMap((label) => {
         const color = teamColors[label.teamId] ?? FALLBACK_COLOR;
         const at = label.emphasized ? label.big : label.small;
-        return (
+        const tag = (
           <span
             key={label.key}
             className={`name-tag ${label.side}${label.emphasized ? ' emphasized' : ''}${label.leader ? ' leader' : ''}`}
@@ -57,6 +57,20 @@ export function NameTags({ board, teamColors }: { board: TagBoard; teamColors: R
             {label.name}
           </span>
         );
+        if (label.bubble === null) return [tag];
+        // What the player said: a speech bubble above their head (text only, never markup; the server already moderated it).
+        return [
+          tag,
+          <span
+            key={`${label.key}-said`}
+            className={`chat-bubble${label.emphasized ? ' raised' : ''}`}
+            data-team={label.teamId}
+            data-key={label.key}
+            style={{ left: `calc(${label.big.x * 100}% + var(--dx, 0%))`, top: `calc(${label.big.y * 100}% + var(--dy, 0%))`, borderColor: color }}
+          >
+            {label.bubble}
+          </span>,
+        ];
       })}
     </div>
   );

@@ -635,3 +635,80 @@ describe('game selection', () => {
     expect(engine.state.players.count).toBe(1);
   });
 });
+
+describe('comments on screen', () => {
+  const chats = (presentation: readonly { type: string }[]) => presentation.filter((event) => event.type === 'chat');
+
+  it('shows a joined player\'s comment as a chat event, moderated', () => {
+    const { engine, say, presentation } = createTestEngine();
+    say('a', 'gelin');
+    expect(say('a', 'Çok güzel bir halay')).toBe('queued');
+    expect(chats(presentation)).toEqual([{ type: 'chat', playerId: 'test:a', text: 'Çok güzel bir halay' }]);
+    expect(engine.stats.chatShown).toBe(1);
+  });
+
+  it('ignores viewers who have not joined, and does not register them', () => {
+    const { engine, say, presentation } = createTestEngine();
+    expect(say('stranger', 'merhaba herkese')).toBe('ignored');
+    expect(chats(presentation)).toEqual([]);
+    expect(engine.state.players.get('test:stranger')).toBeUndefined();
+  });
+
+  it('refuses text that fails moderation and counts it', () => {
+    const { engine, say, presentation } = createTestEngine();
+    say('a', 'gelin');
+    expect(say('a', 'bak https://x.example')).toBe('ignored');
+    expect(say('a', 'siktir')).toBe('ignored');
+    expect(chats(presentation)).toEqual([]);
+    expect(engine.stats.chatRejected).toBe(2);
+  });
+
+  it('has its own per-player cooldown and does not use the command budget', () => {
+    const { engine, clock, say, presentation } = createTestEngine();
+    say('a', 'gelin');
+    say('a', 'ilk yorum');
+    expect(say('a', 'ikinci yorum')).toBe('rate_limited');
+    expect(engine.stats.chatRateLimited).toBe(1);
+    clock.advance(mahalleHalayiConfig.chat!.cooldownMs! + 100);
+    expect(say('a', 'üçüncü yorum')).toBe('queued');
+    expect(chats(presentation)).toHaveLength(2);
+    expect(engine.stats.rateLimited).toBe(0);
+  });
+
+  it('drops a repeated provider event id', () => {
+    const { engine, say, clock } = createTestEngine();
+    say('a', 'gelin');
+    const raw = { eventId: 'same', provider: 'test', userId: 'a', displayName: 'a', receivedAt: clock.now(), kind: 'comment.received' as const, payload: { text: 'selam' } };
+    expect(engine.ingest(raw)).toBe('queued');
+    expect(engine.ingest(raw)).toBe('duplicate');
+  });
+
+  it('shows nothing from an ignored player', () => {
+    const { engine, say, presentation } = createTestEngine();
+    say('a', 'gelin');
+    engine.operator({ type: 'ignore_player', playerId: 'test:a' });
+    expect(say('a', 'selam')).toBe('ignored');
+    expect(chats(presentation)).toEqual([]);
+  });
+
+  it('the operator can turn it off and on, and the HUD says so', () => {
+    const { engine, say, presentation } = createTestEngine();
+    say('a', 'gelin');
+    expect(engine.state.hud().chat).toEqual({ supported: true, enabled: true });
+    expect(engine.operator({ type: 'set_chat', enabled: false })).toEqual({ ok: true });
+    expect(say('a', 'selam')).toBe('ignored');
+    expect(engine.state.hud().chat.enabled).toBe(false);
+    engine.operator({ type: 'set_chat', enabled: true });
+    expect(say('a', 'merhaba')).toBe('queued');
+    expect(chats(presentation)).toHaveLength(1);
+  });
+
+  it('a game without the capability shows nothing and refuses the switch', () => {
+    const halay = createMahalleHalayiMode();
+    const { engine, say } = createTestEngine({ mode: { ...halay, config: { ...halay.config, chat: undefined } } });
+    say('a', 'gelin');
+    expect(say('a', 'selam')).toBe('ignored');
+    expect(engine.operator({ type: 'set_chat', enabled: true })).toEqual({ ok: false, reason: 'chat_unsupported' });
+    expect(engine.state.hud().chat.supported).toBe(false);
+  });
+});

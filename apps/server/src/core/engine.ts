@@ -7,8 +7,10 @@ import {
   type PublicSnapshot,
 } from '@live-game/contracts';
 import { type Clock, systemClock } from './clock';
+import { type ChatVerdict, createChatFilter } from './events/chat-filter';
 import { normalizeComment } from './events/comment-normalizer';
 import { KeyedRateLimiter, type RateSpec, TokenBucket } from './events/rate-limit';
+import { BLOCKLIST_TR } from '../moderation/blocklist-tr';
 import { Histogram } from './metrics';
 import { RecentIdCache } from './events/recent-ids';
 import type { CommandConfig, GameMode, ModeContext, ModeEffect } from './mode';
@@ -69,11 +71,16 @@ export interface EngineStats {
   maxQueueDepth: number;
   /** Gift scores dropped: the game did not opt in, or the sender was not a team member in a scoring round. */
   giftScoreRefused: number;
+  /** Conversational comments handed to the screen / refused by moderation / refused by the chat rate limits. */
+  chatShown: number;
+  chatRejected: number;
+  chatRateLimited: number;
 }
 
 type ViewerItem =
   | { type: 'comment'; playerId: string; displayName: string; command: string; droppable: boolean }
-  | { type: 'gift'; playerId: string; giftKey: string; count: number; droppable: true };
+  | { type: 'gift'; playerId: string; giftKey: string; count: number; droppable: true }
+  | { type: 'chat'; playerId: string; text: string; droppable: true };
 type OperatorItem = { type: 'operator'; command: OperatorCommand; result?: OperatorResult; droppable: false };
 type QueueItem = (ViewerItem | OperatorItem) & { ingestedAt: number; enqueuedPerf: number };
 
@@ -92,6 +99,11 @@ export class GameEngine {
   private dedupe!: RecentIdCache;
   private userLimiter!: KeyedRateLimiter;
   private globalLimiter!: TokenBucket;
+  /** Conversational comments have their own filter, deduplication and rate limits, so chatter never eats the command budget. */
+  private chatFilter: ((raw: string) => ChatVerdict) | null = null;
+  private chatDedupe!: RecentIdCache;
+  private chatUserLimiter!: KeyedRateLimiter;
+  private chatGlobalLimiter!: TokenBucket;
   private readonly globalCooldowns = new Map<string, number>();
   private readonly queue: QueueItem[] = [];
   private draining = false;
@@ -110,6 +122,9 @@ export class GameEngine {
     errors: 0,
     maxQueueDepth: 0,
     giftScoreRefused: 0,
+    chatShown: 0,
+    chatRejected: 0,
+    chatRateLimited: 0,
   };
 
   constructor(private readonly options: EngineOptions) {
@@ -143,6 +158,8 @@ export class GameEngine {
       timings: mode.config.timings,
       clock: this.clock,
       maxPlayers: this.config.maxPlayers,
+      chatSupported: mode.config.chat !== undefined,
+      chatEnabled: mode.config.chat?.defaultEnabled ?? true,
     });
     if (previous) this._state.carryOverFrom(previous);
     this.dedupe = new RecentIdCache(this.config.dedupeCapacity);
@@ -150,6 +167,12 @@ export class GameEngine {
     this.globalLimiter = new TokenBucket(this.config.globalRate, this.clock.now());
     this.globalCooldowns.clear();
     this.queue.length = 0;
+
+    const chat = mode.config.chat;
+    this.chatFilter = chat ? createChatFilter({ maxLength: chat.maxLength ?? 60, blocklist: [...BLOCKLIST_TR, ...(chat.blocklist ?? [])] }) : null;
+    this.chatDedupe = new RecentIdCache(1000);
+    this.chatUserLimiter = new KeyedRateLimiter({ capacity: 1, perSecond: 1000 / (chat?.cooldownMs ?? 6_000) });
+    this.chatGlobalLimiter = new TokenBucket({ capacity: 5, perSecond: 3 }, this.clock.now());
   }
 
   get stats(): Readonly<EngineStats> {
@@ -186,10 +209,7 @@ export class GameEngine {
     if (event.kind === 'comment.received') {
       const command = normalizeComment(event.payload.text);
       const config = command === null ? undefined : this.commands.get(command);
-      if (command === null || !config) {
-        this._stats.ignored++;
-        return 'ignored';
-      }
+      if (command === null || !config) return this.ingestChat(event.eventId, event.provider, playerId, event.payload.text);
       item = { type: 'comment', playerId, displayName: event.displayName, command, droppable: config.droppable };
     } else {
       item = { type: 'gift', playerId, giftKey: event.payload.giftKey, count: event.payload.count, droppable: true };
@@ -208,6 +228,34 @@ export class GameEngine {
     }
 
     return this.enqueueViewerItem(this.stamp(item));
+  }
+
+  /**
+   * A comment that is not a command. Shown on screen only if the game supports it and the operator has it on, and only for a
+   * registered player on a team (viewers who have not joined never reach the limiters). It is moderated first, so refused text
+   * costs no budget, then deduplicated and rate limited on its own budget.
+   */
+  private ingestChat(eventId: string, provider: string, playerId: string, text: string): IngestOutcome {
+    const known = this.state.players.get(playerId);
+    if (!this.chatFilter || !this.state.chat.enabled || !known || known.teamId === null || known.ignored) {
+      this._stats.ignored++;
+      return 'ignored';
+    }
+    const verdict = this.chatFilter(text);
+    if (!verdict.ok) {
+      this._stats.chatRejected++;
+      return 'ignored';
+    }
+    if (this.chatDedupe.checkAndAdd(`${provider}:${eventId}`)) {
+      this._stats.duplicate++;
+      return 'duplicate';
+    }
+    const now = this.clock.now();
+    if (!this.chatUserLimiter.tryTake(playerId, now) || !this.chatGlobalLimiter.tryTake(now)) {
+      this._stats.chatRateLimited++;
+      return 'rate_limited';
+    }
+    return this.enqueueViewerItem(this.stamp({ type: 'chat', playerId, text: verdict.text, droppable: true }));
   }
 
   /**
@@ -286,6 +334,14 @@ export class GameEngine {
         return;
       }
 
+      case 'chat': {
+        const player = this.state.players.get(item.playerId);
+        if (!player || player.teamId === null || player.ignored || !this.state.chat.enabled) return; // things changed while it queued
+        this._stats.chatShown++;
+        this.emit({ type: 'chat', playerId: player.id, text: item.text });
+        return;
+      }
+
       case 'gift': {
         const known = this.state.players.get(item.playerId);
         if (known?.ignored) {
@@ -358,6 +414,10 @@ export class GameEngine {
         return rounds.endRound();
       case 'reset_round_score':
         return this.state.resetRoundScore();
+      case 'set_chat':
+        if (!this.state.chat.supported) return { ok: false, reason: 'chat_unsupported' };
+        this.state.setChatEnabled(command.enabled);
+        return { ok: true };
       case 'select_game': {
         if (!this.options.modes) return { ok: false, reason: 'game_selection_unavailable' };
         if (rounds.phase !== 'stopped') return { ok: false, reason: 'game_running' }; // switching resets everything: stop first

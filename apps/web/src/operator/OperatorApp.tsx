@@ -4,6 +4,7 @@ import { useNow, useRealtime, useRealtimeClient } from '../realtime/react';
 import { formatClock, remainingMs } from '../realtime/time';
 import { EventFeed } from './EventFeed';
 import { GameControls, Scoreboard } from './GameControls';
+import { ChatPanel } from './ChatPanel';
 import { GamePanel } from './GamePanel';
 import { PlayersPanel } from './PlayersPanel';
 import { SimulatorPanel } from './SimulatorPanel';
@@ -76,6 +77,7 @@ export function OperatorApp() {
           <GamePanel run={run} />
           <GameControls run={run} />
           <SoundPanel run={run} />
+          <ChatPanel run={run} />
           <Scoreboard />
           <TikTokPanel run={run} />
           <SimulatorPanel run={run} />

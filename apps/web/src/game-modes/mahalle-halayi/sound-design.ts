@@ -47,6 +47,8 @@ export const soundDesign: SoundDesign = {
         return [{ name: 'sparkle', velocity: 0.6 }];
       case 'crowd':
         return [{ name: 'clap', velocity: 0.5 }];
+      case 'chat':
+        return []; // what people say stays quiet: the music and the dancers are the sound
       case 'celebration':
         if (cue.effect === 'rose') return [{ name: 'chime' }];
         if (cue.effect === 'gg') return [{ name: 'cheer' }, { name: 'sparkle', delayMs: 150 }];

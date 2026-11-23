@@ -125,6 +125,32 @@ describe('TagBoard', () => {
     expect(notifications()).toBe(count + 1);
   });
 
+  it('shows what a player said as a bubble, then lets it expire', () => {
+    const { board, advance } = setup();
+    board.setOccupants([occupant('gelin-0', 'a'), occupant('damat-0', 'b')]);
+    board.say('a', 'selam <b>herkes</b>');
+    expect(board.getSnapshot().map((l) => l.bubble)).toEqual(['selam <b>herkes</b>', null]);
+    advance(4400);
+    board.tick();
+    expect(board.getSnapshot()[0]!.bubble).not.toBeNull();
+    advance(200);
+    board.tick();
+    expect(board.getSnapshot()[0]!.bubble).toBeNull();
+  });
+
+  it('keeps at most three bubbles, dropping the oldest, and ignores players without an avatar', () => {
+    const { board, advance } = setup();
+    const keys = ['gelin-0', 'gelin-1', 'damat-0', 'damat-1'];
+    board.setOccupants(keys.map((key, i) => occupant(key, `p${i}`)));
+    for (let i = 0; i < 4; i++) {
+      board.say(`p${i}`, `söz ${i}`);
+      advance(100);
+    }
+    expect(board.getSnapshot().map((l) => l.bubble)).toEqual([null, 'söz 1', 'söz 2', 'söz 3']);
+    board.say('nobody', 'hello');
+    expect(board.getSnapshot().filter((l) => l.bubble).length).toBe(3);
+  });
+
   it('carries names through untouched (rendering escapes them)', () => {
     const { board } = setup();
     board.setOccupants([occupant('gelin-0', 'a', '<img src=x onerror=alert(1)>')]);

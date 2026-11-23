@@ -303,3 +303,30 @@ body,
   font-weight: 700;
   cursor: pointer;
 }
+
+/* What a joined player just said: a speech bubble above their character. Big enough to read on a phone (3.6% of the width). */
+.chat-bubble {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  max-width: calc(var(--u) * 30);
+  padding: calc(var(--u) * 0.8) calc(var(--u) * 1.8);
+  border: calc(var(--u) * 0.35) solid;
+  border-radius: calc(var(--u) * 2.2);
+  background: #fff;
+  color: #1c1420;
+  font-size: calc(var(--u) * 3.6);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+  transform: translate(-50%, calc(-100% - var(--u) * 1.5));
+  box-shadow: 0 calc(var(--u) * 0.4) calc(var(--u) * 1.2) rgba(0, 0, 0, 0.4);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.chat-bubble.raised {
+  transform: translate(-50%, calc(-100% - var(--u) * 6)); /* above the large name tag shown while that player acts */
+}

@@ -58,6 +58,8 @@ export const OperatorCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('reset_round_score') }),
   /** Switches to another game. Only while the game is stopped: it resets players, scores and rounds. */
   z.object({ type: z.literal('select_game'), modeId: ModeIdSchema }),
+  /** Turns the display of viewers' comments on or off (the operator's kill switch for them). */
+  z.object({ type: z.literal('set_chat'), enabled: z.boolean() }),
   /** Sets the broadcast sound; send `muted`, `volume`, or both. */
   z.object({ type: z.literal('set_sound'), muted: z.boolean().optional(), volume: z.number().min(0).max(1).optional() }),
   z.object({ type: z.literal('trigger_celebration'), effect: z.string().min(1).max(64) }),

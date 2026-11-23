@@ -5,6 +5,8 @@ export type Cue =
   | { type: 'player_joined'; playerId: string; teamId: string }
   | { type: 'player_action'; playerId: string; animation: string }
   | { type: 'celebration'; effect: string; playerId?: string }
+  /** A moderated conversational comment from a joined player (text only; render it as text, never as markup). */
+  | { type: 'chat'; playerId: string; text: string }
   /** `actions` player actions by team members who have no individual avatar, folded by the server. */
   | { type: 'crowd'; teamId: string; actions: number };
 

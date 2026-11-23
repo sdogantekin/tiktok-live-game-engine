@@ -49,6 +49,8 @@ export const mahalleHalayiConfig: MahalleHalayiConfig = {
     big_celebration: 10_000,
   },
   celebrations: ['gg', 'big_celebration'],
+  // Viewers who joined may chat: short, moderated comments appear as speech bubbles. No game-specific blocked words.
+  chat: { maxLength: 60, cooldownMs: 6_000 },
   gifts: {
     rose: { effect: 'rose', target: 'sender' },
     gg: { effect: 'gg', target: 'crowd', globalCooldown: 'gg' },

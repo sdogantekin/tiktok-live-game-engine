@@ -59,7 +59,8 @@ export function Scene({ roster, teams, cues, tags, audio, phase, paused, seconds
         perf.cuesReceived++;
         store.handleCue(cue, now);
         syncTags(); // an active player may just have been given an avatar
-        if ('playerId' in cue && cue.playerId) tags.emphasize(cue.playerId);
+        if ('playerId' in cue && cue.playerId && cue.type !== 'chat') tags.emphasize(cue.playerId);
+        if (cue.type === 'chat') tags.say(cue.playerId, cue.text); // after syncTags, so a newly promoted player already has a tag
         director.handle(cue, now);
         if (cue.type === 'player_action') {
           const teamId = teamOf.current.get(cue.playerId);

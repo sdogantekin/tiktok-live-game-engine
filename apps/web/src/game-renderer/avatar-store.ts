@@ -50,6 +50,7 @@ export class SlotsStore {
   handleCue(cue: Cue, now: number): void {
     switch (cue.type) {
       case 'player_joined':
+      case 'chat': // talking counts as taking part: a chatty player earns an avatar
         this.slots.noteActivity(cue.playerId, now);
         break;
       case 'player_action': {

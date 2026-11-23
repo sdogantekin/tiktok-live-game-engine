@@ -63,6 +63,14 @@ export const ProviderInfoSchema = z.object({
 });
 export type ProviderInfo = z.infer<typeof ProviderInfoSchema>;
 
+/** Whether the active game shows viewers' conversational comments, and whether the operator has it switched on. */
+export const ChatSettingsSchema = z.object({
+  /** The game supports showing comments at all (a game that does not never shows any). */
+  supported: z.boolean(),
+  enabled: z.boolean(),
+});
+export type ChatSettings = z.infer<typeof ChatSettingsSchema>;
+
 /** Sound settings held by the server (so every broadcast view agrees and they survive a refresh). */
 export const SoundSettingsSchema = z.object({
   muted: z.boolean(),
@@ -88,6 +96,7 @@ export const HudStateSchema = z.object({
   remainingMs: z.number().int().nonnegative().nullable(),
   providerStatus: ProviderStatusSchema,
   providerInfo: ProviderInfoSchema.optional(),
+  chat: ChatSettingsSchema,
   sound: SoundSettingsSchema,
   teams: z.array(TeamStandingSchema),
   lastResult: RoundResultSchema.nullable(),
@@ -118,5 +127,7 @@ export const PresentationEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('player_action'), playerId: PlayerIdSchema, animation: z.string().min(1).max(64) }),
   z.object({ type: z.literal('celebration'), effect: z.string().min(1).max(64), playerId: PlayerIdSchema.optional() }),
   z.object({ type: z.literal('hint'), playerId: PlayerIdSchema, reason: z.enum(['no_team', 'switch_locked']) }),
+  /** A conversational comment from a joined player, already moderated and shortened by the server. Text only: never markup. */
+  z.object({ type: z.literal('chat'), playerId: PlayerIdSchema, text: z.string().min(1).max(200) }),
 ]);
 export type PresentationEvent = z.infer<typeof PresentationEventSchema>;

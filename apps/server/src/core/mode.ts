@@ -27,6 +27,22 @@ export interface GameModeConfig {
    * actively scoring round.
    */
   giftsMayScore?: boolean;
+  /**
+   * Whether this game shows viewers' conversational (non-command) comments on screen, and how. Omit it and the game never
+   * shows any. Only comments from registered players on a team are ever shown, after moderation and rate limiting.
+   */
+  chat?: ChatConfig;
+}
+
+export interface ChatConfig {
+  /** Longest text shown, in characters. Default 60. */
+  maxLength?: number;
+  /** Minimum time between two shown comments from the same player. Default 6000. */
+  cooldownMs?: number;
+  /** Extra blocked words on top of the engine's moderation, in the format of `moderation/blocklist-tr.ts`. */
+  blocklist?: readonly string[];
+  /** Whether it starts switched on. Default true (the operator can switch it off). */
+  defaultEnabled?: boolean;
 }
 
 /** Read-only facts and cooldown helpers the engine gives a mode for one action. */

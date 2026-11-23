@@ -2,6 +2,7 @@ import {
   DEFAULT_SOUND_SETTINGS,
   type HudState,
   type ModeId,
+  type ChatSettings,
   type ProviderInfo,
   type ProviderStatus,
   type PublicSnapshot,
@@ -22,6 +23,9 @@ import { decideWinner, ScoringService } from '../scoring/scoring-service';
 import { TeamService } from '../teams/team-service';
 
 export interface GameStateOptions {
+  /** Whether the game shows viewers' comments, and whether that starts switched on. */
+  chatSupported?: boolean;
+  chatEnabled?: boolean;
   modeId: ModeId;
   teams: readonly TeamDefinition[];
   clock: Clock;
@@ -42,9 +46,11 @@ export class GameState {
   private _lastResult: RoundResult | null = null;
   private _providerStatus: ProviderStatus = 'none';
   private providerInfoSource: (() => ProviderInfo) | undefined;
+  private _chat: ChatSettings;
   private _sound: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
 
   constructor(private readonly options: GameStateOptions) {
+    this._chat = { supported: options.chatSupported ?? false, enabled: options.chatEnabled ?? false };
     this.players = new PlayerService(
       options.teams.map((team) => team.id),
       options.maxPlayers,
@@ -114,6 +120,7 @@ export class GameState {
    */
   carryOverFrom(previous: GameState): void {
     this._sound = previous._sound;
+    if (this._chat.supported) this._chat = { ...this._chat, enabled: previous._chat.enabled }; // the operator's choice survives a switch
     this._providerStatus = previous._providerStatus;
     this.providerInfoSource = previous.providerInfoSource;
   }
@@ -121,6 +128,14 @@ export class GameState {
   /** How the HUD learns what the active provider is doing; read each time the HUD is built, so it is always current. */
   setProviderInfoSource(source: () => ProviderInfo): void {
     this.providerInfoSource = source;
+  }
+
+  get chat(): ChatSettings {
+    return this._chat;
+  }
+
+  setChatEnabled(enabled: boolean): void {
+    this._chat = { ...this._chat, enabled };
   }
 
   get sound(): SoundSettings {
@@ -142,6 +157,7 @@ export class GameState {
       phaseEndsAt: this.rounds.phaseEndsAt,
       remainingMs: this.rounds.remainingMs,
       providerStatus: this._providerStatus,
+      chat: this._chat,
       ...(this.providerInfoSource ? { providerInfo: this.providerInfoSource() } : {}),
       sound: this._sound,
       teams: this.standings(),

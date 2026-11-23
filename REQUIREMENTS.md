@@ -83,6 +83,7 @@ Needs:
 - Two sides (the engine calls them teams): Gelin Tarafı and Damat Tarafı.
 - **Gifts are cosmetic by default; a game may opt in to scoring (decided 2026-11-23).** The engine enforces a per-game capability (`giftsMayScore`, off unless the game declares it) and applies a gift score only for a registered player on a team in an actively scoring round. Mahalle Halayı stays cosmetic-only; Takı Takma Töreni opts in. Before a public TikTok LIVE with gift scoring, TikTok's LIVE Monetization Guidelines and Creator Code of Conduct must be read (still open).
 - Player registration from simulated viewer events.
+- **Viewers' comments on screen (added 2026-11-23, Mahalle Halayı opts in):** short conversational comments from players who have joined a side appear as speech bubbles above their character. They are moderated (links, @mentions, phone numbers and a blocked-word list are refused; shouting and repeated letters are calmed; long text is shortened), rate limited per player, on by default, with an operator on/off switch and per-player hiding through Ignore. Viewers who have not joined are not shown. Moderation is best effort, so the operator remains the safety net on a live stream.
 - Comment-command simulation.
 - Gift-event simulation.
 - Basic player and team state.
