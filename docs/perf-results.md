@@ -153,3 +153,13 @@ The Quaternius horse (four meshes per horse), the Kenney scenery (hundreds of in
 | Gift burst | 1080x1920 | 60.0 | 53.2 | 18.2 ms | 90 | 184 k |
 
 Still 60 FPS and under the 150 draw-call budget; triangles rose from about 18 k to 184 k because of the instanced scenery, which a GPU handles easily (the machine used here has one). The draw-call count varies with how much of the course the camera sees. Not measured on a weaker GPU.
+
+After the jockey, spectator and racing-surface upgrade (same day): a more detailed jockey and tack, grandstands with hats, scarves, flags, benches and a front rail, mown stripes, worn dirt, rails on posts, furlong poles, the starting gate and the photo-finish tower.
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Draw calls | Triangles |
+|---|---|---|---|---|---|---|
+| Default | 1080x1920 | 60.0 | 56.2 | 17.4 ms | 131 | 215 k |
+| Default | 720x1280 | 60.0 | 56.2 | 17.3 ms | 115 | 215 k |
+| Gift burst | 1080x1920 | 60.0 | 55.9 | 17.7 ms | 107 | 215 k |
+
+Still 60 FPS, and under the 150 draw-call budget, but with less headroom (131 at most). Anything more should merge meshes or drop detail first.

@@ -68,9 +68,9 @@ export function gridCamera(shape: TrackShape, seconds: number): CameraPose {
   const start = trackPoint(shape, 0);
   const sweep = Math.min(1, Math.max(0, seconds / 12));
   const angle = -0.9 + 1.5 * sweep; // radians round the start line, from the front-left to nearly behind
-  const radius = 26;
+  const radius = 34;
   return {
-    position: [start.x + Math.sin(angle) * radius + 6, 12 + 6 * (1 - sweep), start.z - Math.cos(angle) * radius * 0.6 - 4],
+    position: [start.x + Math.sin(angle) * radius + 6, 19 + 6 * (1 - sweep), start.z - Math.cos(angle) * radius * 0.6 - 6],
     lookAt: [start.x, 1, start.z - 4],
   };
 }

@@ -71,19 +71,50 @@ def split_horse(horse):
 
 
 def build_jockey(bone_names):
-    """The jockey, in the pack's units, sitting on the horse's back (the back line is at z of about 4) and leaning over its neck."""
+    """The jockey and the tack, in the pack's units (the horse's back line is at z of about 4), crouched over its neck.
+
+    Two meshes: `Silks` is tinted with the racer's colour (jacket, sleeves, helmet cover, saddle cloth; the sleeves are a shade darker so the
+    jacket and sleeves read as two tones) and `Rider` has fixed colours (skin, hoops on the jacket, breeches, boots, helmet band and peak,
+    goggles, saddle, stirrups, bridle, reins, whip)."""
     silks = MeshBuilder("Silks", bone_names)
     rider = MeshBuilder("Rider", bone_names)
     bone = "Torso"
-    silks.box((0, 0.4, 4.2), (2.6, 3.0, 0.2), SILKS, bone)  # a big saddle cloth: the racer's colour, seen from above
-    silks.limb((0, 0.7, 4.4), (0, -0.45, 6.0), 0.95, 0.8, SILKS, bone, segments=8)  # torso, leaning forward over the withers
+    leather = "#6b3f1f"
+    dark = "#241a17"
+
+    # the saddle and cloth under him
+    silks.box((0, 0.4, 4.2), (2.7, 3.2, 0.2), SILKS, bone)  # a big saddle cloth: the racer's colour, seen from above
+    rider.box((0, 0.35, 4.42), (1.5, 2.0, 0.26), leather, bone)  # the saddle
+    rider.box((0, -0.55, 4.55), (1.2, 0.35, 0.3), leather, bone)  # its pommel
+
+    # body: jacket (tinted) with two white hoops, leaning forward over the withers
+    silks.limb((0, 0.7, 4.45), (0, -0.45, 6.0), 0.95, 0.8, SILKS, bone, segments=8)
+    for t in (0.35, 0.65):
+        x0, y0, z0 = 0.0, 0.7 - 1.15 * t, 4.45 + 1.55 * t
+        rider.limb((x0, y0 + 0.12, z0 - 0.08), (x0, y0 - 0.12, z0 + 0.08), 0.99 - 0.15 * t, 0.99 - 0.15 * t, "#ffffff", bone, segments=8)
+    # arms: bent at the elbow, hands low on the reins (a shade darker than the jacket)
     for side in (-1, 1):
-        silks.limb((0.85 * side, -0.35, 5.7), (0.62 * side, -1.8, 4.95), 0.32, 0.27, SILKS, bone, segments=5)  # arms down to the reins
-    silks.sphere((0, -0.62, 6.78), 0.52, SILKS, bone, segments=8, rings=4, scale=(1, 1.1, 0.72))  # cap
-    rider.sphere((0, -0.58, 6.5), 0.5, SKIN, bone, segments=8, rings=5)  # head
+        silks.limb((0.85 * side, -0.35, 5.72), (1.0 * side, -1.05, 5.2), 0.34, 0.3, "#d8d8d8", bone, segments=5)
+        silks.limb((1.0 * side, -1.05, 5.2), (0.62 * side, -1.85, 4.95), 0.3, 0.26, "#d8d8d8", bone, segments=5)
+        rider.sphere((0.62 * side, -1.85, 4.95), 0.28, "#f4f4f4", bone, segments=5, rings=3)  # gloves
+    # head: face, helmet cover in the silks, a white band, a dark peak and goggles
+    rider.sphere((0, -0.6, 6.48), 0.5, SKIN, bone, segments=8, rings=5)
+    silks.sphere((0, -0.6, 6.78), 0.56, SILKS, bone, segments=8, rings=4, scale=(1, 1.12, 0.78))
+    rider.limb((0, -0.6, 6.55), (0, -0.6, 6.68), 0.58, 0.58, "#ffffff", bone, segments=8)  # helmet band
+    rider.box((0, -1.12, 6.6), (0.8, 0.55, 0.09), dark, bone)  # peak
+    rider.box((0, -1.02, 6.4), (0.84, 0.16, 0.26), "#7fc4e8", bone)  # goggles
+    # legs: white breeches, black boots, stirrups on leathers
     for side in (-1, 1):
-        rider.sphere((0.62 * side, -1.8, 4.95), 0.27, SKIN, bone, segments=4, rings=3)  # hands
-        rider.limb((0.85 * side, 0.55, 4.5), (1.25 * side, 0.15, 3.15), 0.42, 0.34, BOOTS, bone, segments=5)  # legs and boots
+        rider.limb((0.6 * side, 0.55, 4.55), (1.05 * side, 0.15, 3.75), 0.46, 0.4, "#f4f4f4", bone, segments=5)
+        rider.limb((1.05 * side, 0.15, 3.75), (1.18 * side, 0.05, 3.05), 0.4, 0.34, dark, bone, segments=5)
+        rider.limb((0.95 * side, 0.35, 4.35), (1.22 * side, 0.1, 3.0), 0.05, 0.05, leather, bone, segments=3)  # stirrup leather
+        rider.box((1.22 * side, 0.1, 2.95), (0.45, 0.4, 0.07), "#b9bcc2", bone)  # stirrup iron
+    # whip in the right hand, reins to the bit, cheek straps on the bridle
+    rider.limb((0.62, -1.85, 4.95), (0.45, -3.2, 5.8), 0.06, 0.04, dark, bone, segments=3)
+    for side in (-1, 1):
+        rider.limb((0.62 * side, -1.85, 4.95), (0.38 * side, -4.5, 5.45), 0.04, 0.04, dark, "Neck", segments=3)  # reins
+        rider.limb((0.46 * side, -3.7, 6.0), (0.38 * side, -4.6, 5.4), 0.07, 0.07, leather, "Head", segments=3)  # cheek strap
+    rider.limb((-0.4, -4.55, 5.42), (0.4, -4.55, 5.42), 0.09, 0.09, leather, "Head", segments=4)  # noseband
     return [silks, rider]
 
 

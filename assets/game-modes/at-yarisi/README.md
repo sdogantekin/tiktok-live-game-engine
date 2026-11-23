@@ -26,4 +26,6 @@ shadows and the boost rings are built in code from primitives in `apps/web/src/g
 The tower and skyline are original shapes, not copies of any real place.
 
 Editable `.blend` files are saved in `source-blend/`. No AI-generated meshes or images are used.
-Placeholders to review: our jockey (simple shapes) and spectators, and whether the primitive course dressing is good enough on a real stream.
+Our jockey is built from simple shapes but detailed for the distance it is seen from: a tinted jacket with white hoops, darker sleeves, bent arms, a helmet cover with a white band, peak and goggles, white breeches, black boots, stirrups, saddle, bridle, reins and a whip. The racing surface (mown stripes, worn dirt, rails on posts, furlong poles, the starting gate and the photo-finish tower), the grandstands (tiers with painted fronts, benches, a rail, a roof, flags and varied spectators with hats, scarves, children and waving arms) are code-built and instanced.
+
+Placeholders to review: the spectators and the jockey are still simple shapes, and whether the course reads well enough on a real stream.

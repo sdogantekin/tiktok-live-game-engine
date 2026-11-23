@@ -1,32 +1,10 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Dressing } from './Dressing';
 import { Grandstand, seeded } from './Grandstand';
+import { Parcours } from './Parcours';
 import { shape, TRACK_HALF_WIDTH } from './scene-config';
 import { trackPoint } from './track';
-
-const SAMPLES = 360;
-
-/** A strip along the track between two lateral offsets and two heights (flat ground, or a low wall when the heights differ). */
-function ribbon(lateralA: number, lateralB: number, heightA: number, heightB: number): THREE.BufferGeometry {
-  const positions: number[] = [];
-  const indices: number[] = [];
-  for (let i = 0; i <= SAMPLES; i++) {
-    const d = (i / SAMPLES) * shape.lapLength;
-    const a = trackPoint(shape, d, lateralA);
-    const b = trackPoint(shape, d, lateralB);
-    positions.push(a.x, heightA, a.z, b.x, heightB, b.z);
-    if (i < SAMPLES) {
-      const k = i * 2;
-      indices.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
 
 /** A ring of city buildings in the distance and one tall observation tower: original shapes, nothing copied from a real place. */
 function Skyline() {
@@ -80,9 +58,6 @@ function Skyline() {
 
 /** The racecourse: a dirt track on grass with white rails, a start line, a pond in the infield, stands and a skyline. */
 export function Course({ excitement }: { excitement: { current: number } }) {
-  const dirt = useMemo(() => ribbon(-TRACK_HALF_WIDTH, TRACK_HALF_WIDTH, 0.04, 0.04), []);
-  const innerRail = useMemo(() => ribbon(-TRACK_HALF_WIDTH - 0.3, -TRACK_HALF_WIDTH - 0.3, 0.05, 1.0), []);
-  const outerRail = useMemo(() => ribbon(TRACK_HALF_WIDTH + 0.3, TRACK_HALF_WIDTH + 0.3, 0.05, 1.0), []);
   const line = trackPoint(shape, 0);
   return (
     <>
@@ -90,15 +65,7 @@ export function Course({ excitement }: { excitement: { current: number } }) {
         <planeGeometry args={[600, 600]} />
         <meshStandardMaterial color="#3f8a45" />
       </mesh>
-      <mesh geometry={dirt}>
-        <meshStandardMaterial color="#b08a56" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh geometry={innerRail}>
-        <meshStandardMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh geometry={outerRail}>
-        <meshStandardMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
+      <Parcours />
       {/* the start and finish line across the track, with a chequered edge */}
       <mesh position={[line.x, 0.06, line.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2 * TRACK_HALF_WIDTH, 1.2]} />
