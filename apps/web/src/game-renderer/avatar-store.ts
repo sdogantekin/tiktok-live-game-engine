@@ -16,6 +16,8 @@ export interface SlotsStoreOptions {
   capTotal: number;
   formation: Formation;
   animations: AnimationRules;
+  /** A dance line (default) or a queue; see `AvatarSlotOptions.arrangement`. */
+  arrangement?: 'line' | 'queue';
   random?: () => number;
 }
 
@@ -32,7 +34,7 @@ export class SlotsStore {
   private readonly random: () => number;
 
   constructor(private readonly options: SlotsStoreOptions) {
-    this.slots = new AvatarSlots({ teamIds: options.teamIds, capTotal: options.capTotal });
+    this.slots = new AvatarSlots({ teamIds: options.teamIds, capTotal: options.capTotal, arrangement: options.arrangement });
     this.random = options.random ?? Math.random;
   }
 

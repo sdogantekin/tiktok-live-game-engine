@@ -16,6 +16,11 @@ export interface AvatarSlotOptions {
   leaderTermMs?: number;
   /** ...and the challenger must have been active at least this much more recently than the leader. */
   leaderMarginMs?: number;
+  /**
+   * `line` (default): both ends are filled first and are the two leaders, as in a dance line.
+   * `queue`: slots fill in order from the first, and nobody leads (a queue has a front, not two ends).
+   */
+  arrangement?: 'line' | 'queue';
 }
 
 export const DEFAULT_HYSTERESIS_MS = 8_000;
@@ -56,6 +61,7 @@ export class AvatarSlots {
   private readonly hysteresisMs: number;
   private readonly leaderTermMs: number;
   private readonly leaderMarginMs: number;
+  private readonly arrangement: 'line' | 'queue';
   private readonly leaderSince = new Map<string, number>(); // `team:slot` -> when the current occupant took that lead slot
   private latest = 0; // newest activity time seen, used to age out activity of unknown players
 
@@ -63,6 +69,7 @@ export class AvatarSlots {
     this.hysteresisMs = options.hysteresisMs ?? DEFAULT_HYSTERESIS_MS;
     this.leaderTermMs = options.leaderTermMs ?? DEFAULT_LEADER_TERM_MS;
     this.leaderMarginMs = options.leaderMarginMs ?? DEFAULT_LEADER_MARGIN_MS;
+    this.arrangement = options.arrangement ?? 'line';
     for (const [teamId, cap] of Object.entries(slotCapacities(options.teamIds, options.capTotal))) {
       this.slotsByTeam.set(teamId, Array.from({ length: cap }, () => null));
     }
@@ -79,6 +86,7 @@ export class AvatarSlots {
   /** The slot indexes of a team's two line leaders: both ends of the line (just one if the team has a single slot). */
   leaderSlots(teamId: string): readonly number[] {
     const length = this.slots(teamId).length;
+    if (this.arrangement === 'queue') return [];
     return length > 1 ? [0, length - 1] : length === 1 ? [0] : [];
   }
 
@@ -125,7 +133,7 @@ export class AvatarSlots {
         .map(([id], order) => ({ id, order, active: this.lastActive.get(id) ?? Number.NEGATIVE_INFINITY }))
         .sort((a, b) => b.active - a.active || a.order - b.order);
       let next = 0;
-      for (const index of fillOrder(slots.length)) {
+      for (const index of this.fillOrder(slots.length)) {
         if (next >= waiting.length) break;
         if (slots[index] === null) {
           this.assign(waiting[next]!.id, teamId, index);
@@ -205,7 +213,7 @@ export class AvatarSlots {
   private promote(playerId: string, at: number): boolean {
     const teamId = this.members.get(playerId)!;
     const slots = this.slotsByTeam.get(teamId)!;
-    const free = fillOrder(slots.length).find((index) => slots[index] === null) ?? -1;
+    const free = this.fillOrder(slots.length).find((index) => slots[index] === null) ?? -1;
     if (free !== -1) {
       this.assign(playerId, teamId, free);
       return true;
@@ -225,6 +233,10 @@ export class AvatarSlots {
     this.release(slots[victimIndex]!);
     this.assign(playerId, teamId, victimIndex);
     return true;
+  }
+
+  private fillOrder(length: number): number[] {
+    return this.arrangement === 'queue' ? Array.from({ length }, (_, index) => index) : fillOrder(length);
   }
 
   private assign(playerId: string, teamId: string, index: number): void {

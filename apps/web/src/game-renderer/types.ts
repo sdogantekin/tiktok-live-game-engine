@@ -101,6 +101,8 @@ export interface RosterEntry {
 export interface TeamCount {
   id: string;
   playerCount: number;
+  /** The team's score, for scenes that show it (a meter, a milestone effect). */
+  score?: number;
 }
 
 /** Everything a mode scene receives from the broadcast view. */

@@ -1,17 +1,20 @@
-import { mahalleHalayiPresentation } from '../mahalle-halayi/presentation';
+import { slotCapacities } from '../../game-renderer/avatar-slots';
+import { computeTagAnchors } from '../../game-renderer/name-tags';
 import type { ModePresentation } from '../types';
+import { Scene } from './Scene';
+import { AVATAR_CAP, camera, formation, TEAM_IDS } from './scene-config';
+import { soundDesign } from './sound-design';
 
-/**
- * PLACEHOLDER until Step 3.4: Takı Takma Töreni borrows the Mahalle Halayı scene, camera and sound so the game can be played
- * end to end from the operator dashboard. Step 3.4 replaces the scene, characters and sound; only wording lives here for now.
- */
 export const takiTakmaPresentation: ModePresentation = {
-  ...mahalleHalayiPresentation,
   id: 'taki-takma',
   title: 'Takı Takma Töreni',
+  camera,
+  Scene,
+  tagAnchors: computeTagAnchors(camera, formation, slotCapacities(TEAM_IDS, AVATAR_CAP)),
   simulatorDefaultWord: 'tak',
+  soundDesign,
+  teamColors: { gelin: '#e0457b', damat: '#2f6fdb' },
   text: {
-    ...mahalleHalayiPresentation.text,
     phase: {
       stopped: 'Tören yakında başlıyor',
       lobby: 'Tarafını seç!',
@@ -19,7 +22,16 @@ export const takiTakmaPresentation: ModePresentation = {
       active: 'Takı zamanı!',
       results: 'Sonuç',
     },
+    round: (round) => `${round}. tur`,
+    players: (count) => `${count} misafir`,
+    paused: 'Tören duraklatıldı',
+    winner: 'Daha cömert taraf',
+    draw: 'Berabere!',
     commandsTitle: 'Yorum yaz, takı tak!',
     commands: ['gelin', 'damat', 'tak', 'alkış'],
+    joined: (name, teamName) => `${name} → ${teamName}`,
+    connecting: 'Bağlanıyor…',
+    enableSound: 'Sesi açmak için dokun',
+    providerDown: 'Yorum bağlantısı koptu, tören devam ediyor',
   },
 };
