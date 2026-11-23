@@ -63,6 +63,29 @@ export function computeTagAnchors(camera: CameraConfig, formation: Formation, sl
   return anchors;
 }
 
+/** A fixed anchor for subjects that are not in a formation: the tag's real place comes from `TagBoard.setDynamic` every frame. */
+export const FLOATING_ANCHOR: TagAnchor = {
+  small: { x: 0.5, y: 0.5 },
+  big: { x: 0.5, y: 0.5 },
+  side: 'right',
+  perMetre: { x: { x: 0, y: 0 }, z: { x: 0, y: 0 } },
+};
+
+/** Anchors for `count` floating subjects, keyed `floating-0`, `floating-1`, ... (see `floatingKey`). */
+export function floatingAnchors(count: number): Record<string, TagAnchor> {
+  return Object.fromEntries(Array.from({ length: count }, (_, i) => [floatingKey(i), FLOATING_ANCHOR]));
+}
+
+export const floatingKey = (index: number) => `floating-${index}`;
+
+/** Where a floating subject's tags are on the stage right now (set by the scene every frame from its own camera). */
+export interface DynamicSpot {
+  small: StagePoint;
+  big: StagePoint;
+  /** False when the subject is off screen or behind the camera. */
+  visible: boolean;
+}
+
 export const slotKey = (teamId: string, index: number) => `${teamId}-${index}`;
 
 export interface TagLabel {
@@ -110,12 +133,21 @@ export class TagBoard {
   private occupants: readonly SlotOccupant[] = [];
   /** How far the avatar lines are from home right now (world metres); set every frame by the scene. */
   travel: Vec3 = [0, 0, 0];
+  /**
+   * For subjects that move freely under a moving camera (a race), where a fixed anchor plus a shift cannot work: the scene
+   * writes each label's current stage position here every frame (no notifications), and the DOM layer reads it.
+   */
+  readonly dynamic = new Map<string, DynamicSpot>();
 
   constructor(
     private readonly anchors: Readonly<Record<string, TagAnchor>>,
     private readonly now: () => number = () => performance.now(),
     private readonly emphasisMs = DEFAULT_EMPHASIS_MS,
   ) {}
+
+  setDynamic(key: string, spot: DynamicSpot): void {
+    this.dynamic.set(key, spot);
+  }
 
   setTravel(travel: Vec3): void {
     this.travel = travel;

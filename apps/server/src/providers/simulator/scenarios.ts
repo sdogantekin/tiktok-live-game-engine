@@ -7,6 +7,8 @@ export interface Vocabulary {
   actions: readonly { value: string; weight: number }[];
   chatter: readonly string[];
   gifts: readonly string[];
+  /** Share of a viewer's events that are likes (0 to 1) in the steady scenario, for games that use likes. Default 0. */
+  likeShare?: number;
 }
 
 export const MAHALLE_VOCABULARY: Vocabulary = {
@@ -76,6 +78,8 @@ export function steadyScenario(options: SteadyOptions): ScheduledEvent[] {
       const atMs = Math.floor(t);
       if (rng.chance(options.giftRate ?? 0)) {
         events.push({ atMs, raw: factory.gift(viewer, rng.pick(vocabulary.gifts), at(atMs)) });
+      } else if (rng.chance(vocabulary.likeShare ?? 0)) {
+        events.push({ atMs, raw: factory.like(viewer, 1 + rng.int(8), at(atMs)) });
       } else if (rng.chance(0.1)) {
         events.push({ atMs, raw: factory.comment(viewer, rng.pick(vocabulary.chatter), at(atMs)) });
       } else {

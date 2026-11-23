@@ -3,6 +3,7 @@ import { getSoundEngine } from '../game-renderer/audio/shared-engine';
 import { CueBus, cuesFromBatch } from '../game-renderer/cue-bus';
 import { TagBoard } from '../game-renderer/name-tags';
 import { NameTags } from '../game-renderer/NameTags';
+import { LiveFeed } from '../game-renderer/live-feed';
 import { markCueOrigin, PERF_OVERLAY, PROBE_ENABLED } from '../game-renderer/perf';
 import { renderOffline, type OfflineOptions } from '../game-renderer/audio/offline';
 import { PerfOverlay } from '../game-renderer/PerfOverlay';
@@ -67,6 +68,9 @@ export function BroadcastApp() {
       }),
     [client, cues],
   );
+  // The live view of a game that simulates on the server (a race) travels the same way: a plain feed the scene reads every frame.
+  const liveFeed = useMemo(() => new LiveFeed(), []);
+  useEffect(() => client.onLive((view) => liveFeed.push(view)), [client, liveFeed]);
   const roster = useMemo(() => Object.values(players).map((player) => ({ id: player.id, name: player.name, teamId: player.teamId })), [players]);
 
   // One CSS unit = 1% of the stage width, so every size scales with the composition.
@@ -94,6 +98,7 @@ export function BroadcastApp() {
                   roster={roster}
                   teams={hud.teams}
                   cues={cues}
+                  live={liveFeed}
                   tags={tags}
                   audio={audio}
                   phase={hud.phase}
@@ -110,7 +115,8 @@ export function BroadcastApp() {
               <StatusBar text={presentation.text.providerDown} />
             )}
             <PhaseTimer hud={hud} presentation={presentation} />
-            <TeamScores hud={hud} presentation={presentation} />
+            {presentation.showTeamScores !== false && <TeamScores hud={hud} presentation={presentation} />}
+            {presentation.Overlay && <presentation.Overlay hud={hud} live={liveFeed} />}
             <section className="arena">{hud.phase !== 'results' && <CommandHelp presentation={presentation} />}</section>
             <JoinTicker hud={hud} presentation={presentation} />
             {hud.phase === 'results' && hud.lastResult && (

@@ -11,6 +11,7 @@ export interface LiveConnection {
 export interface ConnectionHandlers {
   onChat(message: unknown): void;
   onGift(message: unknown): void;
+  onLike(message: unknown): void;
   /** The connection closed (the stream may or may not have ended). */
   onDisconnected(): void;
   /** TikTok said the stream ended. */
@@ -51,6 +52,7 @@ export function createLibraryConnectionFactory(options: LibraryConnectionOptions
           connection = instance;
           instance.on(lib.WebcastEvent.CHAT, (message: unknown) => handlers.onChat(message));
           instance.on(lib.WebcastEvent.GIFT, (message: unknown) => handlers.onGift(message));
+          instance.on(lib.WebcastEvent.LIKE, (message: unknown) => handlers.onLike(message));
           instance.on(lib.WebcastEvent.STREAM_END, () => handlers.onStreamEnd());
           instance.on(lib.ControlEvent.DISCONNECTED, () => handlers.onDisconnected());
           instance.on(lib.ControlEvent.ERROR, (event: unknown) => handlers.onError((event as { exception?: unknown })?.exception ?? event));

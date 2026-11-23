@@ -1,6 +1,7 @@
-import type { ModeId, Phase } from '@live-game/contracts';
+import type { HudState, ModeId, Phase } from '@live-game/contracts';
 import type { ComponentType } from 'react';
 import type { TagAnchor } from '../game-renderer/name-tags';
+import type { LiveFeed } from '../game-renderer/live-feed';
 import type { SoundDesign } from '../game-renderer/audio/types';
 import type { CameraConfig, SceneProps } from '../game-renderer/types';
 
@@ -18,6 +19,13 @@ export interface ModePresentation {
   simulatorDefaultWord: string;
   /** The mode's music and sound effects (also rendered offline by the loudness check). */
   soundDesign: SoundDesign;
+  /**
+   * Whether the broadcast shows the team score boxes (default true). A game that ranks individuals, such as a race,
+   * turns them off and draws its own standings in `Overlay`.
+   */
+  showTeamScores?: boolean;
+  /** Extra HUD over the scene, drawn by the game itself (a leaderboard, a legend). It reads the live view from `live`. */
+  Overlay?: ComponentType<{ hud: HudState; live: LiveFeed }>;
   /** Team accent colours by team id. */
   teamColors: Readonly<Record<string, string>>;
   text: {

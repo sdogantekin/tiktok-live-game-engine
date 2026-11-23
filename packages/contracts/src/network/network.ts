@@ -17,6 +17,8 @@ export const SOCKET_EVENTS = {
   hud: 'state:hud',
   /** Roster changes since the previous delta. */
   roster: 'state:roster',
+  /** The live view of a game that simulates on the server (a race); about 10 Hz while it changes. Games without one never send it. */
+  live: 'state:live',
   /** Batched transient visual cues; best-effort. */
   presentation: 'presentation:batch',
   /** Client → server, operator namespace only. Acknowledged with an `OperatorAck`. */
@@ -93,6 +95,8 @@ export const SimulatorCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sim_add_viewers'), count: z.number().int().min(1).max(200) }),
   z.object({ type: z.literal('sim_comment'), viewerId: ViewerRefSchema.optional(), text: z.string().max(1000) }),
   z.object({ type: z.literal('sim_gift'), viewerId: ViewerRefSchema.optional(), giftKey: z.string().min(1).max(64) }),
+  /** One viewer taps the screen `count` times at once. */
+  z.object({ type: z.literal('sim_like'), viewerId: ViewerRefSchema.optional(), count: z.number().int().min(1).max(10_000) }),
   /** `count` existing viewers send `text` within `spreadMs`. */
   z.object({
     type: z.literal('sim_burst'),

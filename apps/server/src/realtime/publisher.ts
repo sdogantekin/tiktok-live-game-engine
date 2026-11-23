@@ -20,6 +20,7 @@ export class Publisher {
   private buffer: PresentationEvent[] = [];
   private oldestIngestedAt: number | undefined;
   private lastHudKey: string | null = null;
+  private lastLiveKey: string | null = null;
   private readonly roster = new Map<string, { teamId: string | null; name: string }>();
   private readonly maxActions: number;
 
@@ -32,6 +33,7 @@ export class Publisher {
     this.buffer = [];
     this.oldestIngestedAt = undefined;
     this.lastHudKey = null;
+    this.lastLiveKey = null;
     this.roster.clear();
   }
 
@@ -88,6 +90,21 @@ export class Publisher {
       this.lastHudKey = key;
       send(SOCKET_EVENTS.hud, hud);
     }
+  }
+
+  /** Sends the live view of a game that has one, only when something in it changed (the sequence number and clock do not count). */
+  publishLive(): void {
+    const { engine, send } = this.options;
+    if (!engine.hasLive) {
+      this.lastLiveKey = null;
+      return;
+    }
+    const view = engine.liveView();
+    if (!view) return;
+    const key = JSON.stringify({ ...view, seq: 0, serverNow: 0 });
+    if (key === this.lastLiveKey) return;
+    this.lastLiveKey = key;
+    send(SOCKET_EVENTS.live, view);
   }
 
   private diffRoster(): RosterDelta {

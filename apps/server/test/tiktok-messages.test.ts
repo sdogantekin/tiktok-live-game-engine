@@ -1,7 +1,7 @@
 import { NormalizedEventSchema } from '@live-game/contracts';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_GIFT_MAP, giftKeyLookup } from '../src/providers/tiktok/gift-map';
-import { parseChat, parseGift } from '../src/providers/tiktok/messages';
+import { parseChat, parseGift, parseLike } from '../src/providers/tiktok/messages';
 import { normalizeUsername } from '../src/providers/tiktok/username';
 
 const NOW = 1_700_000_000_000;
@@ -146,5 +146,33 @@ describe('gift map', () => {
   it('only ever returns keys the game knows (the placeholder tiers use the Halay keys)', () => {
     const keys = new Set(['rose', 'gg', 'big_celebration']);
     for (const key of [...Object.values(DEFAULT_GIFT_MAP.byName), ...DEFAULT_GIFT_MAP.tiers.map((t) => t.key)]) expect(keys.has(key)).toBe(true);
+  });
+});
+
+describe('parseLike', () => {
+  const like = (over: Record<string, unknown> = {}) => ({ common: { msgId: '7300000000000000009' }, user, likeCount: 5, totalLikeCount: 1200, ...over });
+
+  it('turns a like message into a like event with its count and message id', () => {
+    const event = parseLike(like(), NOW)!;
+    expect(NormalizedEventSchema.parse(event)).toMatchObject({ kind: 'like.received', eventId: 'like-7300000000000000009', provider: 'tiktok', payload: { count: 5 } });
+  });
+
+  it('makes a stable id from the running total when TikTok sent no message id, so two messages do not collide', () => {
+    const a = parseLike(like({ common: {}, totalLikeCount: 1200 }), NOW)!;
+    const b = parseLike(like({ common: {}, totalLikeCount: 1205 }), NOW)!;
+    expect(a.eventId).not.toBe(b.eventId);
+    expect(parseLike(like({ common: {}, totalLikeCount: 1200 }), NOW)!.eventId).toBe(a.eventId);
+  });
+
+  it('reads counts that arrive as strings or bigints, and clamps a huge one', () => {
+    expect((parseLike(like({ likeCount: '7' }), NOW) as { payload: { count: number } }).payload.count).toBe(7);
+    expect((parseLike(like({ likeCount: 9n }), NOW) as { payload: { count: number } }).payload.count).toBe(9);
+    expect((parseLike(like({ likeCount: 9_999_999 }), NOW) as { payload: { count: number } }).payload.count).toBe(10_000);
+  });
+
+  it('drops anything it cannot understand instead of guessing', () => {
+    for (const bad of [null, 7, 'x', [], {}, like({ likeCount: 0 }), like({ likeCount: -3 }), like({ likeCount: 'many' }), like({ likeCount: undefined }), like({ user: null }), like({ user: {} })]) {
+      expect(parseLike(bad, NOW)).toBeNull();
+    }
   });
 });

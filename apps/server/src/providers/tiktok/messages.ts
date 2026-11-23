@@ -75,6 +75,32 @@ export function parseChat(raw: unknown, receivedAt: number): NormalizedEvent | n
   };
 }
 
+/**
+ * A like message becomes a `like.received` event. A viewer tapping the screen sends many likes in one message (`likeCount`),
+ * and `totalLikeCount` (the room's running total) is what makes the id of one message different from the next when TikTok
+ * sent no message id. Returns null for a malformed message or one with no positive count.
+ */
+export function parseLike(raw: unknown, receivedAt: number): NormalizedEvent | null {
+  const message = record(raw);
+  if (!message) return null;
+  const sender = senderOf(message.user);
+  const count = intOf(message.likeCount);
+  if (!sender || count === null || count < 1) return null;
+
+  const common = record(message.common);
+  const msgId = idOf(common?.msgId);
+  const eventId = msgId !== null ? `like-${msgId}` : `like-${sender.userId}-${idOf(message.totalLikeCount) ?? ''}-${idOf(common?.createTime) ?? ''}-${count}`;
+  return {
+    kind: 'like.received',
+    eventId: clampId(eventId),
+    provider: TIKTOK_PROVIDER,
+    userId: sender.userId,
+    displayName: sender.displayName,
+    receivedAt,
+    payload: { count: Math.min(10_000, count) },
+  };
+}
+
 /** How the provider turns a TikTok gift into one of the game's semantic gift keys (never a price). */
 export type GiftKeyFor = (gift: { name: string; diamondCount: number }) => string | null;
 

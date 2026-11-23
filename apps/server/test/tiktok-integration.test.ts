@@ -150,6 +150,7 @@ describe('the pinned connector library', () => {
     const connection = createLibraryConnectionFactory({ signApiKey: 'never-logged-secret' })('halay.kanali', {
       onChat: () => undefined,
       onGift: () => undefined,
+      onLike: () => undefined,
       onDisconnected: () => undefined,
       onStreamEnd: () => undefined,
       onError: () => undefined,

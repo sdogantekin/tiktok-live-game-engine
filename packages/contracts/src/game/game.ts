@@ -36,11 +36,21 @@ export const TeamStandingSchema = z.object({
 });
 export type TeamStanding = z.infer<typeof TeamStandingSchema>;
 
+/** One place in an individual ranking (a game where people, not teams, compete, such as a race). */
+export const RankingEntrySchema = z.object({
+  place: z.number().int().positive(),
+  playerId: PlayerIdSchema,
+  name: z.string(),
+});
+export type RankingEntry = z.infer<typeof RankingEntrySchema>;
+
 export const RoundResultSchema = z.object({
   round: z.number().int().positive(),
   /** Winning team id, or null for a draw. */
   winner: TeamIdSchema.nullable(),
   teams: z.array(TeamStandingSchema),
+  /** Present only for games that rank individuals; best first. */
+  ranking: z.array(RankingEntrySchema).max(200).optional(),
 });
 export type RoundResult = z.infer<typeof RoundResultSchema>;
 
@@ -118,6 +128,8 @@ export const GameActionSchema = z.discriminatedUnion('type', [
     giftKey: z.string().min(1).max(64),
     count: z.number().int().min(1).max(999),
   }),
+  /** Likes from one viewer, already summed and rate limited by the engine (only for games that ask for them). */
+  z.object({ type: z.literal('like'), playerId: PlayerIdSchema, count: z.number().int().min(1).max(1000) }),
 ]);
 export type GameAction = z.infer<typeof GameActionSchema>;
 

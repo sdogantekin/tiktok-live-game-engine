@@ -61,6 +61,18 @@ export class EventFactory {
     };
   }
 
+  like(viewer: SimViewer, count: number, receivedAt: number): NormalizedEvent {
+    return {
+      kind: 'like.received',
+      eventId: this.nextId(),
+      provider: SIMULATOR_PROVIDER,
+      userId: viewer.userId,
+      displayName: viewer.displayName,
+      receivedAt,
+      payload: { count },
+    };
+  }
+
   private nextId(): string {
     return `${this.idPrefix}-${++this.sequence}`;
   }

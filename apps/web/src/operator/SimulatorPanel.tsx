@@ -27,6 +27,7 @@ export function SimulatorPanel({ run }: { run: RunCommand }) {
   const burstWord = pickedWord ?? defaultWord; // until the operator chooses, the game's default word
   const text = typedText ?? defaultWord;
   const [gift, setGift] = useState<string>('rose');
+  const [likeCount, setLikeCount] = useState('20');
   const [scenario, setScenario] = useState<'steady' | 'chaos'>('steady');
   const [scenarioViewers, setScenarioViewers] = useState('100');
   const [scenarioSeconds, setScenarioSeconds] = useState('120');
@@ -119,6 +120,8 @@ export function SimulatorPanel({ run }: { run: RunCommand }) {
           ))}
         </select>
         <button onClick={() => run({ type: 'sim_gift', viewerId: viewer, giftKey: gift })}>Send gift</button>
+        <input type="number" min={1} max={10000} value={likeCount} onChange={(event) => setLikeCount(event.target.value)} aria-label="Likes" />
+        <button onClick={() => run({ type: 'sim_like', viewerId: viewer, count: Math.min(10_000, Math.max(1, Math.trunc(Number(likeCount)) || 1)) })}>Send likes</button>
       </div>
 
       <div className="row">

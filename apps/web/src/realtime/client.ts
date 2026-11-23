@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 import {
   HudStateSchema,
+  type LiveView,
+  LiveViewSchema,
   type OperatorAck,
   OperatorAckSchema,
   type OperatorCommand,
@@ -19,6 +21,8 @@ export interface RealtimeClient {
   store: RealtimeStore;
   /** Operator namespace only. Never rejects: failures come back as `{ ok: false }`. */
   send(command: OperatorCommand | SimulatorCommand | TikTokCommand): Promise<OperatorAck>;
+  /** The live view of a game that simulates on the server, as it arrives (about ten a second during a race). */
+  onLive(listener: (view: LiveView) => void): () => void;
   /** Raw presentation batches as they arrive, for the 3D scene (the store only keeps notable cues). */
   onPresentation(listener: (batch: PresentationBatch) => void): () => void;
   close(): void;
@@ -63,6 +67,11 @@ export function createRealtimeClient(options: { namespace: SocketNamespace; toke
     for (const listener of batchListeners) listener(v);
   });
 
+  const liveListeners = new Set<(view: LiveView) => void>();
+  listen(SOCKET_EVENTS.live, parseWith(LiveViewSchema), (v) => {
+    for (const listener of liveListeners) listener(v);
+  });
+
   return {
     store,
     async send(command) {
@@ -73,6 +82,12 @@ export function createRealtimeClient(options: { namespace: SocketNamespace; toke
       } catch {
         return { ok: false, reason: 'timeout' };
       }
+    },
+    onLive(listener) {
+      liveListeners.add(listener);
+      return () => {
+        liveListeners.delete(listener);
+      };
     },
     onPresentation(listener) {
       batchListeners.add(listener);

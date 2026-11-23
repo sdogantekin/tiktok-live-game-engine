@@ -25,5 +25,13 @@ export const NormalizedEventSchema = z.discriminatedUnion('kind', [
       count: z.number().int().min(1).max(999),
     }),
   }),
+  z.object({
+    ...eventBase,
+    kind: z.literal('like.received'),
+    payload: z.object({
+      /** How many likes this event stands for: a viewer tapping the screen sends many at once. */
+      count: z.number().int().min(1).max(10_000),
+    }),
+  }),
 ]);
 export type NormalizedEvent = z.infer<typeof NormalizedEventSchema>;

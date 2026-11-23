@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   GameActionSchema,
+  LiveViewSchema,
+  RoundResultSchema,
   HelloSchema,
   NormalizedEventSchema,
   OperatorCommandSchema,
@@ -58,5 +60,48 @@ describe('GameActionSchema / PresentationEventSchema', () => {
     expect(GameActionSchema.safeParse({ type: 'gift', playerId: null, giftKey: 'rose', count: 1 }).success).toBe(true);
     expect(PresentationEventSchema.safeParse({ type: 'hint', playerId: 'p', reason: 'no_team' }).success).toBe(true);
     expect(PresentationEventSchema.safeParse({ type: 'hint', playerId: 'p', reason: 'other' }).success).toBe(false);
+  });
+});
+
+describe('likes, live views and rankings', () => {
+  const base = { eventId: 'e1', provider: 'tiktok', userId: 'u', displayName: 'n', receivedAt: 1 };
+
+  it('accepts a like event with a sensible count and rejects the rest', () => {
+    expect(NormalizedEventSchema.safeParse({ ...base, kind: 'like.received', payload: { count: 25 } }).success).toBe(true);
+    for (const count of [0, -1, 1.5, 10_001, '3', null, undefined]) {
+      expect(NormalizedEventSchema.safeParse({ ...base, kind: 'like.received', payload: { count } }).success).toBe(false);
+    }
+  });
+
+  it('knows a like action for a game', () => {
+    expect(GameActionSchema.safeParse({ type: 'like', playerId: 'p', count: 3 }).success).toBe(true);
+    expect(GameActionSchema.safeParse({ type: 'like', playerId: 'p', count: 0 }).success).toBe(false);
+  });
+
+  const racer = { id: 'p', name: 'Ayşe', distance: 120.5, speed: 17, boost: 0.4, place: null };
+  const race = { kind: 'race', seq: 3, serverNow: 5, stage: 'racing', laps: 6, lapLength: 400, racers: [racer], waiting: 2, capacity: 10 };
+
+  it('parses a race view and rejects malformed ones', () => {
+    expect(LiveViewSchema.safeParse(race).success).toBe(true);
+    for (const bad of [
+      { ...race, kind: 'bingo' },
+      { ...race, stage: 'sleeping' },
+      { ...race, racers: Array.from({ length: 33 }, () => racer) },
+      { ...race, racers: [{ ...racer, boost: 2 }] },
+      { ...race, racers: [{ ...racer, distance: -1 }] },
+      { ...race, racers: [{ ...racer, place: 0 }] },
+      { ...race, laps: 0 },
+      null,
+      'race',
+    ]) {
+      expect(LiveViewSchema.safeParse(bad).success).toBe(false);
+    }
+  });
+
+  it('keeps the ranking in a round result optional', () => {
+    const result = { round: 1, winner: null, teams: [] };
+    expect(RoundResultSchema.safeParse(result).success).toBe(true);
+    expect(RoundResultSchema.safeParse({ ...result, ranking: [{ place: 1, playerId: 'p', name: 'A' }] }).success).toBe(true);
+    expect(RoundResultSchema.safeParse({ ...result, ranking: [{ place: 0, playerId: 'p', name: 'A' }] }).success).toBe(false);
   });
 });

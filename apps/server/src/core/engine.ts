@@ -1,4 +1,5 @@
 import {
+  type LiveView,
   type ModeId,
   NormalizedEventSchema,
   type OperatorCommand,
@@ -53,6 +54,12 @@ export interface EngineOptions {
   onModeChanged?: () => void;
 }
 
+/** Likes counted per viewer per second when a game does not say, and how many seconds of them one viewer may have waiting. */
+const DEFAULT_LIKES_PER_SECOND = 20;
+const LIKE_BUFFER_SECONDS = 2;
+/** A step never advances the simulation by more than this, so a stalled process does not make a huge jump. */
+const MAX_STEP_MS = 250;
+
 export type IngestOutcome = 'queued' | 'invalid' | 'ignored' | 'duplicate' | 'rate_limited' | 'queue_full';
 export type OperatorResult = TransitionResult;
 
@@ -75,6 +82,9 @@ export interface EngineStats {
   chatShown: number;
   chatRejected: number;
   chatRateLimited: number;
+  /** Likes handed to the game / likes dropped because the game does not use them, the viewer is unknown, or the buffer was full. */
+  likesApplied: number;
+  likesDropped: number;
 }
 
 type ViewerItem =
@@ -104,6 +114,11 @@ export class GameEngine {
   private chatDedupe!: RecentIdCache;
   private chatUserLimiter!: KeyedRateLimiter;
   private chatGlobalLimiter!: TokenBucket;
+  /** Likes wait here, summed per viewer, until the next `step()` hands them to the game at a limited rate. */
+  private readonly pendingLikes = new Map<string, number>();
+  private likeDedupe!: RecentIdCache;
+  private lastStepAt: number | null = null;
+  private liveSeq = 0;
   private readonly globalCooldowns = new Map<string, number>();
   private readonly queue: QueueItem[] = [];
   private draining = false;
@@ -125,6 +140,8 @@ export class GameEngine {
     chatShown: 0,
     chatRejected: 0,
     chatRateLimited: 0,
+    likesApplied: 0,
+    likesDropped: 0,
   };
 
   constructor(private readonly options: EngineOptions) {
@@ -173,6 +190,12 @@ export class GameEngine {
     this.chatDedupe = new RecentIdCache(1000);
     this.chatUserLimiter = new KeyedRateLimiter({ capacity: 1, perSecond: 1000 / (chat?.cooldownMs ?? 6_000) });
     this.chatGlobalLimiter = new TokenBucket({ capacity: 5, perSecond: 3 }, this.clock.now());
+
+    this.pendingLikes.clear();
+    this.likeDedupe = new RecentIdCache(2000);
+    this.lastStepAt = null;
+    const live = mode.live;
+    if (live) this._state.setRankingSource(() => live.ranking());
   }
 
   get stats(): Readonly<EngineStats> {
@@ -211,6 +234,8 @@ export class GameEngine {
       const config = command === null ? undefined : this.commands.get(command);
       if (command === null || !config) return this.ingestChat(event.eventId, event.provider, playerId, event.payload.text);
       item = { type: 'comment', playerId, displayName: event.displayName, command, droppable: config.droppable };
+    } else if (event.kind === 'like.received') {
+      return this.ingestLike(event.eventId, event.provider, playerId, event.payload.count);
     } else {
       item = { type: 'gift', playerId, giftKey: event.payload.giftKey, count: event.payload.count, droppable: true };
     }
@@ -256,6 +281,84 @@ export class GameEngine {
       return 'rate_limited';
     }
     return this.enqueueViewerItem(this.stamp({ type: 'chat', playerId, text: verdict.text, droppable: true }));
+  }
+
+  /**
+   * Likes, for a game that uses them. Never queued one by one: a viewer's likes are summed and wait for the next `step()`,
+   * which hands them to the game no faster than the game's `maxPerSecond` per viewer. Only viewers the engine already
+   * knows (and has not ignored) count, and the buffer per viewer is bounded, so a flood costs nothing but the sum.
+   */
+  private ingestLike(eventId: string, provider: string, playerId: string, count: number): IngestOutcome {
+    const likes = this.mode.config.likes;
+    const known = this.state.players.get(playerId);
+    if (!likes || !this.mode.handleLike || !known || known.ignored) {
+      this._stats.likesDropped += count;
+      this._stats.ignored++;
+      return 'ignored';
+    }
+    if (this.likeDedupe.checkAndAdd(`${provider}:${eventId}`)) {
+      this._stats.duplicate++;
+      return 'duplicate';
+    }
+    const buffer = Math.max(1, (likes.maxPerSecond ?? DEFAULT_LIKES_PER_SECOND) * LIKE_BUFFER_SECONDS);
+    const before = this.pendingLikes.get(playerId) ?? 0;
+    const after = Math.min(buffer, before + count);
+    this._stats.likesDropped += before + count - after;
+    this.pendingLikes.set(playerId, after);
+    return 'queued';
+  }
+
+  /**
+   * Advances what runs on its own clock: hands buffered likes to the game, and steps the game's live simulation. The runtime
+   * calls it about ten times a second. It does nothing for a game without likes or a live part. Never throws.
+   */
+  step(): void {
+    const now = this.clock.now();
+    const dtMs = this.lastStepAt === null ? 0 : Math.min(MAX_STEP_MS, Math.max(0, now - this.lastStepAt));
+    this.lastStepAt = now;
+    try {
+      this.flushLikes(dtMs);
+      const live = this.mode.live;
+      if (!live) return;
+      const { rounds, players } = this.state;
+      const result = live.step(dtMs, { now, phase: rounds.phase, paused: rounds.paused, isScoring: rounds.isScoring, players: new Map(players.list().map((p) => [p.id, p])) });
+      if (result?.endRound && rounds.phase === 'active') rounds.endRound();
+    } catch (error) {
+      this._stats.errors++;
+      this.options.onError?.(error);
+    }
+  }
+
+  private flushLikes(dtMs: number): void {
+    if (this.pendingLikes.size === 0 || !this.mode.handleLike) return;
+    const perSecond = this.mode.config.likes?.maxPerSecond ?? DEFAULT_LIKES_PER_SECOND;
+    const perStep = Math.max(1, Math.round((perSecond * dtMs) / 1000));
+    for (const [playerId, pending] of [...this.pendingLikes]) {
+      const player = this.state.players.get(playerId);
+      if (!player || player.ignored) {
+        this.pendingLikes.delete(playerId);
+        this._stats.likesDropped += pending;
+        continue;
+      }
+      const take = Math.min(pending, perStep);
+      if (pending > take) this.pendingLikes.set(playerId, pending - take);
+      else this.pendingLikes.delete(playerId);
+      const effects = this.mode.handleLike(this.context(player), { type: 'like', playerId, count: take });
+      this._stats.likesApplied += take;
+      for (const effect of effects) this.emit(effect.event);
+    }
+  }
+
+  /** Whether the running game has a live part (a view to send to the broadcast). */
+  get hasLive(): boolean {
+    return this.mode.live !== undefined;
+  }
+
+  /** The current live view with its sequence number and server time, or null for a game without one. */
+  liveView(): LiveView | null {
+    const body = this.mode.live?.view();
+    if (!body) return null;
+    return { ...body, seq: ++this.liveSeq, serverNow: this.clock.now() } as LiveView;
   }
 
   /**

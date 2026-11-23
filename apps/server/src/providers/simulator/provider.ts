@@ -89,6 +89,8 @@ export class SimulatorProvider {
         return this.sendAs(command.viewerId, (viewer) => this.manual.comment(viewer, command.text, this.now()));
       case 'sim_gift':
         return this.sendAs(command.viewerId, (viewer) => this.manual.gift(viewer, command.giftKey, this.now()));
+      case 'sim_like':
+        return this.sendAs(command.viewerId, (viewer) => this.manual.like(viewer, command.count, this.now()));
       case 'sim_burst':
         return this.burst(command.text, command.count, command.spreadMs);
       case 'sim_scenario':

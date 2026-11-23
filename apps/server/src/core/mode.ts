@@ -1,9 +1,10 @@
-import type { GameAction, ModeId, Phase, PresentationEvent, TeamDefinition } from '@live-game/contracts';
+import type { GameAction, LiveViewBody, ModeId, Phase, PresentationEvent, RankingEntry, TeamDefinition } from '@live-game/contracts';
 import type { Player } from './players/player-service';
 import type { RoundTimings } from './rounds/round-service';
 
 export type CommandAction = Extract<GameAction, { type: 'command' }>;
 export type GiftAction = Extract<GameAction, { type: 'gift' }>;
+export type LikeAction = Extract<GameAction, { type: 'like' }>;
 
 export interface CommandConfig {
   /** When the queue overflows, droppable (purely visual) commands are shed first. */
@@ -32,6 +33,16 @@ export interface GameModeConfig {
    * shows any. Only comments from registered players on a team are ever shown, after moderation and rate limiting.
    */
   chat?: ChatConfig;
+  /**
+   * Whether this game uses viewers' likes. Omit it and likes are ignored. The engine sums a viewer's likes and hands them to
+   * `handleLike` no faster than `maxPerSecond`, so a burst of hundreds of taps cannot do more than a steady stream.
+   */
+  likes?: LikesConfig;
+}
+
+export interface LikesConfig {
+  /** The most likes per second one viewer can have counted. Default 20. */
+  maxPerSecond?: number;
 }
 
 export interface ChatConfig {
@@ -72,9 +83,39 @@ export type ModeEffect =
  */
 export type GiftEffect = Extract<ModeEffect, { type: 'present' | 'score' }>;
 
+/** What a like handler may return: presentation only. A like never joins a team or scores by itself. */
+export type LikeEffect = Extract<ModeEffect, { type: 'present' }>;
+
+/** What a game's live simulation is told every step. */
+export interface LiveContext {
+  now: number;
+  phase: Phase;
+  paused: boolean;
+  isScoring: boolean;
+  /** Everyone the engine knows, so the game can drop racers who were removed or ignored. */
+  players: ReadonlyMap<string, Readonly<Player>>;
+}
+
+/**
+ * A game that simulates something on the server every moment (a race). The engine steps it about ten times a second,
+ * only for a game that has one, with its own clock, so it is deterministic and tested with a manual clock like the rest.
+ */
+export interface LiveSim {
+  /** Advances the game by `dtMs`. Return `{ endRound: true }` to end the active round now (for example, everyone finished). */
+  step(dtMs: number, ctx: LiveContext): { endRound?: boolean } | void;
+  /** What the broadcast needs to draw right now. */
+  view(): LiveViewBody;
+  /** The ranking of the round that just ended, best first; read once when the results are made. */
+  ranking(): readonly RankingEntry[];
+}
+
 export interface GameMode {
   id: ModeId;
   config: GameModeConfig;
   handleCommand(ctx: ModeContext, action: CommandAction): ModeEffect[];
   handleGift(ctx: ModeContext, action: GiftAction): GiftEffect[];
+  /** Required for a game that sets `config.likes`. */
+  handleLike?(ctx: ModeContext, action: LikeAction): LikeEffect[];
+  /** For a game that runs a simulation of its own. */
+  live?: LiveSim;
 }

@@ -25,6 +25,17 @@ export function NameTags({ board, teamColors }: { board: TagBoard; teamColors: R
         for (const el of root.querySelectorAll<HTMLElement>('.name-tag, .chat-bubble')) {
           const label = byKey.get(el.dataset.key ?? '');
           if (!label) continue;
+          const spot = board.dynamic.get(label.key);
+          if (spot) {
+            // A subject the scene moves itself: put the tag where the scene says (the label's anchor is only the starting point).
+            const bubble = el.classList.contains('chat-bubble');
+            const base = bubble || label.emphasized ? label.big : label.small;
+            const target = bubble || label.emphasized ? spot.big : spot.small;
+            el.style.setProperty('--dx', `${(target.x - base.x) * 100}%`);
+            el.style.setProperty('--dy', `${(target.y - base.y) * 100}%`);
+            el.style.visibility = spot.visible ? 'visible' : 'hidden';
+            continue;
+          }
           const shift = tagShift(label.perMetre, board.travel);
           el.style.setProperty('--dx', `${shift.x * 100}%`);
           el.style.setProperty('--dy', `${shift.y * 100}%`);

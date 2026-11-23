@@ -6,6 +6,7 @@ import {
   type ProviderInfo,
   type ProviderStatus,
   type PublicSnapshot,
+  type RankingEntry,
   type RoundResult,
   type SoundSettings,
   type TeamDefinition,
@@ -46,6 +47,7 @@ export class GameState {
   private _lastResult: RoundResult | null = null;
   private _providerStatus: ProviderStatus = 'none';
   private providerInfoSource: (() => ProviderInfo) | undefined;
+  private rankingSource: (() => readonly RankingEntry[]) | undefined;
   private _chat: ChatSettings;
   private _sound: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
 
@@ -125,6 +127,11 @@ export class GameState {
     this.providerInfoSource = previous.providerInfoSource;
   }
 
+  /** For a game that ranks individuals: where the results get the final ranking from (read when a round ends). */
+  setRankingSource(source: () => readonly RankingEntry[]): void {
+    this.rankingSource = source;
+  }
+
   /** How the HUD learns what the active provider is doing; read each time the HUD is built, so it is always current. */
   setProviderInfoSource(source: () => ProviderInfo): void {
     this.providerInfoSource = source;
@@ -197,6 +204,7 @@ export class GameState {
         round,
         winner: decideWinner(teams.map((team) => ({ id: team.id, score: team.score }))),
         teams,
+        ...(this.rankingSource ? { ranking: [...this.rankingSource()] } : {}),
       };
     }
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeTagAnchors, projectToStage, slotKey, type SlotOccupant, tagShift, TagBoard } from './name-tags';
+import { computeTagAnchors, floatingAnchors, floatingKey, projectToStage, slotKey, type SlotOccupant, tagShift, TagBoard } from './name-tags';
 import type { CameraConfig, Formation } from './types';
 
 const camera: CameraConfig = { position: [0, 22, 19], lookAt: [0, 0, -2.2], fov: 52 };
@@ -176,5 +176,25 @@ describe('tags following a travelling line', () => {
     const shift = tagShift(anchor.perMetre, [0, 0, 1.2]);
     expect(anchor.small.y + shift.y).toBeCloseTo(exact.y, 2);
     expect(anchor.small.x + shift.x).toBeCloseTo(exact.x, 2);
+  });
+});
+
+describe('floating tags (subjects the scene moves itself)', () => {
+  it('has anchors for as many subjects as asked, all alike', () => {
+    const anchors = floatingAnchors(3);
+    expect(Object.keys(anchors)).toEqual([floatingKey(0), floatingKey(1), floatingKey(2)]);
+  });
+
+  it('shows a label per occupied floating slot and keeps their spots outside React state', () => {
+    const board = new TagBoard(floatingAnchors(2), () => 0);
+    let notifications = 0;
+    board.subscribe(() => notifications++);
+    board.setOccupants([{ slotKey: floatingKey(0), playerId: 'a', name: 'Ayşe', teamId: 'racers' }]);
+    expect(board.getSnapshot().map((l) => l.key)).toEqual([floatingKey(0)]);
+    const before = notifications;
+    board.setDynamic(floatingKey(0), { small: { x: 0.2, y: 0.3 }, big: { x: 0.2, y: 0.25 }, visible: true });
+    board.setDynamic(floatingKey(0), { small: { x: 0.3, y: 0.4 }, big: { x: 0.3, y: 0.35 }, visible: false });
+    expect(notifications).toBe(before); // moving every frame never re-renders
+    expect(board.dynamic.get(floatingKey(0))).toMatchObject({ small: { x: 0.3 }, visible: false });
   });
 });

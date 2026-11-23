@@ -94,6 +94,11 @@ export function createGameServer(options: GameServerOptions) {
     publisher.resync();
     broadcast.emit(SOCKET_EVENTS.snapshot, engine.snapshot());
     operator.emit(SOCKET_EVENTS.snapshot, engine.snapshot());
+    const live = engine.liveView();
+    if (live) {
+      broadcast.emit(SOCKET_EVENTS.live, live);
+      operator.emit(SOCKET_EVENTS.live, live);
+    }
   };
 
   // Provider events are queued immediately and drained once per macrotask, so a burst is one drain pass.
@@ -143,6 +148,8 @@ export function createGameServer(options: GameServerOptions) {
   const greet = (socket: { emit: (event: string, payload: unknown) => void }, namespace: SocketNamespace) => {
     socket.emit(SOCKET_EVENTS.hello, HelloSchema.parse({ status: 'ok', namespace, serverTime: clock.now() }));
     socket.emit(SOCKET_EVENTS.snapshot, engine.snapshot()); // fresh authoritative state on every (re)connect
+    const live = engine.liveView();
+    if (live) socket.emit(SOCKET_EVENTS.live, live); // a game with a live part: the current view, without waiting for it to change
   };
 
   // Broadcast is strictly read-only: any client-to-server message ends the connection.
@@ -178,8 +185,10 @@ export function createGameServer(options: GameServerOptions) {
       const now = clock.now();
       if (now - lastStatePublish >= stateMs) {
         lastStatePublish = now;
+        engine.step(); // likes and a game's own simulation advance at the same ten-a-second rhythm
         t = performance.now();
         publisher.publishState();
+        publisher.publishLive();
         metrics.publishMs.record(performance.now() - t);
       }
     } catch (error) {

@@ -3,6 +3,7 @@ import { io, type Socket } from 'socket.io-client';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   type OperatorAck,
+  LiveViewSchema,
   PresentationBatchSchema,
   PublicSnapshotSchema,
   RosterDeltaSchema,
@@ -11,6 +12,7 @@ import {
 } from '@live-game/contracts';
 import { mahalleHalayiConfig } from '../src/game-modes/mahalle-halayi/config';
 import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules';
+import { raceStub } from './race-stub';
 import { createGameServer, type GameServer, type GameServerOptions } from '../src/realtime/socket-server';
 
 const TOKEN = 'integration-test-token';
@@ -109,6 +111,21 @@ describe('realtime server', () => {
     const snapshot = PublicSnapshotSchema.parse(client.of(SOCKET_EVENTS.snapshot)[0]);
     expect(snapshot).toMatchObject({ phase: 'stopped', providerStatus: 'connected', players: [], lastResult: null });
     expect(snapshot.teams.map((t) => t.id)).toEqual(['gelin', 'damat']);
+  });
+
+  it('a game with a live part sends its view to a new client at once and again as it changes, and a game without one never does', async () => {
+    const { mode } = raceStub();
+    const { viewer } = await start({ mode });
+    const client = await viewer();
+    const first = LiveViewSchema.parse(await client.waitFor(SOCKET_EVENTS.live));
+    expect(first).toMatchObject({ kind: 'race', stage: 'racing', capacity: 10 });
+    const later = await client.waitFor(SOCKET_EVENTS.live, (view) => view.racers[0].distance > first.racers.find(() => true)!.distance);
+    expect(LiveViewSchema.parse(later).seq).toBeGreaterThan(first.seq);
+
+    const plain = await start();
+    const other = await plain.viewer();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(other.of(SOCKET_EVENTS.live)).toEqual([]);
   });
 
   it('switching the game gives every client a fresh snapshot of the new game, and only while stopped', async () => {

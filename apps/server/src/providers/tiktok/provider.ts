@@ -2,7 +2,7 @@ import type { NormalizedEvent, ProviderInfo, ProviderStatus } from '@live-game/c
 import type { ConnectionFactory, ConnectionHandlers, LiveConnection } from './connection';
 import { type ConnectFailure, classifyFailure, FAILURE_MESSAGE, retryDelayMs } from './failures';
 import { giftKeyLookup, type GiftMap } from './gift-map';
-import { parseChat, parseGift } from './messages';
+import { parseChat, parseGift, parseLike } from './messages';
 import { normalizeUsername } from './username';
 
 export type TikTokResult = { ok: true } | { ok: false; reason: string };
@@ -191,6 +191,11 @@ export class TikTokProvider {
         if (!event) return;
         this.gifts++;
         this.options.emit(event);
+      },
+      onLike: (raw) => {
+        if (!live()) return;
+        const event = parseLike(raw, this.now());
+        if (event) this.options.emit(event);
       },
       onDisconnected: () => this.lost(generation, 'The connection to TikTok closed.', 'network'),
       onStreamEnd: () => this.lost(generation, 'The stream ended.', 'offline'),

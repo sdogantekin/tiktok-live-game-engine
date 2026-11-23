@@ -195,3 +195,22 @@ describe('fault injection', () => {
     expect(NormalizedEventSchema.safeParse(emitted[0]).success).toBe(false);
   });
 });
+
+describe('likes', () => {
+  it('sends a valid like event for a viewer, and refuses nonsense counts', () => {
+    const { provider, emitted } = setup();
+    expect(provider.handle({ type: 'sim_like', viewerId: 'v', count: 25 })).toEqual({ ok: true });
+    expect(NormalizedEventSchema.parse(emitted[0])).toMatchObject({ kind: 'like.received', userId: 'v', payload: { count: 25 } });
+    expect(provider.handle({ type: 'sim_like', viewerId: 'v', count: 25 }).ok).toBe(true);
+  });
+
+  it('plays likes in the steady scenario only when the game vocabulary asks for them', async () => {
+    const { steadyScenario, MAHALLE_VOCABULARY } = await import('./scenarios');
+    const run = (likeShare?: number) =>
+      steadyScenario({ seed: 3, viewers: 30, startAt: 0, durationMs: 20_000, joinWindowMs: 1000, eventsPerSecond: 20, vocabulary: { ...MAHALLE_VOCABULARY, likeShare } }).filter((e) => (e.raw as { kind: string }).kind === 'like.received');
+    expect(run()).toHaveLength(0);
+    const likes = run(0.5);
+    expect(likes.length).toBeGreaterThan(50);
+    for (const event of likes) expect(NormalizedEventSchema.safeParse(event.raw).success).toBe(true);
+  });
+});
