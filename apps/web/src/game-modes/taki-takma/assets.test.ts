@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readGlb } from '../mahalle-halayi/glb-info';
 import { BUDGETS, CHARACTER_BONES, CHARACTER_CLIPS, MODEL_URLS } from './assets.manifest';
-import { figures, guestModels } from './scene-config';
+import { figures, GUEST_VARIANTS, guestModels } from './scene-config';
 
 const file = (url: string) => new URL(`../../../public${url}`, import.meta.url);
 
@@ -38,8 +38,8 @@ describe('Takı Takma Töreni character models', () => {
 describe('scene config uses clips that exist', () => {
   const clipsOf = (url: string) => new Set(readGlb(file(url)).clipNames);
 
-  it('guests: every clip the scene plays is in their model', () => {
-    for (const url of Object.values(guestModels.urls)) {
+  it('guests: every clip the scene plays is in every guest model, women and men', () => {
+    for (const url of Object.values(GUEST_VARIANTS).flat()) {
       const clips = clipsOf(url);
       for (const clip of [...Object.values(guestModels.clips), 'walk']) expect(clips.has(clip), clip).toBe(true);
     }

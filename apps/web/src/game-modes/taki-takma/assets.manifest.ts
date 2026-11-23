@@ -6,8 +6,10 @@ export const MODEL_BASE = '/game-modes/taki-takma/models';
 
 export const MODEL_URLS = {
   characters: {
-    guestGelin: `${MODEL_BASE}/character_guest_gelin.glb`,
-    guestDamat: `${MODEL_BASE}/character_guest_damat.glb`,
+    guestGelinWoman: `${MODEL_BASE}/character_guest_gelin_woman.glb`,
+    guestGelinMan: `${MODEL_BASE}/character_guest_gelin_man.glb`,
+    guestDamatWoman: `${MODEL_BASE}/character_guest_damat_woman.glb`,
+    guestDamatMan: `${MODEL_BASE}/character_guest_damat_man.glb`,
     bride: `${MODEL_BASE}/character_couple_bride.glb`,
     groom: `${MODEL_BASE}/character_couple_groom.glb`,
     anneGelin: `${MODEL_BASE}/character_anne_gelin.glb`,
@@ -23,8 +25,10 @@ const PARENT_CLIPS = ['idle', 'clap', 'wipe_tears', 'cheer'] as const;
 
 /** Every character GLB must contain exactly these animation clips. */
 export const CHARACTER_CLIPS: Readonly<Record<keyof typeof MODEL_URLS.characters, readonly string[]>> = {
-  guestGelin: GUEST_CLIPS,
-  guestDamat: GUEST_CLIPS,
+  guestGelinWoman: GUEST_CLIPS,
+  guestGelinMan: GUEST_CLIPS,
+  guestDamatWoman: GUEST_CLIPS,
+  guestDamatMan: GUEST_CLIPS,
   bride: COUPLE_CLIPS,
   groom: COUPLE_CLIPS,
   anneGelin: PARENT_CLIPS,

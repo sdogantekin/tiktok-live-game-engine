@@ -13,9 +13,9 @@ and writes to `apps/web/public/game-modes/taki-takma/models/`. Editable `.blend`
 
 | File | Contents | Clips |
 |---|---|---|
-| `character_guest_gelin.glb`, `character_guest_damat.glb` | The guests of each side (veil / fez) | `idle`, `walk`, `pin`, `clap`, `jump` |
+| `character_guest_{gelin,damat}_{woman,man}.glb` | The guests of each side: women in long evening dresses, men in suits with a tie in the side's colour | `idle`, `walk`, `pin`, `clap`, `jump` |
 | `character_couple_bride.glb`, `character_couple_groom.glb` | The couple on the podium | `idle`, `receive`, `thank`, `clap` |
-| `character_anne_gelin.glb`, `character_baba_gelin.glb`, `character_anne_damat.glb`, `character_baba_damat.glb` | The parents: mothers in a headscarf, fathers in a flat cap with grey hair and a moustache | `idle`, `clap`, `wipe_tears`, `cheer` |
+| `character_anne_gelin.glb`, `character_baba_gelin.glb`, `character_anne_damat.glb`, `character_baba_damat.glb` | The parents: mothers in evening gowns with a grey bun and pearls, fathers in dark suits with grey hair and a moustache | `idle`, `clap`, `wipe_tears`, `cheer` |
 
 The hall (parquet, carpet, podium, curtains, lamps, the two gold meters), the gold pieces guests carry, and the takı shower
 are built in code from primitives in `apps/web/src/game-modes/taki-takma/`; there is no hall GLB.

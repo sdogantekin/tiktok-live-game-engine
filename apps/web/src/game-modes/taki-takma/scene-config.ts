@@ -52,11 +52,18 @@ export const camera: CameraConfig = { position: [0, 26, 12.5], lookAt: [0, 0, -1
 
 /** The guests: they stand, walk up to the couple (`special` plays the pin), clap (`flourish`), and hop for big gifts. */
 export const guestModels: AvatarModels = {
-  urls: { gelin: MODEL_URLS.characters.guestGelin, damat: MODEL_URLS.characters.guestDamat },
+  urls: { gelin: MODEL_URLS.characters.guestGelinWoman, damat: MODEL_URLS.characters.guestDamatWoman },
   clips: { idle: 'idle', flourish: 'clap', jump: 'jump', spin: 'clap', wiggle: 'clap', hop: 'jump', special: 'pin' },
   looping: ['idle', 'walk'],
 };
 export const GUEST_WALK = 'walk';
+
+/** Each side's guests come in two kinds, in evening dress and in a suit; the queue alternates them (woman first). */
+export const GUEST_VARIANTS: Readonly<Record<string, readonly [woman: string, man: string]>> = {
+  gelin: [MODEL_URLS.characters.guestGelinWoman, MODEL_URLS.characters.guestGelinMan],
+  damat: [MODEL_URLS.characters.guestDamatWoman, MODEL_URLS.characters.guestDamatMan],
+};
+export const guestVariantIndex = (slotIndex: number) => slotIndex % 2;
 
 const reacting = (urls: Record<string, string>, clips: { nod: string; big: string; cheer: string }): AvatarModels => ({
   urls,

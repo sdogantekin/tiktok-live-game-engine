@@ -4,12 +4,13 @@ Run:  blender -b --factory-startup --python build_taki_characters.py [-- preview
 
 It reuses `build_character.py` from the Mahalle Halayı assets (same 12-bone rig, same mesh builder, same validation),
 adds the looks and animation clips this game needs, and writes the GLBs to this game's own folder:
-  guest_gelin, guest_damat   the guests who queue and walk up to pin a takı (clips: idle, walk, pin, clap, jump)
+  guest_*_woman/man          the guests (women in evening dresses, men in suits) who queue and walk up to pin a takı (clips: idle, walk, pin, clap, jump)
   couple_bride, couple_groom the couple receiving takı (clips: idle, receive, thank, clap)
   anne_*, baba_*             the four parents (clips: idle, clap, wipe_tears, cheer)
 One beat is 12 frames (24 fps, 120 BPM), as in the Halay clips.
 """
 
+import math
 import os
 import sys
 
@@ -26,20 +27,33 @@ assetlib.BLEND_DIR = os.path.join(ROOT, "assets", "game-modes", "taki-takma", "s
 # ---------------------------------------------------------------------------------------------
 # Looks. Side colours follow the Halay game: gelin side pink, damat side blue.
 # ---------------------------------------------------------------------------------------------
+HAIR = bc.HAIR
+SKIN_LIGHT = "#f1c9a5"
+SKIN_MID = "#e8bd98"
+
+
+def person(clothes, trousers, skin, clips, extras, **more):
+    return {"kind": "team", "clothes": clothes, "trousers": trousers, "skin": skin, "clips": clips, "extras": extras, **more}
+
+
 GELIN = {"clothes": "#e0457b", "trousers": "#c93a6d", "skin": "#f1c9a5"}
 DAMAT = {"clothes": "#2f6fdb", "trousers": "#27344f", "skin": "#e8bd98"}
 
 bc.LOOKS.update(
     {
-        "guest_gelin": {"kind": "team", **GELIN, "accessory": "veil", "clips": "guest"},
-        "guest_damat": {"kind": "team", **DAMAT, "accessory": "fez", "clips": "guest"},
+        "guest_gelin_woman": person("#e0457b", "#c93a6d", SKIN_LIGHT, "guest", ["gown", "long_hair", "shawl"], shawl="#ffb3d1"),
+        "guest_gelin_man": person("#a8336b", "#4a2340", SKIN_LIGHT, "guest", ["suit", "hair_top"], tie="#ff6fa5"),
+        "guest_damat_woman": person("#2f6fdb", "#27479a", SKIN_MID, "guest", ["gown", "long_hair", "shawl"], shawl="#a9c8f5"),
+        "guest_damat_man": person("#2f5fb5", "#1f3562", SKIN_MID, "guest", ["suit", "hair_top"], tie="#4a8cff"),
+        # Modern formal wear for the guests: men in suits (a tie in their side's colour), women in long evening dresses with a
+        # shawl in the side's colour. Both kinds on each side; the scene alternates them down the queue.
         "couple_bride": {"kind": "bride", "clothes": "#ffffff", "trousers": "#ffffff", "skin": "#f1c9a5", "clips": "couple_taki"},
         "couple_groom": {"kind": "groom", "clothes": "#1d1d27", "trousers": "#1d1d27", "skin": "#e8bd98", "clips": "couple_taki"},
-        # The parents: mothers in a headscarf and a long coat colour, fathers in a flat cap with a moustache and grey hair.
-        "anne_gelin": {"kind": "team", "clothes": "#b8458f", "trousers": "#7d2f63", "skin": "#efc4a0", "clips": "parent", "extras": ["scarf"], "scarf": "#f2b8d4"},
-        "baba_gelin": {"kind": "team", "clothes": "#6f3a52", "trousers": "#3b2430", "skin": "#e6b793", "clips": "parent", "extras": ["cap", "moustache", "grey"], "cap": "#8f4a68"},
-        "anne_damat": {"kind": "team", "clothes": "#3f7fd9", "trousers": "#27407a", "skin": "#e8bd98", "clips": "parent", "extras": ["scarf"], "scarf": "#a9c8f5"},
-        "baba_damat": {"kind": "team", "clothes": "#27407a", "trousers": "#1c2a4a", "skin": "#e1b48d", "clips": "parent", "extras": ["cap", "moustache", "grey"], "cap": "#4a6ca8"},
+        # The parents: mothers in deeper evening gowns with a grey bun and pearls, fathers in dark suits with grey hair and a moustache.
+        "anne_gelin": person("#9c2f63", "#7d2f63", "#efc4a0", "parent", ["gown", "bun", "pearls"]),
+        "baba_gelin": person("#4a1f36", "#2c1422", "#e6b793", "parent", ["suit", "grey", "moustache"], tie="#d8a23a"),
+        "anne_damat": person("#1f5fb0", "#183f78", SKIN_MID, "parent", ["gown", "bun", "pearls"]),
+        "baba_damat": person("#18305c", "#101f3c", "#e1b48d", "parent", ["suit", "grey", "moustache"], tie="#d8a23a"),
     }
 )
 
@@ -54,6 +68,35 @@ bc.CLIP_SETS.update(
 # ---------------------------------------------------------------------------------------------
 # Extra mesh pieces for the looks above (added on top of the shared character mesh).
 # ---------------------------------------------------------------------------------------------
+
+
+def _gown(m, look):
+    wide = 0.4
+    m.cylinder((0, 0, 0.33), wide, 0.27, 0.64, look["clothes"], "Hips", segments=10)  # a long skirt down to the shoes
+    m.cylinder((0, 0, 0.68), 0.27, 0.27, 0.05, "#ffd35a", "Spine", segments=8, scale=(1, 0.82, 1))  # a gold belt
+    m.sphere((0.1, -0.22, 0.98), 0.04, "#ffd35a", "Spine", segments=4, rings=3)  # a brooch
+
+
+def _shawl(m, look):
+    m.cylinder((0, 0.02, 0.97), 0.38, 0.3, 0.1, look["shawl"], "Spine", segments=8, scale=(1, 0.85, 1))  # a wrap over the shoulders
+
+
+def _long_hair(m, look):
+    m.box((0, 0.26, 1.12), (0.5, 0.1, 0.4), bc.HAIR, "Head")  # hair to the shoulders: the dress shows below it
+    for side in (-1, 1):
+        m.box((0.3 * side, 0.02, 1.15), (0.08, 0.14, 0.34), bc.HAIR, "Head")
+    m.sphere((0, 0.02, 1.5), 0.17, bc.HAIR, "Head", segments=6, rings=3, scale=(1, 0.9, 0.6))
+
+
+def _hair_top(m, look):
+    m.sphere((0, 0.0, 1.5), 0.17, bc.HAIR, "Head", segments=6, rings=3, scale=(1, 0.9, 0.6))
+
+
+def _suit(m, look):
+    m.box((0, -0.215, 0.93), (0.13, 0.02, 0.3), "#ffffff", "Spine")  # shirt front
+    m.box((0, -0.225, 0.9), (0.05, 0.02, 0.24), look.get("tie", "#b3261e"), "Spine")  # tie
+    for side in (-1, 1):
+        m.box((0.085 * side, -0.222, 0.98), (0.05, 0.02, 0.22), look["trousers"], "Spine")  # lapels
 
 
 def _scarf(m, look):
@@ -72,9 +115,21 @@ def _moustache(m, look):
 
 def _grey(m, look):
     m.sphere((0, 0.04, 1.325), 0.335, "#cfcfcf", "Head", segments=8, rings=4, scale=(1, 0.88, 0.72))
+    m.sphere((0, 0.0, 1.5), 0.21, "#cfcfcf", "Head", segments=6, rings=3, scale=(1, 0.9, 0.6))
 
 
-EXTRAS = {"scarf": _scarf, "cap": _cap, "moustache": _moustache, "grey": _grey}
+def _bun(m, look):
+    _grey(m, look)
+    m.sphere((0, 0.2, 1.52), 0.15, "#cfcfcf", "Head", segments=6, rings=4)
+
+
+def _pearls(m, look):
+    for i in range(7):
+        angle = -1.2 + i * 0.4
+        m.sphere((0.17 * math.sin(angle), -0.2 * math.cos(angle) - 0.05, 1.0), 0.03, "#ffffff", "Spine", segments=4, rings=3)
+
+
+EXTRAS = {"scarf": _scarf, "cap": _cap, "moustache": _moustache, "grey": _grey, "bun": _bun, "pearls": _pearls, "gown": _gown, "shawl": _shawl, "long_hair": _long_hair, "hair_top": _hair_top, "suit": _suit}
 _build_mesh = bc.build_mesh
 
 
@@ -163,7 +218,7 @@ bc.CLIPS["cheer"] = [
     (25, {}),
 ]
 
-NEW_LOOKS = ["guest_gelin", "guest_damat", "couple_bride", "couple_groom", "anne_gelin", "baba_gelin", "anne_damat", "baba_damat"]
+NEW_LOOKS = ["guest_gelin_woman", "guest_gelin_man", "guest_damat_woman", "guest_damat_man", "couple_bride", "couple_groom", "anne_gelin", "baba_gelin", "anne_damat", "baba_damat"]
 
 if __name__ == "__main__":
     args = assetlib.args_after_dashes()

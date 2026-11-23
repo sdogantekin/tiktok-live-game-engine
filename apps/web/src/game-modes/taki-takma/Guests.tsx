@@ -7,7 +7,7 @@ import { useClipPlayer } from '../../game-renderer/model-utils';
 import { perf } from '../../game-renderer/perf';
 import type { AvatarModels } from '../../game-renderer/types';
 import type { GoldPieces } from './gold';
-import { FACING_COUPLE, GUEST_WALK, guestModels, pinSpot, TEAM_IDS } from './scene-config';
+import { FACING_COUPLE, GUEST_VARIANTS, GUEST_WALK, guestModels, guestVariantIndex, pinSpot, TEAM_IDS } from './scene-config';
 import { TRIP_MS, tripPose, type Trips } from './trips';
 
 const CARRY_HEIGHT = 2.3;
@@ -77,7 +77,7 @@ function Guest({ store, trips, gold, goldIndex, teamId, index, gltf, models }: {
 
 /** The guests of both sides in their queues, each able to walk up to the couple, pin a takı and walk back. */
 export function Guests({ store, trips, gold }: { store: SlotsStore; trips: Trips; gold: GoldPieces }) {
-  const gltfs = useLoader(GLTFLoader, TEAM_IDS.map((teamId) => guestModels.urls[teamId]!));
+  const gltfs = useLoader(GLTFLoader, TEAM_IDS.flatMap((teamId) => [...GUEST_VARIANTS[teamId]!]));
   const capacity = store.slots.slots(TEAM_IDS[0]).length;
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export function Guests({ store, trips, gold }: { store: SlotsStore; trips: Trips
     <>
       {TEAM_IDS.flatMap((teamId, teamIndex) =>
         store.slots.slots(teamId).map((_, index) => (
-          <Guest key={`${teamId}-${index}`} store={store} trips={trips} gold={gold} goldIndex={teamIndex * capacity + index} teamId={teamId} index={index} gltf={gltfs[teamIndex]!} models={guestModels} />
+          <Guest key={`${teamId}-${index}`} store={store} trips={trips} gold={gold} goldIndex={teamIndex * capacity + index} teamId={teamId} index={index} gltf={gltfs[teamIndex * 2 + guestVariantIndex(index)]!} models={guestModels} />
         )),
       )}
     </>
