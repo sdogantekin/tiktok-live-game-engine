@@ -101,3 +101,47 @@ test('At Yarışı can be played from the dashboard: viewers join with 1, ten ra
     await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
   }
 });
+
+test('At Yarışı: ending the race shows the ranking, and the next race goes to those who were waiting', async ({ context }) => {
+  test.setTimeout(120_000);
+  const operator = await openOperator(context);
+  const broadcast = await openBroadcast(context);
+  const say = async (viewer: string, text: string) => {
+    await operator.getByLabel('Viewer id').fill(viewer);
+    await operator.getByLabel('Comment text').fill(text);
+    await button(operator, 'Send comment').click();
+  };
+
+  try {
+    await startFreshGame(operator);
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('at-yarisi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('At Yarışı');
+
+    await button(operator, 'Start game').click();
+    await addViewers(operator, 10); // the ten who race
+    await button(operator, 'Start round now').click();
+    await expect(operator.getByTestId('phase')).toHaveText('active');
+    await expect(broadcast.getByTestId('standing-row')).toHaveCount(10);
+
+    // An eleventh viewer arrives after the start and has to wait.
+    await say('latecomer', '1');
+    await expect(broadcast.getByText('Sırada 1')).toBeVisible();
+    await expect(broadcast.getByTestId('standing-row').filter({ hasText: 'latecomer' })).toHaveCount(0);
+
+    // End the race: the ranking is shown, with the ten racers' places and no team banner.
+    await button(operator, 'End round').click();
+    await expect(operator.getByTestId('phase')).toHaveText('results');
+    await expect(broadcast.getByTestId('race-result')).toContainText('1.');
+    await expect(broadcast.locator('.result-banner, .banner')).toHaveCount(0);
+
+    // After the results the next race forms: the viewer who waited is now on the grid.
+    await expect(broadcast.getByTestId('standing-row').filter({ hasText: 'latecomer' })).toHaveCount(1, { timeout: 60_000 });
+  } finally {
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('mahalle-halayi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
+  }
+});

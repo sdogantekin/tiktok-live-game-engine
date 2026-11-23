@@ -129,3 +129,15 @@ Same method as above (headed Chrome with the GPU, production build, 200 particip
 | Gift burst (3x ev anahtarı, gg, roses) | 1080x1920 | 60.0 | 55.2 | 17.6 ms | 0% | 112 | 53 k | 0.22 | 81 ms |
 
 No long tasks, heap about 20-25 MB, draw calls under the 150 budget. The first run's single 533 ms frame happened in its first measured second (likely shader compilation or a tab focus change) and did not repeat in the two later runs; it is worth watching on the real stream machine. Raw numbers: `docs/perf/taki-results.json`; run with `pnpm perf:browser -g "Takı"`.
+
+## At Yarışı (Step 4.5, 2026-11-23)
+
+Same method (headed Chrome with the GPU, production build, 20 s per run): ten horses racing, 190 more viewers waiting in the queue, a steady stream of simulated likes, comments and gifts (60% of the viewers' events are likes). Draw calls count the whole scene: horses (three meshes each), the course, rails, instanced stands and spectators, skyline and trees.
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Slow frames | Draw calls | Triangles | Mixer ms/frame | Event latency p95 |
+|---|---|---|---|---|---|---|---|---|---|
+| Default | 1080x1920 | 60.0 | 56.2 | 17.4 ms | 0% | 63 | 18.5 k | 0.13 | 206 ms |
+| Default | 720x1280 | 60.0 | 56.2 | 17.3 ms | 0% | 43 | 18.3 k | 0.15 | 239 ms |
+| Gift burst (3x big celebration, 2x rose, GG) | 1080x1920 | 60.0 | 55.9 | 17.5 ms | 0.07% | 45 | 18.5 k | 0.16 | 277 ms |
+
+No long tasks, heap 14-18 MB. The draw-call count varies with how much of the course and stands the camera sees. **Event latency is higher than in the other games** (p95 about 200-280 ms against 85 ms): likes are summed and handed to the game from the 10 Hz step, and the sample is small (about 35 cues in a run), so treat it as an order of magnitude; nothing in the race depends on it. Raw numbers: `docs/perf/race-results.json`; run with `pnpm perf:browser -g "At Yarışı"`.

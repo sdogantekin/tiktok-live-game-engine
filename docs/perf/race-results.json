@@ -1,0 +1,99 @@
+{
+  "measuredAt": "2026-11-23T21:52:38.064Z",
+  "measureSeconds": 20,
+  "results": [
+    {
+      "label": "default",
+      "viewport": "1080x1920",
+      "frames": 1201,
+      "avgFps": 60.00109910419432,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.400000005960464,
+        "p99": 17.799999982118607,
+        "max": 23
+      },
+      "onePercentLowFps": 56.17977533733554,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.1320566197517611,
+      "jsHeapMB": 18.133732795715332,
+      "latencyMs": {
+        "count": 34,
+        "p50": 79,
+        "p95": 206,
+        "p99": 311,
+        "max": 311
+      },
+      "drawCalls": 63,
+      "triangles": 18538,
+      "avatars": 0,
+      "crowdVisible": 0
+    },
+    {
+      "label": "default",
+      "viewport": "720x1280",
+      "frames": 1200,
+      "avgFps": 60.0030001500075,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.30000001192093,
+        "p99": 17.799999982118607,
+        "max": 19.399999976158142
+      },
+      "onePercentLowFps": 56.17977533733554,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.1497500003874302,
+      "jsHeapMB": 13.805217742919922,
+      "latencyMs": {
+        "count": 33,
+        "p50": 66,
+        "p95": 239,
+        "p99": 435,
+        "max": 435
+      },
+      "drawCalls": 43,
+      "triangles": 18322,
+      "avatars": 0,
+      "crowdVisible": 0
+    },
+    {
+      "label": "gift burst",
+      "viewport": "1080x1920",
+      "frames": 1471,
+      "avgFps": 60.00065262435114,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.5,
+        "p99": 17.900000005960464,
+        "max": 36.39999997615814
+      },
+      "onePercentLowFps": 55.86592176910688,
+      "slowFrameShare": 0.0006798096532970768,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.16077498363281575,
+      "jsHeapMB": 14.477347373962402,
+      "latencyMs": {
+        "count": 42,
+        "p50": 79,
+        "p95": 277,
+        "p99": 472,
+        "max": 472
+      },
+      "drawCalls": 45,
+      "triangles": 18456,
+      "avatars": 0,
+      "crowdVisible": 0
+    }
+  ]
+}

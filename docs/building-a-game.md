@@ -4,13 +4,13 @@ This engine runs livestream games. A game is two small modules that plug into it
 
 The two shipped games are complete worked examples. Read them next to this guide:
 
-| | Mahalle Halayı | Takı Takma Töreni |
-|---|---|---|
-| Server rules | `apps/server/src/game-modes/mahalle-halayi/` | `apps/server/src/game-modes/taki-takma/` |
-| Web presentation | `apps/web/src/game-modes/mahalle-halayi/` | `apps/web/src/game-modes/taki-takma/` |
-| Assets (Blender) | `assets/game-modes/mahalle-halayi/` | `assets/game-modes/taki-takma/` |
+| | Mahalle Halayı | Takı Takma Töreni | At Yarışı |
+|---|---|---|---|
+| Server rules | `apps/server/src/game-modes/mahalle-halayi/` | `apps/server/src/game-modes/taki-takma/` | `apps/server/src/game-modes/at-yarisi/` |
+| Web presentation | `apps/web/src/game-modes/mahalle-halayi/` | `apps/web/src/game-modes/taki-takma/` | `apps/web/src/game-modes/at-yarisi/` |
+| Assets (Blender) | `assets/game-modes/mahalle-halayi/` | `assets/game-modes/taki-takma/` | `assets/game-modes/at-yarisi/` |
 
-Takı Takma Töreni is the better template: it was built after the engine learned about several games, so it shows the full path, including per-game gift scoring, a queue instead of dance lines, guests who walk around, and its own sound.
+Takı Takma Töreni is the better template for a game made of **commands and teams**: it shows the full path, including per-game gift scoring, a queue instead of dance lines, guests who walk around, and its own sound. At Yarışı is the template for a game that **moves on its own** (a simulation the server runs every moment, driven by likes, ranking people instead of teams): see "Games that move on their own" below.
 
 ## What the engine gives you, and what you provide
 
@@ -158,6 +158,34 @@ A `SoundDesign` (`apps/web/src/game-renderer/audio/types.ts`) is data plus three
 
 Validate the score with `validateScore` in a test.
 
+## Games that move on their own (likes, a live simulation, ranked results)
+
+A game that is more than "what does this word do" (a race, a battle, anything with positions that change every moment) uses three more optional capabilities. Each is off unless the game turns it on, and At Yarışı (`apps/server/src/game-modes/at-yarisi/`, `apps/web/src/game-modes/at-yarisi/`) uses all of them.
+
+**Likes** (`config.likes`, `handleLike`). A viewer tapping the screen is a `like.received` event with a count. The engine never queues them one by one: it sums a viewer's likes in a small bounded buffer and hands them to `handleLike(ctx, { playerId, count })` from the game's step, no faster than `maxPerSecond` per viewer, so a burst of thousands of taps counts no more than a steady stream. Only viewers the engine already knows (and has not ignored) count. `handleLike` may return only presentation effects; whatever the likes do to the game is the game's own state. Make likes **worth something but bounded** (a saturating boost that fades), or one tapper will decide everything.
+
+**A live simulation** (`GameMode.live`). Give the mode a `LiveSim`:
+
+```ts
+live: {
+  step(dtMs, ctx) { /* advance by dtMs; return { endRound: true } to end the round */ },
+  view() { /* what the broadcast needs to draw now (a LiveViewBody) */ },
+  ranking() { /* the final ranking, best first */ },
+}
+```
+
+The runtime calls it about ten times a second with the elapsed time (never more than 250 ms per step) and the players the engine knows, so you drop racers who were removed or ignored. Keep the simulation **pure and seedable** (see `at-yarisi/race.ts`, which has no idea about viewers or sockets) and test it with a fixed seed; wire it to the engine in `rules.ts`. The view is sent to the broadcast as the `state:live` message, validated by a schema in `packages/contracts/src/game/live.ts`; add a schema there for a new kind of view. Pause freezes the simulation because `ctx.isScoring` is false while paused.
+
+**Individual results** (`ranking()`). A round result can carry `ranking` (place, player, name). Declare one team (everyone who joined) so joining, the roster and chat keep working, hide the team score boxes and the team result banner with `showTeamScores: false`, and draw your own standings and results in the presentation's `Overlay`.
+
+**On the web side:**
+- The scene gets `live`, a `LiveFeed` with the newest view (outside React, like cues). Feed it to a smoother (`RaceSmoother`): draw each thing at the server's last position plus a short, capped guess, eased, never backwards, and snap on a big jump.
+- A scene that moves its own camera can: the Stage only sets the first pose. Keep the camera maths pure (`camera.ts`: focus, chase, damping) and test it.
+- **Name tags and speech bubbles for subjects that move freely:** give the presentation `floatingAnchors(count)`, set the occupants with `floatingKey(i)`, and each frame project each subject to the stage and call `tags.setDynamic(key, { small, big, visible })`. The tag layer follows without React renders.
+- `Overlay` is a component the broadcast page draws over the scene (`{ hud, live }`). Size it in stage units (`calc(var(--u) * n)`) like the rest of the HUD.
+- If the scene needs a clip to speed up with something (a horse's stride), pass `followTempo: true` in the beat state of `useClipPlayer.update`.
+- Scenes can also announce moments from the game itself as cues (`cues.emit({ type: 'celebration', effect: 'last_lap' })`), which the sound design maps to effects.
+
 ## Step 7: Run it and check
 
 ```bash
@@ -188,6 +216,7 @@ pnpm test:e2e              # add a spec like e2e/games.spec.ts that plays your g
 - [ ] Sound design and its test
 - [ ] Assets with a manifest and a validation test (or the primitive fallback only)
 - [ ] An e2e test that plays a round
+- [ ] If it moves on its own: likes, a live simulation and ranked results turned on in the config, a pure seeded simulation with a fairness or balance test, a smoother and a camera with their own tests
 - [ ] Game words added to the engine-boundary test
 - [ ] A performance run and a look at both stream sizes
 - [ ] `REQUIREMENTS.md` (game rules and decisions), `PLAN.md`, and an asset README

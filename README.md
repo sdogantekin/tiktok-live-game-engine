@@ -2,12 +2,13 @@
 
 A modular, real-time game engine for livestreams. Viewers become players through chat comments and gifts, and the game is shown on stream as a vertical (9:16) broadcast view that any streaming tool can capture from a browser window. You run it on your own machine; a separate operator page controls the show.
 
-Two games ship with it, both on the same engine:
+Three games ship with it, all on the same engine:
 
 | Game | What it is |
 |---|---|
 | **Mahalle Halayı** | A Turkish wedding-courtyard dance competition. Gelin and Damat sides form halay lines, score by commenting `halay`, and cheer each other on. Gifts are celebrations only. |
 | **Takı Takma Töreni** | The jewellery-pinning ceremony of a Turkish wedding. Guests of both sides queue up, walk to the couple and pin a takı (`tak`); the more generous side wins. Gifts bring a bigger takı and **bonus points** (a per-game decision). |
+| **At Yarışı** | A horse race. Viewers type `1` to join; ten race and the rest wait their turn. Likes (free) and gifts speed up your own horse, the server runs a six-lap race, and the results rank people, not teams. |
 
 Building your own game on the engine is documented in [`docs/building-a-game.md`](docs/building-a-game.md); going live is in [`docs/running-a-stream.md`](docs/running-a-stream.md).
 
@@ -19,6 +20,7 @@ Building your own game on the engine is documented in [`docs/building-a-game.md`
 |---|---|---|
 | **Product Phase 1** | Standalone MVP: engine + first game, driven by the Local Simulator | **Accepted** |
 | **Second game** (Steps 3.1–3.5) | Takı Takma Töreni, game selection, per-game gift scoring, viewers' comments on screen | **Done** |
+| **Third game** (Steps 4.1–4.5) | At Yarışı, and the engine capabilities it needed: likes, a live server-side simulation, individual results | **Done** |
 | **Product Phase 2** | TikTok LIVE integration | **Built, not yet verified on a real stream.** A TikTok provider reads comments and gifts through an unofficial connector (a deliberate, accepted Terms-of-Service risk, see [`docs/tiktok-live-feasibility.md`](docs/tiktok-live-feasibility.md)). It is off by default and has only been tested against a fake connection. |
 
 "Phase" means a product milestone; "Step" means an implementation step. Steps and decisions are in [`PLAN.md`](PLAN.md).
@@ -26,14 +28,14 @@ Building your own game on the engine is documented in [`docs/building-a-game.md`
 ## What works today
 
 - **A complete game loop on the server:** join a side, game actions with cooldowns, timed rounds with a winner or draw, automatic next round. The server is the only authority on scores and rounds.
-- **Two games and a game picker.** The operator switches games while the game is stopped.
+- **Three games and a game picker.** The operator switches games while the game is stopped.
 - **Viewers' comments on screen:** short, moderated comments from joined players appear as speech bubbles (links, mentions, phone numbers and blocked words are refused; operator on/off switch and per-player Ignore).
 - **A 3D broadcast view** (React Three Fiber, low-poly toy style from Blender scripts) with HUD, name tags, effects and **sound** (original synthesised music and effects, or a music file the game producer supplies).
 - **An operator panel:** game picker, start/pause/end rounds, celebrations, players, sound, comments, the TikTok connection, and the simulator.
 - **A local event simulator** with synthetic viewers, bursts, steady and chaos scenarios and simulated outages. It speaks each game's own words. It is permanent: it works with no TikTok code, credentials or network.
 - **A TikTok LIVE provider** (off by default, one provider at a time, never mixed with the simulator).
 
-Performance has been measured for both games at 200 participants: about 60 FPS and 112-118 draw calls (`docs/perf-results.md`).
+Performance has been measured for the dance and ceremony games at 200 participants (about 60 FPS, 112-118 draw calls) and for the race (60 FPS, 43-63 draw calls), see `docs/perf-results.md`.
 
 ## Getting started
 
@@ -65,7 +67,7 @@ Copy `.env.example` to `.env` to override defaults. Secrets are never committed.
 | `PORT` | `3001` | Server port. |
 | `OPERATOR_TOKEN` | random each run | Operator access token. |
 | `WEB_DIR` | unset | Directory of the built web app to serve (`pnpm start` sets it to `apps/web/dist`). |
-| `GAME` | `mahalle-halayi` | The game to start with: `mahalle-halayi` or `taki-takma`. The operator can switch while the game is stopped. |
+| `GAME` | `mahalle-halayi` | The game to start with: `mahalle-halayi`, `taki-takma` or `at-yarisi`. The operator can switch while the game is stopped. |
 | `TIKTOK_LIVE` | `off` | `on` lets the operator read a real TikTok LIVE (see `docs/running-a-stream.md`). |
 | `EULER_API_KEY` | unset | Optional key for the signing service the TikTok connector depends on. A secret: never commit it. |
 

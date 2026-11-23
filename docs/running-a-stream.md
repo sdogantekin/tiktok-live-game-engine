@@ -99,10 +99,17 @@ For a first test, run against a **private** LIVE of your own and watch the laten
 
 ## 8. Gifts and scoring: read this before a public stream
 
-- By default gifts are celebrations only. **Takı Takma Töreni opts in to gift scoring** (rose +3, GG +10, big_celebration +30, placeholders), so the side whose viewers send gifts can win.
+- By default gifts are celebrations only. **Takı Takma Töreni opts in to gift scoring** (rose +3, GG +10, big_celebration +30, placeholders), so the side whose viewers send gifts can win. **At Yarışı lets gifts speed up the sender's own horse** (a short surge from a rose or GG, a jockey from a big celebration; all gift help is capped at +10%, below what likes alone can add), so gifts can influence who wins there too.
 - TikTok's **LIVE Monetization Guidelines** and **Creator Code of Conduct** say what a streamer may promise or do in exchange for gifts. **They have not been read yet.** Read them, and decide whether gift-driven scoring is acceptable, before a public Takı stream. If in doubt, use Mahalle Halayı, or change Takı's `giftsMayScore` to `false` (one line in its config).
 - Real gift values never become points by themselves: each game maps gift keys to what they do.
-- Every viewer can play for free in both games; gifts are an extra.
+- Every viewer can play for free in every game; gifts are an extra. In At Yarışı free play is **likes**: a viewer who only joins with `1` and never taps will almost never win, so say on screen that likes make the horse faster (the overlay does).
+
+### Likes and the race (At Yarışı)
+
+- Viewers join with `1`. **Ten race; everyone else waits** and is shown as "Sırada N". After a race the horses go to the back of the queue, so everyone gets a turn. Viewers are shown by name and a generated colour, never a profile picture.
+- **Likes** reach the game as like events from the TikTok reader. They are summed per viewer and counted at no more than 20 a second each, so a flood of taps cannot decide the race. **Real like events have not been tested on a real LIVE:** whether they arrive in a usable form and rate must be measured on a private test first. If they do not arrive, the race still runs, but nobody gets a speed-up from likes and gifts become the only way to help, which is **not** what the game is balanced for.
+- The simulator can send likes (**Send likes** in the Simulator panel, and a steady stream in its scenarios), so you can rehearse a full race without an audience.
+- The race is run by the server: **Pause** freezes it, and **End round** ends it where it is (horses are ranked by distance).
 
 ## 9. If something looks wrong
 
@@ -116,13 +123,14 @@ For a first test, run against a **private** LIVE of your own and watch the laten
 | Game stutters | The window is hidden, minimised or covered; or the machine is overloaded by the streaming tool |
 | Scene drawn from plain shapes | Model files failed to load (look for 404s in the browser console) |
 | Black or missing 3D scene, HUD fine | WebGL is unavailable: turn on hardware acceleration in the browser |
+| Horses do not speed up from likes (real stream) | Likes may not be arriving: check the TikTok panel and test with a private LIVE; see "Likes and the race" |
 | Nothing from a real stream arrives | Is `TIKTOK_LIVE=on` set, is the panel `connected`, and is the creator really live? |
 
 ## What is not verified
 
 Be clear with yourself about these before relying on a stream:
 
-- **The TikTok reader on a real LIVE:** latency, rate limits, reconnects, and whether real messages carry stable ids. Only a fake connection has been tested.
+- **The TikTok reader on a real LIVE:** latency, rate limits, reconnects, whether real messages carry stable ids, and (for At Yarışı) whether like events arrive in a usable form and rate. Only a fake connection has been tested.
 - **Capture by a streaming tool:** whether TikTok LIVE Studio (or OBS) can show the broadcast window, and carry its sound on your operating system. Not tested.
 - **Streaming-tool load:** the game was measured without a tool encoding video at the same time.
 - **Browsers other than Chrome.**
