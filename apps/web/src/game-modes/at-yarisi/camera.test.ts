@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chaseCamera, damp, dampAngle, focusOf, gridCamera, turnBetween } from './camera';
+import { CHASE, CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, RUN_IN, RUN_IN_FOV, turnBetween } from './camera';
 import { trackShape } from './track';
 
 describe('damping', () => {
@@ -58,5 +58,27 @@ describe('focus and chase camera', () => {
     expect(early.position).not.toEqual(late.position);
     expect(gridCamera(shape, 99).position).toEqual(late.position); // it stops arcing
     expect(gridCamera(shape, -5).position).toEqual(early.position);
+  });
+});
+
+describe('the finish run-in', () => {
+  it('is the normal chase far from the line and the close low view at it, blended in between', () => {
+    expect(chaseFor(500)).toEqual({ tuning: CHASE, fov: CHASE_FOV });
+    expect(chaseFor(0)).toEqual({ tuning: RUN_IN, fov: RUN_IN_FOV });
+    const mid = chaseFor(35);
+    expect(mid.tuning.behind).toBeLessThan(CHASE.behind);
+    expect(mid.tuning.behind).toBeGreaterThan(RUN_IN.behind);
+    expect(mid.fov).toBeLessThan(CHASE_FOV);
+    expect(mid.fov).toBeGreaterThan(RUN_IN_FOV);
+  });
+
+  it('gets steadily closer as the line comes, and stays put once past it', () => {
+    let previous = Infinity;
+    for (let remaining = 80; remaining >= 0; remaining -= 5) {
+      const { tuning } = chaseFor(remaining);
+      expect(tuning.behind).toBeLessThanOrEqual(previous + 1e-9);
+      previous = tuning.behind;
+    }
+    expect(chaseFor(-20)).toEqual(chaseFor(0));
   });
 });

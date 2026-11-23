@@ -1,3 +1,4 @@
+import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { seeded } from './Grandstand';
@@ -62,11 +63,15 @@ const MOWN_DARK = new THREE.Color('#3f8a45');
  * The racing surface and its furniture: mown stripes either side of the track, the dirt with a worn middle and slightly uneven colour, the
  * white running rails on posts, furlong poles, the starting gate behind the grid and the photo-finish tower by the line.
  */
-export function Parcours() {
+export function Parcours({ gateUp }: { gateUp: { current: boolean } }) {
   const posts = useRef<THREE.InstancedMesh>(null);
   const poles = useRef<THREE.InstancedMesh>(null);
   const poleCaps = useRef<THREE.InstancedMesh>(null);
   const gate = useRef<THREE.InstancedMesh>(null);
+  // The gate stands only while the horses line up; once they are away it is gone (the camera passes the line on every lap).
+  useFrame(() => {
+    if (gate.current) gate.current.visible = gateUp.current;
+  });
 
   const { dirtEdge, dirtMiddle, mownOutside, mownInside, mownFar } = useMemo(() => {
     const rnd = seeded(3);
@@ -132,16 +137,16 @@ export function Parcours() {
       <mesh geometry={mownFar}>
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
-      <mesh geometry={mownOutside}>
+      <mesh geometry={mownOutside} receiveShadow>
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
-      <mesh geometry={mownInside}>
+      <mesh geometry={mownInside} receiveShadow>
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
-      <mesh geometry={dirtEdge}>
+      <mesh geometry={dirtEdge} receiveShadow>
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
-      <mesh geometry={dirtMiddle}>
+      <mesh geometry={dirtMiddle} receiveShadow>
         <meshStandardMaterial vertexColors side={THREE.DoubleSide} />
       </mesh>
       {rails.map((geometry, i) => (

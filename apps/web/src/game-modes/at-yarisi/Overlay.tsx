@@ -1,5 +1,5 @@
 import type { HudState, RaceView } from '@live-game/contracts';
-import { type CSSProperties, useSyncExternalStore } from 'react';
+import { type CSSProperties, useEffect, useState, useSyncExternalStore } from 'react';
 import type { LiveFeed } from '../../game-renderer/live-feed';
 import { lapOf, racerColor } from './track';
 
@@ -17,6 +17,17 @@ export function Overlay({ hud, live }: { hud: HudState; live: LiveFeed }) {
   const view = useRace(live);
   const standing = view ? [...view.racers].sort((a, b) => (a.place ?? Infinity) - (b.place ?? Infinity) || b.distance - a.distance) : [];
   const leader = standing[0];
+
+  // The first horse home: a banner with its name for a few seconds, while the rest are still finishing. (Keyed by the round too, so
+  // the same viewer winning twice in a row is celebrated twice.)
+  const winner = view?.racers.find((racer) => racer.place === 1) ?? null;
+  const bannerKey = winner ? `${hud.round}:${winner.id}` : null;
+  const [dismissedKey, setDismissedKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (bannerKey === null) return;
+    const timer = setTimeout(() => setDismissedKey(bannerKey), 6000);
+    return () => clearTimeout(timer);
+  }, [bannerKey]);
 
   return (
     <>
@@ -38,6 +49,16 @@ export function Overlay({ hud, live }: { hud: HudState; live: LiveFeed }) {
             Yarışçı {view.racers.length}/{view.capacity}
             {view.waiting > 0 ? ` · Sırada ${view.waiting}` : ''}
           </div>
+        </section>
+      )}
+
+      {winner && bannerKey !== dismissedKey && hud.phase !== 'results' && (
+        <section
+          data-testid="winner-banner"
+          style={{ ...panel, left: '50%', top: '34%', transform: 'translateX(-50%)', width: u(78), padding: u(2.2), textAlign: 'center', background: 'linear-gradient(135deg, rgba(120,84,10,0.92), rgba(255,211,90,0.92))', color: '#1c1420', border: `${u(0.5)} solid ${racerColor(winner.id)}` }}
+        >
+          <div style={{ fontSize: u(3.4), fontWeight: 700, letterSpacing: u(0.4) }}>KAZANAN</div>
+          <div style={{ fontSize: u(7), fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{winner.name}</div>
         </section>
       )}
 

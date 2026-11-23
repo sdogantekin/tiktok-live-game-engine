@@ -7,9 +7,10 @@ import { Boundary } from '../../game-renderer/Boundary';
 import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { floatingKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
-import { CHASE, chaseCamera, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
+import { CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
 import { type HorseFrame, Horses } from './Horses';
 import { laneOffset, shape } from './scene-config';
+import { type RaceFx, RaceEffects } from './RaceEffects';
 import { RACE_CUES, soundDesign } from './sound-design';
 import { RaceSmoother } from './smoothing';
 import { Course } from './Course';
@@ -32,6 +33,11 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
   const frame = useRef<HorseFrame>({ racers: [], stage: null });
   /** How lively the crowd is (0..1), updated every frame from the race. */
   const mood = useRef(0);
+  const fx = useRef<RaceFx | null>(null);
+  /** Whether the starting gate stands: only before the start. */
+  const gate = useRef(true);
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const sunTarget = useRef<THREE.Object3D>(null);
   const rig = useRef({
     last: 0, // set on the first frame
     gridSince: 0,
@@ -60,8 +66,13 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       cues.subscribe((cue) => {
         const now = performance.now();
         if (cue.type === 'chat') tags.say(cue.playerId, cue.text);
-        else if (cue.type === 'player_action') energy.bump(TEAM, 0.06, now); // a burst of likes
-        else if (cue.type === 'celebration' && cue.effect !== RACE_CUES.lastLap && cue.effect !== RACE_CUES.won) energy.bump(TEAM, 0.15, now); // a gift
+        else if (cue.type === 'player_action') {
+          energy.bump(TEAM, 0.06, now); // a burst of likes
+          tags.emphasize(cue.playerId); // the viewer's own name lights up: their taps landed
+        } else if (cue.type === 'celebration' && cue.effect !== RACE_CUES.lastLap && cue.effect !== RACE_CUES.won) {
+          energy.bump(TEAM, 0.15, now); // a gift
+          if (cue.playerId) tags.emphasize(cue.playerId);
+        }
       }),
     [cues, tags, energy],
   );
@@ -80,6 +91,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     const racers = smoother.step(now, dtMs);
     const stage = smoother.stage;
     frame.current = { racers, stage };
+    gate.current = stage === 'grid' || stage === null;
     clock.tick(now, excitement(now, stage === 'racing')); // before the sound director reads it (it runs later)
     mood.current = excitement(now, stage === 'racing');
 
@@ -95,9 +107,12 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
         cues.emit({ type: 'celebration', effect: RACE_CUES.lastLap });
       }
     }
-    if (!r.winSounded && racers.some((racer) => racer.place === 1)) {
+    const winnerIndex = racers.findIndex((racer) => racer.place === 1);
+    if (!r.winSounded && winnerIndex >= 0) {
       r.winSounded = true;
       cues.emit({ type: 'celebration', effect: RACE_CUES.won });
+      const spot = trackPoint(shape, racers[winnerIndex]!.distance, laneOffset(winnerIndex, racers.length));
+      fx.current?.burst(spot.x, spot.z); // confetti over the winner
     }
     if (stage !== r.previousStage) {
       if (stage === 'grid' || stage === null) r.gridSince = now;
@@ -112,6 +127,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
 
     // The camera: an arc round the grid before the start, then a chase behind the leaders, then a wider view on the winner.
     let target;
+    let fov = CHASE_FOV;
     if (subjects.length === 0 || stage === 'grid' || stage === null) {
       target = gridCamera(shape, (now - r.gridSince) / 1000);
     } else {
@@ -120,7 +136,11 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       r.focus = r.focus
         ? { x: damp(r.focus.x, focus.x, 7, dt), z: damp(r.focus.z, focus.z, 7, dt), heading: dampAngle(r.focus.heading, focus.heading, 4, dt) }
         : focus;
-      target = chaseCamera(r.focus, stage === 'finished' ? WIDE : CHASE);
+      // The last stretch: the camera drops in close and low behind the leaders, and the view tightens.
+      const leader = racers.reduce((best, racer) => Math.max(best, racer.distance), 0);
+      const chase = chaseFor(view ? view.laps * view.lapLength - leader : Infinity);
+      target = chaseCamera(r.focus, stage === 'finished' ? WIDE : chase.tuning);
+      fov = stage === 'finished' ? CHASE_FOV : chase.fov;
     }
     if (stage === 'grid' || stage === null) r.focus = null;
     if (!r.ready) {
@@ -134,7 +154,22 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     }
     state.camera.position.copy(r.position);
     state.camera.lookAt(r.look);
+    const camera = state.camera as THREE.PerspectiveCamera;
+    if (Math.abs(camera.fov - fov) > 0.01) {
+      camera.fov = damp(camera.fov, fov, 3, dt);
+      camera.updateProjectionMatrix();
+    }
     state.camera.updateMatrixWorld();
+
+    // The sun's shadow follows the action: its light and target ride along with the camera's focus.
+    const light = sun.current;
+    const target3 = sunTarget.current;
+    if (light && target3) {
+      const centre = r.focus ?? trackPoint(shape, 0);
+      target3.position.set(centre.x, 0, centre.z);
+      light.position.set(centre.x + 26, 55, centre.z + 20);
+      light.target.updateMatrixWorld();
+    }
 
     // Name tags follow the horses: the tag layer is told where each one is on the stage every frame.
     const ids = racers.map((racer) => racer.id).join('|');
@@ -156,8 +191,27 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       <color attach="background" args={['#a8d4f0']} />
       <fog attach="fog" args={['#a8d4f0', 140, 420]} />
       <hemisphereLight args={['#ffffff', '#6a8a5a', 1.5]} />
-      <directionalLight position={[40, 70, 30]} intensity={1.8} color="#fff1d6" />
-      <Course excitement={mood} />
+      <object3D ref={sunTarget} />
+      <directionalLight
+        ref={(light) => {
+          sun.current = light;
+          if (light && sunTarget.current) light.target = sunTarget.current;
+        }}
+        position={[40, 70, 30]}
+        intensity={1.8}
+        color="#fff1d6"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-28}
+        shadow-camera-right={28}
+        shadow-camera-top={28}
+        shadow-camera-bottom={-28}
+        shadow-camera-near={10}
+        shadow-camera-far={140}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.05}
+      />
+      <Course excitement={mood} gateUp={gate} />
       <Boundary label="scenery" fallback={null}>
         <Suspense fallback={null}>
           <Scenery />
@@ -166,6 +220,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       <Boundary label="horses" fallback={null}>
         <Suspense fallback={null}>
           <Horses frame={frame} />
+          <RaceEffects frame={frame} fxRef={fx} />
         </Suspense>
       </Boundary>
       {audio && (

@@ -18,6 +18,8 @@ clothes, cap and saddle cloth) with the racer's colour, while **`Details`** (man
 colours. Each horse gets its own copies of the two tinted materials; every horse is four draw calls. The model is in the pack's own units, so the scene
 scales it by `HORSE_SCALE` (0.3).
 
+Effects (all code, no assets): hoof dust, speed streaks behind boosted horses and the winner's confetti are fixed-size particle pools drawn as three instanced meshes (`RaceEffects.tsx`, `particles.ts`); a sun shadow follows the leaders (cast by the horses' coats and the jockeys' silks only); a boosted jockey glows in his silks colour; the camera drops in close and low over the last 70 m (`camera.ts`).
+
 Third-party sources, their licences and what we changed are in `THIRD_PARTY_NOTICES.md` and `assets/third-party/`. Rebuild the horse with `pnpm assets:build`
 (it needs the vendored `Horse.blend`).
 

@@ -57,15 +57,15 @@ function Skyline() {
 }
 
 /** The racecourse: a dirt track on grass with white rails, a start line, a pond in the infield, stands and a skyline. */
-export function Course({ excitement }: { excitement: { current: number } }) {
+export function Course({ excitement, gateUp }: { excitement: { current: number }; gateUp: { current: boolean } }) {
   const line = trackPoint(shape, 0);
   return (
     <>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[600, 600]} />
         <meshStandardMaterial color="#3f8a45" />
       </mesh>
-      <Parcours />
+      <Parcours gateUp={gateUp} />
       {/* the start and finish line across the track, with a chequered edge */}
       <mesh position={[line.x, 0.06, line.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2 * TRACK_HALF_WIDTH, 1.2]} />

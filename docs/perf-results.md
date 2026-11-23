@@ -163,3 +163,13 @@ After the jockey, spectator and racing-surface upgrade (same day): a more detail
 | Gift burst | 1080x1920 | 60.0 | 55.9 | 17.7 ms | 107 | 215 k |
 
 Still 60 FPS, and under the 150 draw-call budget, but with less headroom (131 at most). Anything more should merge meshes or drop detail first.
+
+After the finish, dust, shadow and boost effects (2026-11-24): hoof dust behind every galloping horse, speed streaks behind boosted ones, the winner's confetti, a close low run-in camera over the last 70 m, the winner banner, a real sun shadow that follows the leaders (cast only by the horses' coats and the jockeys' silks), and a glow on boosted jockeys. Dust, streaks and confetti are three instanced meshes with fixed-size particle pools.
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Draw calls | Triangles |
+|---|---|---|---|---|---|---|
+| Default | 1080x1920 | 60.0 | 53.5 | 18.1 ms | 146 | 241 k |
+| Default | 720x1280 | 60.0 | 53.5 | 18.2 ms | 134 | 241 k |
+| Gift burst | 1080x1920 | 59.9 | 53.5 | 18.0 ms | 125 | 241 k |
+
+Still 60 FPS, and just under the 150 draw-call budget at the busiest moment (the count includes the shadow pass, and varies with how much of the course the camera sees). **There is no headroom left in draw calls:** any further detail should first merge meshes (for example the spectator parts, the rails and the horses' four meshes) or drop something. Not measured on a weaker GPU.

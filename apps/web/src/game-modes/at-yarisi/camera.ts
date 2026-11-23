@@ -74,3 +74,23 @@ export function gridCamera(shape: TrackShape, seconds: number): CameraPose {
     lookAt: [start.x, 1, start.z - 4],
   };
 }
+
+/** Close and low for the last stretch: the camera drops in behind the leaders and the view tightens as the line comes. */
+export const RUN_IN: ChaseTuning = { behind: 14, height: 7.5, ahead: 11 };
+export const CHASE_FOV = 52;
+export const RUN_IN_FOV = 42;
+
+const smooth = (t: number) => t * t * (3 - 2 * t);
+const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/**
+ * The chase framing for a leader `remaining` metres from the finish line: the normal chase far away, the close low run-in over the last
+ * `window` metres (blended smoothly), and the matching field of view.
+ */
+export function chaseFor(remaining: number, window = 70): { tuning: ChaseTuning; fov: number } {
+  const t = smooth(Math.min(1, Math.max(0, (window - remaining) / window)));
+  return {
+    tuning: { behind: mix(CHASE.behind, RUN_IN.behind, t), height: mix(CHASE.height, RUN_IN.height, t), ahead: mix(CHASE.ahead, RUN_IN.ahead, t) },
+    fov: mix(CHASE_FOV, RUN_IN_FOV, t),
+  };
+}

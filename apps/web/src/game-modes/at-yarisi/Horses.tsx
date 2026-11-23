@@ -25,7 +25,6 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
   const gltf = useLoader(GLTFLoader, MODEL_URLS.horse);
   const player = useClipPlayer(gltf, horseModels);
   const group = useRef<THREE.Group>(null);
-  const blob = useRef<THREE.Mesh>(null);
   const glow = useRef<THREE.Mesh>(null);
   const shownId = useRef<string | null>(null);
   const victoryAt = useRef<number | null>(null);
@@ -37,7 +36,7 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
     player.object.traverse((node) => {
       const mesh = node as THREE.Mesh;
       if (!mesh.isMesh) return;
-      mesh.castShadow = false;
+      mesh.castShadow = mesh.name === 'Coat' || mesh.name === 'Silks'; // the sun's real shadow (see Scene): only the horse and the jockey's silks cast it, which is all it takes to read
       if (mesh.name === 'Coat' || mesh.name === 'Silks') {
         // Idempotent (React may run this twice): keep the copy already made for this mesh.
         const own = (mesh.userData.tint as THREE.MeshStandardMaterial | undefined) ?? (mesh.material as THREE.MeshStandardMaterial).clone();
@@ -55,7 +54,6 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
     const root = group.current;
     if (!root) return;
     root.visible = racer !== undefined;
-    if (blob.current) blob.current.visible = racer !== undefined;
     if (glow.current) glow.current.visible = racer !== undefined;
     if (!racer) {
       shownId.current = null;
@@ -67,12 +65,12 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
       victoryAt.current = null;
       materials.coat?.color.set(coatOf(racer.id));
       materials.silks?.color.set(racerColor(racer.id));
+      materials.silks?.emissive.set(racerColor(racer.id));
     }
+    materials.silks?.setValues({ emissiveIntensity: Math.min(0.9, racer.boost * 1.2) }); // a boosted jockey glows in his own colours
     const point = trackPoint(shape, racer.distance, laneOffset(index, racers.length));
     root.position.set(point.x, 0, point.z);
     root.rotation.y = point.heading;
-    if (blob.current) blob.current.position.set(point.x, 0.07, point.z);
-    if (blob.current) blob.current.rotation.set(-Math.PI / 2, 0, point.heading);
     if (glow.current) {
       glow.current.position.set(point.x, 0.08, point.z);
       (glow.current.material as THREE.MeshBasicMaterial).opacity = Math.min(0.85, racer.boost * 1.4);
@@ -102,10 +100,6 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
           <primitive object={player.object} />
         </group>
       </group>
-      <mesh ref={blob} visible={false}>
-        <circleGeometry args={[1.5, 16]} />
-        <meshBasicMaterial color="#000000" transparent opacity={0.28} depthWrite={false} />
-      </mesh>
       <mesh ref={glow} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.6, 2.2, 22]} />
         <meshBasicMaterial color="#ffd35a" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
