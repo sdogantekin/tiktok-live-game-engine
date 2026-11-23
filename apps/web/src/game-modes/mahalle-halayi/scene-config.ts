@@ -142,6 +142,7 @@ export const brideModels = sideStepper('bride');
 export const groomModels = sideStepper('groom');
 export const davulModels = beatLoop('davul_play', 1, 'davulcu');
 export const zurnaModels = beatLoop('zurna_play', 2, 'zurnaci');
+export const sazModels = beatLoop('saz_play', 1, 'sazci');
 
 export interface Placed {
   piece: string;
@@ -172,7 +173,7 @@ export const courtyardLayout: readonly Placed[] = [
 ];
 
 export interface Performer {
-  look: 'bride' | 'groom' | 'davulcu' | 'zurnaci';
+  look: 'bride' | 'groom' | 'davulcu' | 'zurnaci' | 'sazci';
   position: Vec3;
   rotationY: number;
   /** Walks a circle round `centre` while facing it (their halay is a ring of two); `phase` is the start angle. */
@@ -191,9 +192,9 @@ export const couple: readonly Performer[] = [
   { look: 'groom', position: [0, 0, FLOOR_CENTER_Z], rotationY: 0, scale: 1.2, orbit: { ...COUPLE_ORBIT, phase: -1.14 } }, // ~1.1 m apart: their slightly larger arms meet in between
 ];
 
-/** Traditional wedding musicians on the stage: two zurna players around the davul. */
+/** Traditional wedding musicians on the stage: a saz player and a zurna player on either side of the davul. */
 export const musicians: readonly Performer[] = [
-  { look: 'zurnaci', position: [-1.9, 0.5, -7.5], rotationY: 0.15 },
+  { look: 'sazci', position: [-1.9, 0.5, -7.5], rotationY: 0.15 },
   { look: 'davulcu', position: [0, 0.5, -7.3], rotationY: 0 },
   { look: 'zurnaci', position: [1.9, 0.5, -7.5], rotationY: -0.15 },
 ];

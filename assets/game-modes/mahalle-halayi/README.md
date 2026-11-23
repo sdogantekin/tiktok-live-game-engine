@@ -47,7 +47,7 @@ is a draft only and must pass the checklist below.
 |---|---|---|---|
 | `character_gelin.glb`, `character_damat.glb` | Team dancers on one rigged toy character (12 bones) | ~500 each | Clips: `idle`, `step_left`, `step_right`, `halay_kick`, `jump`, `dance_a`, `dance_b`, `rose_special`. One skinned mesh, one draw call. |
 | `character_bride.glb`, `character_groom.glb` | The couple, side by side on their own small circle | ~550 each | Clips: `idle`, `step_left`, `step_right` (the same linked side step as the lines). |
-| `character_davulcu.glb`, `character_zurnaci.glb` | Traditional musicians; the davul and zurna are part of the mesh | ~800 each | Clips: `idle`, `davul_play` (1 beat), `zurna_play` (2 beats). |
+| `character_davulcu.glb`, `character_zurnaci.glb`, `character_sazci.glb` | Traditional musicians; the davul, zurna and saz (bağlama) are part of the mesh | ~800-900 each | Clips: `idle`, `davul_play` (1 beat), `zurna_play` (2 beats), `saz_play` (1 beat, four strums). |
 | `crowd.glb` | `CrowdBody` (tinted per instance) and `CrowdHead` | ~120 | Drawn with instancing. |
 | `courtyard.glb` | Kit pieces: plaza, dance floor, 3 houses, lamp, 2 banners, stage, wedding arch, planter | ~3.1 k | Each piece is a named node with its origin on the ground. |
 

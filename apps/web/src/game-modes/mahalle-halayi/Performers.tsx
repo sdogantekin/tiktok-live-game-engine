@@ -7,13 +7,14 @@ import type { SlotsStore } from '../../game-renderer/avatar-store';
 import { useClipPlayer } from '../../game-renderer/model-utils';
 import type { AvatarModels } from '../../game-renderer/types';
 import { MODEL_URLS } from './assets.manifest';
-import { brideModels, couple, davulModels, groomModels, type Performer, musicians, zurnaModels } from './scene-config';
+import { brideModels, couple, davulModels, groomModels, type Performer, musicians, sazModels, zurnaModels } from './scene-config';
 
 const MODELS: Readonly<Record<Performer['look'], AvatarModels>> = {
   bride: brideModels,
   groom: groomModels,
   davulcu: davulModels,
   zurnaci: zurnaModels,
+  sazci: sazModels,
 };
 
 function PerformerFigure({ performer, store }: { performer: Performer; store: SlotsStore }) {

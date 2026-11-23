@@ -43,9 +43,9 @@ test('the halay lines walk on the beat, with the couple and the traditional musi
   await expect
     .poll(async () => {
       const clips = (await perf(broadcast)).clipStarts;
-      return [(clips.step_left ?? 0) + (clips.step_right ?? 0), (clips.leader_step_left ?? 0) + (clips.leader_step_right ?? 0), clips.davul_play ?? 0, clips.zurna_play ?? 0].map((n) => n > 0);
+      return [(clips.step_left ?? 0) + (clips.step_right ?? 0), (clips.leader_step_left ?? 0) + (clips.leader_step_right ?? 0), clips.davul_play ?? 0, clips.zurna_play ?? 0, clips.saz_play ?? 0].map((n) => n > 0);
     }, { timeout: 15_000 })
-    .toEqual([true, true, true, true]);
+    .toEqual([true, true, true, true, true]);
 
   // Each line has a halaybaşı at both ends, marked on their name tags (two lines, two ends each).
   await expect.poll(() => broadcast.locator('.name-tag.leader').count()).toBe(4);

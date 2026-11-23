@@ -48,6 +48,7 @@ LOOKS = {
     "bride": {"kind": "bride", "clothes": "#ffffff", "trousers": "#ffffff", "skin": "#f1c9a5", "clips": "couple"},
     "groom": {"kind": "groom", "clothes": "#1d1d27", "trousers": "#1d1d27", "skin": "#e8bd98", "clips": "couple"},
     "davulcu": {"kind": "musician", "clothes": "#f4efe6", "trousers": "#27344f", "skin": "#e1b48d", "vest": "#8c2f39", "sash": "#c8a63a", "fez": "#b3261e", "instrument": "davul", "clips": "davul"},
+    "sazci": {"kind": "musician", "clothes": "#f4efe6", "trousers": "#27344f", "skin": "#dcae86", "vest": "#1f5f7a", "sash": "#d8a23a", "fez": "#2c3e50", "instrument": "saz", "clips": "saz"},
     "zurnaci": {"kind": "musician", "clothes": "#f4efe6", "trousers": "#4a2b4f", "skin": "#d9a982", "vest": "#2e6b4f", "sash": "#d8702a", "fez": "#8c2f39", "instrument": "zurna", "clips": "zurna"},
 }
 
@@ -164,6 +165,17 @@ def build_mesh(look_name):
         m.limb((0, -0.62, 0.9), (0, -0.84, 0.74), 0.05, 0.15, "#d8a24a", "Head", segments=8)
         for side in (-1, 1):
             m.sphere((0.2 * side, -0.2, 1.12), 0.1, look["skin"], "Head", segments=6, rings=4)
+    if look.get("instrument") == "saz":
+        # the saz (bağlama): a deep pear-shaped bowl held across the chest, a long neck reaching out to the left
+        # (the left hand frets it), a headstock, a sound hole and strings; the right hand strums over the bowl
+        m.sphere((-0.02, -0.31, 0.72), 0.21, "#8a4b24", "Spine", segments=8, rings=6, scale=(1.0, 0.5, 1.2))
+        m.sphere((-0.02, -0.3, 0.55), 0.15, "#7a4120", "Spine", segments=8, rings=5, scale=(1.0, 0.5, 1.1))
+        m.sphere((-0.02, -0.355, 0.68), 0.06, "#1c1420", "Spine", segments=6, rings=4, scale=(1.0, 0.4, 1.0))  # sound hole
+        m.limb((0.12, -0.34, 0.9), (0.86, -0.4, 1.28), 0.04, 0.03, "#5a3418", "Spine", segments=5)  # neck
+        m.box((0.9, -0.41, 1.32), (0.1, 0.045, 0.17), "#3b2412", "Spine")  # headstock
+        m.limb((0.0, -0.37, 0.72), (0.88, -0.43, 1.3), 0.008, 0.008, "#e8e0c8", "Spine", segments=3)  # strings
+        for fret in (0.3, 0.45, 0.6):  # frets
+            m.box((0.12 + 0.74 * fret, -0.41 - 0.06 * fret, 0.9 + 0.38 * fret), (0.012, 0.03, 0.07), "#e8e0c8", "Spine")
 
     return m
 
@@ -264,6 +276,15 @@ CLIPS = {
         (10, {"Hips": (0, 0, 0, 0, 0, 0.0), "Spine": (0, 0, 0), "UpperArm.R": (-60, 0, 10), "LowerArm.R": (-20, 0, 0), "UpperArm.L": (-50, 0, -10), "LowerArm.L": (-60, 0, 0), "Head": (2, 0, 0)}),
         (13, {"Hips": (0, 0, 0, 0, 0, -0.04), "Spine": (6, 0, 0), "UpperArm.R": (-70, 0, 10), "LowerArm.R": (-25, 0, 0), "UpperArm.L": (-40, 0, -10), "LowerArm.L": (-60, 0, 0), "Head": (-4, 0, 0)}),
     ],
+    # Saz player: the left hand frets the long neck, the right hand strums over the bowl in quick down/up strokes (four per
+    # beat), with the body bouncing on the beat. One beat.
+    "saz_play": [
+        (1, {"Hips": (0, 0, 0, 0, 0, -0.03), "Spine": (4, 0, 2), "Head": (-3, 0, 0), "UpperArm.L": (-78, 0, -22), "LowerArm.L": (-18, 0, 0), "UpperArm.R": (-55, 0, 18), "LowerArm.R": (-45, 0, 0)}),
+        (4, {"Hips": (0, 0, 0, 0, 0, 0.0), "Spine": (2, 0, 0), "Head": (0, 0, 0), "UpperArm.L": (-78, 0, -22), "LowerArm.L": (-22, 0, 0), "UpperArm.R": (-55, 0, 18), "LowerArm.R": (-85, 0, 0)}),
+        (7, {"Hips": (0, 0, 0, 0, 0, -0.03), "Spine": (4, 0, -2), "Head": (-3, 0, 0), "UpperArm.L": (-78, 0, -22), "LowerArm.L": (-18, 0, 0), "UpperArm.R": (-55, 0, 18), "LowerArm.R": (-45, 0, 0)}),
+        (10, {"Hips": (0, 0, 0, 0, 0, 0.0), "Spine": (2, 0, 0), "Head": (0, 0, 0), "UpperArm.L": (-78, 0, -22), "LowerArm.L": (-22, 0, 0), "UpperArm.R": (-55, 0, 18), "LowerArm.R": (-85, 0, 0)}),
+        (13, {"Hips": (0, 0, 0, 0, 0, -0.03), "Spine": (4, 0, 2), "Head": (-3, 0, 0), "UpperArm.L": (-78, 0, -22), "LowerArm.L": (-18, 0, 0), "UpperArm.R": (-55, 0, 18), "LowerArm.R": (-45, 0, 0)}),
+    ],
     # Zurnaci: both hands up at the horn, head bobbing and body swaying with the tune. Two beats.
     "zurna_play": [
         (1, {"Hips": (0, 0, 0, 0.02, 0, -0.03), "Spine": (-4, 0, 3), "Head": (-6, 0, 3), "UpperArm.L": (-95, 0, -18), "UpperArm.R": (-95, 0, 18), "LowerArm.L": (-85, 0, 0), "LowerArm.R": (-85, 0, 0)}),
@@ -363,6 +384,7 @@ CLIP_SETS = {
     "couple": ["idle", "step_left", "step_right"],
     "davul": ["idle", "davul_play"],
     "zurna": ["idle", "zurna_play"],
+    "saz": ["idle", "saz_play"],
 }
 
 

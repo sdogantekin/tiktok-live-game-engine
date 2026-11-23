@@ -16,6 +16,7 @@ export const MODEL_URLS = {
     groom: `${MODEL_BASE}/character_groom.glb`,
     davulcu: `${MODEL_BASE}/character_davulcu.glb`,
     zurnaci: `${MODEL_BASE}/character_zurnaci.glb`,
+    sazci: `${MODEL_BASE}/character_sazci.glb`,
   },
   crowd: `${MODEL_BASE}/crowd.glb`,
   courtyard: `${MODEL_BASE}/courtyard.glb`,
@@ -35,6 +36,7 @@ export const CHARACTER_CLIPS: Readonly<Record<keyof typeof MODEL_URLS.characters
   groom: ['idle', 'step_left', 'step_right'],
   davulcu: ['idle', 'davul_play'],
   zurnaci: ['idle', 'zurna_play'],
+  sazci: ['idle', 'saz_play'],
 };
 export const CHARACTER_BONES = 12;
 

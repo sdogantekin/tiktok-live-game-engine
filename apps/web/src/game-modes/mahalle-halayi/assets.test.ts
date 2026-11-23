@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BUDGETS, CHARACTER_BONES, CHARACTER_CLIPS, COURTYARD_PIECES, CROWD_NODES, MODEL_URLS } from './assets.manifest';
 import { readGlb } from './glb-info';
-import { avatarModels, brideModels, courtyardLayout, davulModels, groomModels, zurnaModels } from './scene-config';
+import { avatarModels, brideModels, courtyardLayout, davulModels, groomModels, sazModels, zurnaModels } from './scene-config';
 
 const file = (url: string) => new URL(`../../../public${url}`, import.meta.url);
 
@@ -80,6 +80,7 @@ describe('asset set', () => {
       { models: groomModels, looks: ['groom'] },
       { models: davulModels, looks: ['davulcu'] },
       { models: zurnaModels, looks: ['zurnaci'] },
+      { models: sazModels, looks: ['sazci'] },
     ] as const;
     for (const { models, looks } of configs) {
       for (const look of looks) {
