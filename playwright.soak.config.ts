@@ -16,7 +16,8 @@ export default defineConfig({
     channel: 'chrome',
     headless: false,
     launchOptions: {
-      args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'],
+      // The autoplay flag lets the game's audio really play during the run (Chrome otherwise keeps it suspended).
+      args: ['--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required'],
     },
   },
   webServer: {

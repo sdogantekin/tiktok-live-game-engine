@@ -76,7 +76,9 @@ Columns: average FPS · 1%-low FPS · frame ms p50/p95/p99/max · share of frame
 
 Even with **200 individually animated, skinned characters and a 400-figure crowd** (4× the planned draw calls and 4× the triangles), the frame rate held at 60 FPS. There was no knee within what I could test, so the real limit on this machine is higher than this.
 
-**Re-run after Step 1.9 (2026-11-23, beat-synced lines, bride and groom, traditional musicians):** the default scene is now 93 draw calls and 55 k triangles with ~0.2 ms mixer time; the 200-avatar + 200-crowd stress case runs at 59.9 FPS (1% low 56.5 FPS, frame p95 17.2 ms), latency p95 85 ms. The raw numbers are in `docs/perf/browser-results.json`.
+**Re-run after Steps 1.9 and 1.10 (2026-11-23: beat-synced lines, two halaybaşı per line, couple, musicians including the saz player, the sound engine, and the game's music file streaming, with Chrome's autoplay flag so audio really played):**
+- **Browser test:** 59.5–60 FPS in all 20 configurations (frame p95 about 18 ms), up to 200 individually animated avatars plus a 200-figure crowd (437 draw calls, 217 k triangles); the default scene is 93 draw calls and 56 k triangles with about 0.2 ms of animation-mixer time; latency p95 81–87 ms. The first attempt showed 30.0 FPS for its first 13 measurements and then 60 FPS: exactly 30 is what a throttled or occluded window produces (not a rendering cost); a second run was 60 FPS throughout, as was the soak.
+- **30-minute soak at 200 participants, with the music file playing:** FPS 59.4 to 59.9 (median 59.9), worst slow-frame share 0.45%, latency p95 85 ms; server memory 32.8 to 32.6 MB (-0.09 MB/min, so no growth), browser heap 26.7 to 26.4 MB (-0.02 MB/min); graphics resources constant (41 geometries, 33 textures); phases active, countdown and results all seen. Raw data: `docs/perf/soak.json`, `docs/perf/browser-results.json`.
 
 ## Findings
 

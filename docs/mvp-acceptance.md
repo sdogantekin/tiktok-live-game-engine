@@ -1,6 +1,6 @@
 # MVP acceptance (Product Phase 1)
 
-> **Status (2026-11-23):** reopened. After the first playtest, Steps 1.9 (living halay, bride and groom, traditional musicians) and 1.10 (sound) were added to Product Phase 1; this checklist is re-signed when both are done. The results below are from before those steps.
+> **Status (2026-11-23):** reopened. After the first playtest, Steps 1.9 (living halay, bride and groom, traditional musicians) and 1.10 (sound) were added to Product Phase 1; this checklist is re-signed when both are done. Both steps are built and verified (unit and end-to-end tests, a 30-minute soak and a browser performance run, see `docs/perf-results.md`), and are waiting for your acceptance; the table below still shows the earlier evidence.
 
 Checklist for `REQUIREMENTS.md` §11, with the evidence behind each line. "Met" means the evidence exists and was run; anything not verified is said so.
 
