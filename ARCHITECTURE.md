@@ -189,6 +189,9 @@ The backend processes domain actions and owns the canonical state. The frontend 
 
 ## 6. Event model and processing
 
+### TikTok provider (Product Phase 2)
+`apps/server/src/providers/tiktok/` is our own adapter: it turns untrusted TikTok chat and gift messages into normalized events, counts a gift streak once, classifies connection failures (offline, unknown username, signing service, rate limit, blocked, network) with a retry wait per reason, and can always be stopped. The unofficial `tiktok-live-connector` library sits behind a small port (`connection.ts`) and is loaded only when a connection is made, so the simulator and the tests never load it. A `ProviderHub` (`realtime/provider-hub.ts`) keeps exactly one provider in charge and feeds the HUD's `providerInfo`. Enabled only by `TIKTOK_LIVE=on`.
+
 ### Provider boundary
 
 Provider adapters translate provider-specific payloads into normalized application events. The core engine must not import provider SDK or connector types.

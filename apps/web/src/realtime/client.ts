@@ -10,6 +10,7 @@ import {
   RosterDeltaSchema,
   SOCKET_EVENTS,
   type SimulatorCommand,
+  type TikTokCommand,
   type SocketNamespace,
 } from '@live-game/contracts';
 import { createRealtimeStore, type RealtimeStore } from './store';
@@ -17,7 +18,7 @@ import { createRealtimeStore, type RealtimeStore } from './store';
 export interface RealtimeClient {
   store: RealtimeStore;
   /** Operator namespace only. Never rejects: failures come back as `{ ok: false }`. */
-  send(command: OperatorCommand | SimulatorCommand): Promise<OperatorAck>;
+  send(command: OperatorCommand | SimulatorCommand | TikTokCommand): Promise<OperatorAck>;
   /** Raw presentation batches as they arrive, for the 3D scene (the store only keeps notable cues). */
   onPresentation(listener: (batch: PresentationBatch) => void): () => void;
   close(): void;

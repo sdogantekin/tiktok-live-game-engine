@@ -38,10 +38,23 @@ The broadcast page plays original synthesised music and effects (a halay in a Hi
 
 - **One click to unlock.** Browsers keep audio silent until the page has had a click or key press. The broadcast page shows a small "Sesi açmak için dokun" hint until then; click once anywhere (or start Chrome with `--autoplay-policy=no-user-gesture-required` for an unattended capture machine).
 - **Keep the page visible.** Browsers slow background tabs; if the broadcast window is hidden or minimised, the dancers and the music both stall. Keep it on screen (or on its own display).
+- **Music on a public TikTok LIVE:** TikTok's Music Terms say recorded music you do not own may be used in a LIVE only with all rights and permissions, and TikTok Sounds are not allowed in a LIVE (see `docs/tiktok-live-feasibility.md`). Use the built-in music, or a file the game producer has cleared, for any public stream.
 - **Music file or built-in music.** The game's default music is its supplied file (`halay.mp3`, not committed to the repository); if the file is missing or fails to load the built-in synthesised music plays instead.
 - **Mute and volume** are in the operator panel (Sound). The server holds them, so every broadcast view agrees and a refresh keeps them. While muted the broadcast shows no unlock hint.
 - **Capturing the sound into a stream** (how TikTok LIVE Studio or another capture tool hears this browser window) is a Product Phase 2 question; it is not solved here.
 - **What is checked automatically:** the music and effects are rendered offline in Chrome and measured (audible, no clipping, peak under 0.99, loud but not wild at high energy, an effect storm still under the limit), and the scheduling logic is unit-tested. **Whether it sounds good is a human judgement** that no test can make: please listen.
+
+## Reading a real TikTok LIVE (Product Phase 2)
+
+Off by default, on purpose. Reading a stream uses unofficial access that conflicts with TikTok's Terms of Service; you accepted that risk (`docs/tiktok-live-feasibility.md`).
+
+1. **Start the server with it enabled:** `TIKTOK_LIVE=on pnpm start` (or put `TIKTOK_LIVE=on` in `.env`). The server logs that it is enabled. Optionally add `EULER_API_KEY=...` to `.env` (the signing service's key, which raises its free rate limits; a secret, never commit it, never shared).
+2. **In the operator page, TikTok LIVE panel:** type the creator's username (the name after the `@` in the profile address, not the display name; a pasted profile or live URL works), then **Connect TikTok**. The simulator is switched off first: one provider per run, so simulated players can never appear on a real stream, and the simulator cannot be switched back on until you press **Disconnect TikTok**.
+3. **What it shows:** `connecting`, `connected` (with live comment and gift counts), `waiting` (the creator is not live, the connection dropped, or the signing service is down: it retries on its own and says why and when), `failed` (a username TikTok does not know: no retry), `stopped`.
+4. **The kill switch is Disconnect TikTok:** it stops reading at once, cancels every retry and ignores anything still in flight.
+5. **What it reads:** comments (they join teams and trigger actions exactly like simulated ones) and gifts (a finished streak counts once; gifts stay cosmetic). It reads only: it never posts, never logs in, and never uses a session cookie.
+6. **Gift tiers are placeholders** (`apps/server/src/providers/tiktok/gift-map.ts`): `Rose` and `GG` by name, otherwise by value; the real mapping is a product decision.
+7. **Not yet verified against a real stream:** latency, rate limits, reconnection, that real messages carry their ids, and getting the broadcast view into LIVE Studio. These are the Step 2.5 private-test checks.
 
 ## If something looks wrong
 

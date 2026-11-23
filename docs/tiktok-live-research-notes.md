@@ -1,6 +1,6 @@
 # TikTok LIVE access: preliminary research notes
 
-**Status:** preliminary desk research, not the Step 2.0 feasibility report (see `PLAN.md` §12).
+**Status:** preliminary desk research of 2026-11-22. **Superseded by the Step 2.0 feasibility report, `docs/tiktok-live-feasibility.md` (2026-11-23).**
 **Researched:** 2026-11-22, from web searches and page reads only. No connector code was written and no TikTok account or API was touched.
 **Confidence key:** *confirmed* = read on the source page; *single source* = one page, not cross-checked; *inference* = my reasoning, not stated by a source; *not verified* = could not be checked.
 

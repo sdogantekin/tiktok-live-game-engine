@@ -67,6 +67,18 @@ export type OperatorCommand = z.infer<typeof OperatorCommandSchema>;
 
 const ViewerRefSchema = z.string().min(1).max(64);
 
+/**
+ * Operator commands addressed to the TikTok LIVE provider. Only the operator can send them; the provider is read-only
+ * (it never posts, never uses a session) and the server must be started with it enabled.
+ */
+export const TikTokCommandSchema = z.discriminatedUnion('type', [
+  /** Starts reading a creator's LIVE (the simulator is switched off first: one provider per run). */
+  z.object({ type: z.literal('tiktok_connect'), username: z.string().min(1).max(200) }),
+  /** The kill switch: stops reading at once and cancels any retry. */
+  z.object({ type: z.literal('tiktok_disconnect') }),
+]);
+export type TikTokCommand = z.infer<typeof TikTokCommandSchema>;
+
 /** Operator commands addressed to the local simulator provider (not the game engine). */
 export const SimulatorCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sim_connect') }),

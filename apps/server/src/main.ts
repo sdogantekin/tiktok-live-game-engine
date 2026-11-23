@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { loadConfig } from './config';
 import { getGameMode } from './game-modes/registry';
 import { generateOperatorToken } from './operator/auth';
+import { createLibraryConnectionFactory } from './providers/tiktok/connection';
 import { createGameServer } from './realtime/socket-server';
 
 const config = loadConfig();
@@ -14,7 +15,16 @@ if (webDir && !existsSync(join(webDir, 'index.html'))) {
   process.exit(1);
 }
 
-const server = createGameServer({ mode: getGameMode('mahalle-halayi'), operatorToken, staticDir: webDir });
+const server = createGameServer({
+  mode: getGameMode('mahalle-halayi'),
+  operatorToken,
+  staticDir: webDir,
+  tiktok: {
+    enabled: config.tiktokEnabled,
+    connect: createLibraryConnectionFactory({ signApiKey: config.signApiKey }),
+    log: (line) => console.log(line),
+  },
+});
 
 server.http.listen(config.port, config.host, () => {
   const origin = `http://${config.host}:${config.port}`;
@@ -23,6 +33,11 @@ server.http.listen(config.port, config.host, () => {
     console.log(`[server] serving the built web app from ${webDir}`);
     console.log(`[server] broadcast view: ${origin}/broadcast/`);
   }
+  console.log(
+    config.tiktokEnabled
+      ? '[server] TikTok LIVE reading is ENABLED (read-only, unofficial access; the operator can stop it at any time)'
+      : '[server] TikTok LIVE reading is off (start with TIKTOK_LIVE=on to allow it)',
+  );
   if (!config.operatorToken) {
     console.log(`[server] operator token (this run only): ${operatorToken}`);
     // In development the pages come from Vite on 5173; in production the server serves them itself.

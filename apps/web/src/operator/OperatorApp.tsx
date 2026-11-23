@@ -1,4 +1,4 @@
-import type { OperatorCommand, SimulatorCommand } from '@live-game/contracts';
+import type { OperatorCommand, SimulatorCommand, TikTokCommand } from '@live-game/contracts';
 import { useCallback, useState } from 'react';
 import { useNow, useRealtime, useRealtimeClient } from '../realtime/react';
 import { formatClock, remainingMs } from '../realtime/time';
@@ -6,9 +6,10 @@ import { EventFeed } from './EventFeed';
 import { GameControls, Scoreboard } from './GameControls';
 import { PlayersPanel } from './PlayersPanel';
 import { SimulatorPanel } from './SimulatorPanel';
+import { TikTokPanel } from './TikTokPanel';
 import { SoundPanel } from './SoundPanel';
 
-export type RunCommand = (command: OperatorCommand | SimulatorCommand) => void;
+export type RunCommand = (command: OperatorCommand | SimulatorCommand | TikTokCommand) => void;
 
 const CONNECTION_LABEL = {
   connecting: 'Connecting…',
@@ -74,6 +75,7 @@ export function OperatorApp() {
           <GameControls run={run} />
           <SoundPanel run={run} />
           <Scoreboard />
+          <TikTokPanel run={run} />
           <SimulatorPanel run={run} />
         </div>
         <div className="column">

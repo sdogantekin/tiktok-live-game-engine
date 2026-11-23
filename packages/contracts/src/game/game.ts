@@ -48,6 +48,21 @@ export type RoundResult = z.infer<typeof RoundResultSchema>;
 export const ProviderStatusSchema = z.enum(['none', 'connected', 'disconnected']);
 export type ProviderStatus = z.infer<typeof ProviderStatusSchema>;
 
+/** What the active event provider is doing, in words an operator can read. The simulator and a real provider both fill it. */
+export const ProviderInfoSchema = z.object({
+  kind: z.enum(['simulator', 'tiktok']),
+  /** Short machine-friendly state, e.g. `connected`, `waiting`, `failed`. */
+  state: z.string().min(1).max(32),
+  /** One plain sentence for the operator (never contains a credential). */
+  message: z.string().max(300),
+  /** The stream being read, for a real provider. */
+  username: z.string().max(64).optional(),
+  /** Counters for the operator: comments and gifts the provider has handed to the engine. */
+  comments: z.number().int().nonnegative().optional(),
+  gifts: z.number().int().nonnegative().optional(),
+});
+export type ProviderInfo = z.infer<typeof ProviderInfoSchema>;
+
 /** Sound settings held by the server (so every broadcast view agrees and they survive a refresh). */
 export const SoundSettingsSchema = z.object({
   muted: z.boolean(),
@@ -72,6 +87,7 @@ export const HudStateSchema = z.object({
   /** Time left in the frozen phase while paused; null otherwise. */
   remainingMs: z.number().int().nonnegative().nullable(),
   providerStatus: ProviderStatusSchema,
+  providerInfo: ProviderInfoSchema.optional(),
   sound: SoundSettingsSchema,
   teams: z.array(TeamStandingSchema),
   lastResult: RoundResultSchema.nullable(),

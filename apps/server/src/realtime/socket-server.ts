@@ -13,6 +13,10 @@ import type { GameMode } from '../core/mode';
 import { isValidOperatorToken } from '../operator/auth';
 import { handleOperatorMessage } from '../operator/commands';
 import { SimulatorProvider, type SimulatorProviderOptions } from '../providers/simulator/provider';
+import type { ConnectionFactory } from '../providers/tiktok/connection';
+import type { GiftMap } from '../providers/tiktok/gift-map';
+import { TikTokProvider } from '../providers/tiktok/provider';
+import { ProviderHub } from './provider-hub';
 import { Histogram } from '../core/metrics';
 import { Publisher } from './publisher';
 import { createStaticHandler } from './static-files';
@@ -27,6 +31,11 @@ export interface GameServerOptions {
   stateMs?: number;
   maxActionsPerBatch?: number;
   simulator?: Pick<SimulatorProviderOptions, 'seed' | 'joinSpreadMs'>;
+  /**
+   * TikTok LIVE provider. Off unless `enabled` is true (the server is started with `TIKTOK_LIVE=on`); it reads a public
+   * stream only, with no login or session, and the operator can stop it at any time.
+   */
+  tiktok?: { enabled: boolean; connect?: ConnectionFactory; giftMap?: GiftMap; log?: (line: string) => void };
   /** Directory of the built web app to serve (production mode). Omit in development, where Vite serves the pages. */
   staticDir?: string;
   onError?: (error: unknown) => void;
@@ -76,22 +85,46 @@ export function createGameServer(options: GameServerOptions) {
 
   // Provider events are queued immediately and drained once per macrotask, so a burst is one drain pass.
   let drainScheduled = false;
+  const deliver = (raw: unknown) => {
+    engine.ingest(raw);
+    if (!drainScheduled) {
+      drainScheduled = true;
+      setImmediate(() => {
+        drainScheduled = false;
+        engine.drain();
+      });
+    }
+  };
+
+  // Exactly one provider is in charge at a time (the simulator or TikTok LIVE); the hub keeps it that way and reports it.
+  const hubRef: { current?: ProviderHub } = {};
   const simulator = new SimulatorProvider({
     ...options.simulator,
     now: () => clock.now(),
-    emit: (raw) => {
-      engine.ingest(raw);
-      if (!drainScheduled) {
-        drainScheduled = true;
-        setImmediate(() => {
-          drainScheduled = false;
-          engine.drain();
-        });
-      }
-    },
-    onStatusChange: (status) => engine.state.setProviderStatus(status),
+    emit: deliver,
+    onStatusChange: () => hubRef.current?.refresh(),
   });
-  engine.state.setProviderStatus(simulator.status);
+  const tiktok = new TikTokProvider({
+    enabled: options.tiktok?.enabled ?? false,
+    connect:
+      options.tiktok?.connect ??
+      (() => {
+        throw new Error('no TikTok connection factory was configured');
+      }),
+    giftMap: options.tiktok?.giftMap,
+    now: () => clock.now(),
+    log: options.tiktok?.log,
+    emit: (event) => deliver(event),
+    onChange: () => hubRef.current?.refresh(),
+  });
+  const hub = new ProviderHub({
+    simulator,
+    tiktok,
+    setStatus: (status) => engine.state.setProviderStatus(status),
+    setInfoSource: (source) => engine.state.setProviderInfoSource(source),
+  });
+  hubRef.current = hub;
+  hub.refresh();
 
   const greet = (socket: { emit: (event: string, payload: unknown) => void }, namespace: SocketNamespace) => {
     socket.emit(SOCKET_EVENTS.hello, HelloSchema.parse({ status: 'ok', namespace, serverTime: clock.now() }));
@@ -110,7 +143,7 @@ export function createGameServer(options: GameServerOptions) {
   });
   operator.on('connection', (socket) => {
     socket.on(SOCKET_EVENTS.operatorCommand, (raw: unknown, ack?: unknown) => {
-      const result = handleOperatorMessage(raw, { engine, simulator });
+      const result = handleOperatorMessage(raw, { engine, hub });
       if (typeof ack === 'function') ack(result);
     });
     greet(socket, SOCKET_NAMESPACES.operator);
@@ -145,10 +178,13 @@ export function createGameServer(options: GameServerOptions) {
     io,
     engine,
     simulator,
+    tiktok,
+    hub,
     metrics,
     async close() {
       clearInterval(heartbeat);
       simulator.stop();
+      tiktok.stop();
       await io.close();
     },
   };

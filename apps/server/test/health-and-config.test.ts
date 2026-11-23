@@ -5,8 +5,17 @@ import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules'
 import { createGameServer, type GameServer } from '../src/realtime/socket-server';
 
 describe('config', () => {
-  it('defaults to loopback:3001 with no preset operator token', () => {
-    expect(loadConfig({})).toEqual({ host: '127.0.0.1', port: 3001 });
+  it('defaults to loopback:3001 with no preset operator token, and with TikTok reading off', () => {
+    expect(loadConfig({})).toMatchObject({ host: '127.0.0.1', port: 3001, tiktokEnabled: false });
+    expect(loadConfig({}).signApiKey).toBeUndefined();
+  });
+
+  it('turns TikTok reading on only when asked, and reads the optional signing-service key', () => {
+    expect(loadConfig({ TIKTOK_LIVE: 'on' }).tiktokEnabled).toBe(true);
+    expect(loadConfig({ TIKTOK_LIVE: 'off' }).tiktokEnabled).toBe(false);
+    expect(() => loadConfig({ TIKTOK_LIVE: 'yes' })).toThrow(); // anything but on/off is a mistake, not "on"
+    expect(loadConfig({ EULER_API_KEY: 'a-long-enough-key' }).signApiKey).toBe('a-long-enough-key');
+    expect(loadConfig({ EULER_API_KEY: '' }).signApiKey).toBeUndefined();
   });
 
   it('reads and validates the operator token and port', () => {

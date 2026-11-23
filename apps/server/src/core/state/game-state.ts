@@ -2,6 +2,7 @@ import {
   DEFAULT_SOUND_SETTINGS,
   type HudState,
   type ModeId,
+  type ProviderInfo,
   type ProviderStatus,
   type PublicSnapshot,
   type RoundResult,
@@ -40,6 +41,7 @@ export class GameState {
   readonly rounds: RoundService;
   private _lastResult: RoundResult | null = null;
   private _providerStatus: ProviderStatus = 'none';
+  private providerInfoSource: (() => ProviderInfo) | undefined;
   private _sound: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
 
   constructor(private readonly options: GameStateOptions) {
@@ -106,6 +108,11 @@ export class GameState {
     this._providerStatus = status;
   }
 
+  /** How the HUD learns what the active provider is doing; read each time the HUD is built, so it is always current. */
+  setProviderInfoSource(source: () => ProviderInfo): void {
+    this.providerInfoSource = source;
+  }
+
   get sound(): SoundSettings {
     return this._sound;
   }
@@ -125,6 +132,7 @@ export class GameState {
       phaseEndsAt: this.rounds.phaseEndsAt,
       remainingMs: this.rounds.remainingMs,
       providerStatus: this._providerStatus,
+      ...(this.providerInfoSource ? { providerInfo: this.providerInfoSource() } : {}),
       sound: this._sound,
       teams: this.standings(),
       lastResult: this._lastResult,
