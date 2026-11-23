@@ -6,6 +6,7 @@ import { EventFeed } from './EventFeed';
 import { GameControls, Scoreboard } from './GameControls';
 import { PlayersPanel } from './PlayersPanel';
 import { SimulatorPanel } from './SimulatorPanel';
+import { SoundPanel } from './SoundPanel';
 
 export type RunCommand = (command: OperatorCommand | SimulatorCommand) => void;
 
@@ -71,6 +72,7 @@ export function OperatorApp() {
       <div className="columns">
         <div className="column">
           <GameControls run={run} />
+          <SoundPanel run={run} />
           <Scoreboard />
           <SimulatorPanel run={run} />
         </div>

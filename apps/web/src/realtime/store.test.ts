@@ -12,6 +12,7 @@ const hud = (overrides: Partial<HudState> = {}): HudState => ({
   phaseEndsAt: null,
   remainingMs: null,
   providerStatus: 'connected',
+  sound: { muted: false, volume: 0.7 },
   teams: [
     { id: 'gelin', name: 'Gelin Takımı', score: 0, playerCount: 0 },
     { id: 'damat', name: 'Damat Takımı', score: 0, playerCount: 0 },

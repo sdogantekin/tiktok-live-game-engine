@@ -1,3 +1,5 @@
+import type { Phase } from '@live-game/contracts';
+import type { SoundEngine } from './audio/engine';
 import type { CueBus } from './cue-bus';
 import type { TagBoard } from './name-tags';
 
@@ -109,4 +111,10 @@ export interface SceneProps {
   cues: CueBus;
   /** Receives which avatar belongs to whom, and who just acted, for the name-tag layer drawn over the scene. */
   tags: TagBoard;
+  /** The broadcast's sound engine (null if the browser has no Web Audio). */
+  audio: SoundEngine | null;
+  phase: Phase;
+  paused: boolean;
+  /** Whole seconds left in the current timed phase, or null. */
+  secondsLeft: number | null;
 }

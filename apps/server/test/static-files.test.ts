@@ -6,11 +6,12 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules';
 import { createGameServer, type GameServer } from '../src/realtime/socket-server';
+import { parseRange } from '../src/realtime/static-files';
 
 /** Sends a request with the path exactly as given (fetch would normalize `..` away). */
-function raw(port: number, path: string, method = 'GET'): Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }> {
+function raw(port: number, path: string, method = 'GET', headers: Record<string, string> = {}): Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }> {
   return new Promise((resolve, reject) => {
-    const req = request({ host: '127.0.0.1', port, path, method }, (res) => {
+    const req = request({ host: '127.0.0.1', port, path, method, headers }, (res) => {
       let body = '';
       res.on('data', (chunk) => (body += chunk));
       res.on('end', () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body }));
@@ -35,6 +36,8 @@ describe('serving the built web app', () => {
     writeFileSync(join(web, 'broadcast', 'index.html'), '<h1>broadcast</h1>');
     writeFileSync(join(web, 'assets', 'app-abc123.js'), 'console.log(1)');
     writeFileSync(join(web, 'game-modes', 'x', 'models', 'a.glb'), 'glTF');
+    mkdirSync(join(web, 'game-modes', 'x', 'audio'), { recursive: true });
+    writeFileSync(join(web, 'game-modes', 'x', 'audio', 'song.mp3'), '0123456789');
     secret = join(root, 'secret.txt');
     writeFileSync(secret, 'TOP SECRET');
     symlinkSync(secret, join(web, 'link.txt'));
@@ -60,6 +63,25 @@ describe('serving the built web app', () => {
     expect(script.headers['x-content-type-options']).toBe('nosniff');
 
     expect((await raw(port, '/game-modes/x/models/a.glb')).headers['content-type']).toBe('model/gltf-binary');
+  });
+
+  it('serves audio with the right type and supports byte ranges, so the browser can loop and seek', async () => {
+    const whole = await raw(port, '/game-modes/x/audio/song.mp3');
+    expect(whole).toMatchObject({ status: 200, body: '0123456789' });
+    expect(whole.headers['content-type']).toBe('audio/mpeg');
+    expect(whole.headers['accept-ranges']).toBe('bytes');
+
+    const part = await raw(port, '/game-modes/x/audio/song.mp3', 'GET', { range: 'bytes=2-5' });
+    expect(part).toMatchObject({ status: 206, body: '2345' });
+    expect(part.headers['content-range']).toBe('bytes 2-5/10');
+    expect(part.headers['content-length']).toBe('4');
+
+    expect((await raw(port, '/game-modes/x/audio/song.mp3', 'GET', { range: 'bytes=7-' })).body).toBe('789');
+    expect((await raw(port, '/game-modes/x/audio/song.mp3', 'GET', { range: 'bytes=-3' })).body).toBe('789');
+
+    const unsatisfiable = await raw(port, '/game-modes/x/audio/song.mp3', 'GET', { range: 'bytes=50-60' });
+    expect(unsatisfiable.status).toBe(416);
+    expect(unsatisfiable.headers['content-range']).toBe('bytes */10');
   });
 
   it('redirects a directory without a trailing slash, keeping the query string', async () => {
@@ -98,5 +120,19 @@ describe('serving the built web app', () => {
   it('keeps /health and Socket.IO working alongside the files', async () => {
     expect(JSON.parse((await raw(port, '/health')).body)).toEqual({ status: 'ok' });
     expect((await raw(port, '/socket.io/?EIO=4&transport=polling')).status).toBe(200);
+  });
+});
+
+describe('parseRange', () => {
+  it('reads a single byte range and rejects anything it cannot satisfy', () => {
+    expect(parseRange(undefined, 100)).toBeNull();
+    expect(parseRange('bytes=0-9', 100)).toEqual({ start: 0, end: 9 });
+    expect(parseRange('bytes=90-', 100)).toEqual({ start: 90, end: 99 });
+    expect(parseRange('bytes=-10', 100)).toEqual({ start: 90, end: 99 });
+    expect(parseRange('bytes=-500', 100)).toEqual({ start: 0, end: 99 }); // a suffix longer than the file: all of it
+    expect(parseRange('bytes=95-500', 100)).toEqual({ start: 95, end: 99 }); // an end past the file is clipped
+    for (const bad of ['bytes=100-', 'bytes=50-10', 'bytes=-', 'bytes=-0', 'bytes=a-b', 'items=0-5', 'bytes=0-5,10-15', '']) {
+      expect(parseRange(bad, 100), bad).toBe('invalid');
+    }
   });
 });

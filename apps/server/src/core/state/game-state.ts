@@ -1,10 +1,12 @@
-import type {
-  HudState,
-  ModeId,
-  ProviderStatus,
-  PublicSnapshot,
-  RoundResult,
-  TeamDefinition,
+import {
+  DEFAULT_SOUND_SETTINGS,
+  type HudState,
+  type ModeId,
+  type ProviderStatus,
+  type PublicSnapshot,
+  type RoundResult,
+  type SoundSettings,
+  type TeamDefinition,
 } from '@live-game/contracts';
 import type { Clock } from '../clock';
 import { type AssignResult, type Player, PlayerService } from '../players/player-service';
@@ -38,6 +40,7 @@ export class GameState {
   readonly rounds: RoundService;
   private _lastResult: RoundResult | null = null;
   private _providerStatus: ProviderStatus = 'none';
+  private _sound: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
 
   constructor(private readonly options: GameStateOptions) {
     this.players = new PlayerService(
@@ -103,6 +106,14 @@ export class GameState {
     this._providerStatus = status;
   }
 
+  get sound(): SoundSettings {
+    return this._sound;
+  }
+
+  setSound(change: Partial<SoundSettings>): void {
+    this._sound = { muted: change.muted ?? this._sound.muted, volume: change.volume ?? this._sound.volume };
+  }
+
   /** Everything except the roster; cheap enough to build several times per second. */
   hud(): HudState {
     return {
@@ -114,6 +125,7 @@ export class GameState {
       phaseEndsAt: this.rounds.phaseEndsAt,
       remainingMs: this.rounds.remainingMs,
       providerStatus: this._providerStatus,
+      sound: this._sound,
       teams: this.standings(),
       lastResult: this._lastResult,
     };

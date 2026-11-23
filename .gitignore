@@ -10,3 +10,7 @@ playwright-report/
 test-results/
 .vite/
 __pycache__/
+
+# Third-party music file supplied by the game producer: the rights are theirs, so it is not committed by default.
+# Remove this line to commit it. Without the file the game plays its built-in synthesised music.
+apps/web/public/game-modes/mahalle-halayi/audio/halay.mp3

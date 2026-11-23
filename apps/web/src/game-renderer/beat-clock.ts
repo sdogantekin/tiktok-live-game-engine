@@ -1,7 +1,7 @@
 /** Tempo the animation clips are authored at: one beat is half a second. */
 export const CLIP_BPM = 120;
-export const BASE_BPM = 96;
-export const MAX_BPM = 132;
+export const BASE_BPM = 100; // halays run roughly 96-136 BPM
+export const MAX_BPM = 136;
 /** The tempo follows the group energy but never jumps: it moves at most this many BPM per second. */
 const MAX_BPM_SLEW = 14;
 
@@ -19,6 +19,15 @@ export class BeatClock {
   beats = 0;
   bpm = BASE_BPM;
   private last: number | null = null;
+
+  /**
+   * Forces the clock to a beat position and tempo: used while a music file plays, so the dancers dance to the file's
+   * own beat. Call after `tick` in the same frame; normal (energy-driven) timekeeping resumes from here when you stop.
+   */
+  lockTo(beats: number, bpm: number): void {
+    this.beats = beats;
+    this.bpm = bpm;
+  }
 
   /** Advances the clock to `now` (ms). Call once per frame, before anything reads it. */
   tick(now: number, energy: number): void {

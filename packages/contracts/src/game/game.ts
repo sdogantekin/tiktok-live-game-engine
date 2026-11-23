@@ -48,6 +48,15 @@ export type RoundResult = z.infer<typeof RoundResultSchema>;
 export const ProviderStatusSchema = z.enum(['none', 'connected', 'disconnected']);
 export type ProviderStatus = z.infer<typeof ProviderStatusSchema>;
 
+/** Sound settings held by the server (so every broadcast view agrees and they survive a refresh). */
+export const SoundSettingsSchema = z.object({
+  muted: z.boolean(),
+  /** Master volume, 0..1. */
+  volume: z.number().min(0).max(1),
+});
+export type SoundSettings = z.infer<typeof SoundSettingsSchema>;
+export const DEFAULT_SOUND_SETTINGS: SoundSettings = { muted: false, volume: 0.7 };
+
 /**
  * Everything except the roster. Small, so it is re-sent whole whenever it changes.
  * Clients derive remaining time from `phaseEndsAt - serverNow`.
@@ -63,6 +72,7 @@ export const HudStateSchema = z.object({
   /** Time left in the frozen phase while paused; null otherwise. */
   remainingMs: z.number().int().nonnegative().nullable(),
   providerStatus: ProviderStatusSchema,
+  sound: SoundSettingsSchema,
   teams: z.array(TeamStandingSchema),
   lastResult: RoundResultSchema.nullable(),
 });

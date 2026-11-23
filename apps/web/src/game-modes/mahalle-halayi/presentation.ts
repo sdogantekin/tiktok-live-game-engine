@@ -3,6 +3,7 @@ import { Scene } from './Scene';
 import { computeTagAnchors } from '../../game-renderer/name-tags';
 import { slotCapacities } from '../../game-renderer/avatar-slots';
 import { AVATAR_CAP, camera, formation, TEAM_IDS } from './scene-config';
+import { soundDesign } from './sound-design';
 
 export const mahalleHalayiPresentation: ModePresentation = {
   id: 'mahalle-halayi',
@@ -11,6 +12,7 @@ export const mahalleHalayiPresentation: ModePresentation = {
   Scene,
   tagAnchors: computeTagAnchors(camera, formation, slotCapacities(TEAM_IDS, AVATAR_CAP)),
   simulatorDefaultWord: 'halay',
+  soundDesign,
   teamColors: { gelin: '#e0457b', damat: '#2f6fdb' },
   text: {
     phase: {
@@ -29,6 +31,7 @@ export const mahalleHalayiPresentation: ModePresentation = {
     commands: ['gelin', 'damat', 'halay', 'zıpla', 'oyna'],
     joined: (name, teamName) => `${name} → ${teamName}`,
     connecting: 'Bağlanıyor…',
+    enableSound: 'Sesi açmak için dokun',
     providerDown: 'Yorum bağlantısı koptu, oyun devam ediyor',
   },
 };

@@ -316,6 +316,10 @@ export class GameEngine {
         return rounds.endRound();
       case 'reset_round_score':
         return this.state.resetRoundScore();
+      case 'set_sound':
+        if (command.muted === undefined && command.volume === undefined) return { ok: false, reason: 'nothing_to_change' };
+        this.state.setSound({ muted: command.muted, volume: command.volume });
+        return { ok: true };
       case 'trigger_celebration':
         if (!this.celebrations.has(command.effect)) return { ok: false, reason: 'unknown_effect' };
         this.emit({ type: 'celebration', effect: command.effect });

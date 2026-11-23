@@ -32,6 +32,17 @@ The terminal prints the operator link (it contains a one-time token) and the bro
 - **Zoom 100%.** Browser zoom changes the pixel size of the 9:16 box.
 - The mouse pointer is not part of the page; hide it in the capture tool if it shows.
 
+## Sound
+
+The broadcast page plays original synthesised music and effects (a halay in a Hicaz-flavoured scale with davul and zurna voices; nothing is sampled, so there are no recordings to license). The tempo follows the dancers' beat clock and the arrangement builds with the crowd's energy; effects mark joins, jumps, claps, gifts, the countdown, round start and the results.
+
+- **One click to unlock.** Browsers keep audio silent until the page has had a click or key press. The broadcast page shows a small "Sesi açmak için dokun" hint until then; click once anywhere (or start Chrome with `--autoplay-policy=no-user-gesture-required` for an unattended capture machine).
+- **Keep the page visible.** Browsers slow background tabs; if the broadcast window is hidden or minimised, the dancers and the music both stall. Keep it on screen (or on its own display).
+- **Music file or built-in music.** The game's default music is its supplied file (`halay.mp3`, not committed to the repository); if the file is missing or fails to load the built-in synthesised music plays instead.
+- **Mute and volume** are in the operator panel (Sound). The server holds them, so every broadcast view agrees and a refresh keeps them. While muted the broadcast shows no unlock hint.
+- **Capturing the sound into a stream** (how TikTok LIVE Studio or another capture tool hears this browser window) is a Product Phase 2 question; it is not solved here.
+- **What is checked automatically:** the music and effects are rendered offline in Chrome and measured (audible, no clipping, peak under 0.99, loud but not wild at high energy, an effect storm still under the limit), and the scheduling logic is unit-tested. **Whether it sounds good is a human judgement** that no test can make: please listen.
+
 ## If something looks wrong
 
 | Symptom | Likely cause |

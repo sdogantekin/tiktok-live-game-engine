@@ -70,3 +70,9 @@ Manual (done by eye for every new or changed asset):
 - [x] Name tags stay readable and do not overlap (browser test, 2026-11-23)
 - [ ] Animations loop and blend back into `idle` without popping (clips play in the scene; smoothness still to be judged on a live recording)
 - [ ] Licence and provenance noted (everything so far is original, authored in these scripts)
+
+## Music
+
+`apps/web/public/game-modes/mahalle-halayi/audio/halay.mp3` is the game's default music, supplied by the game producer (who is responsible for the rights to it). It is listed in `.gitignore`, so it is **not committed to the repository by default**: remove that line to commit it. Without the file the game plays its built-in synthesised halay and effects; while the file is in use the engine's built-in sound effects stay silent so they do not clash with it (set `effectsOverTrack: true` in `sound-design.ts` to bring them back).
+
+To change the music, replace the file (keeping the name) or point `track.url` in `apps/web/src/game-modes/mahalle-halayi/sound-design.ts` at another file. If the new file has one steady tempo, add `bpm` (and `firstBeatSeconds`, the time of its first beat) so the dancers lock to it; leave `bpm` out for a file with changing tempo. Loops that are a whole number of bars keep the dancers' beat continuous when the file wraps.

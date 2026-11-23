@@ -185,10 +185,10 @@ export interface Performer {
  * The couple stand side by side on a small circle, both facing its centre with joined hands, and side-step round it
  * (one turn every 16 beats). `phase` is where on the circle each of them starts.
  */
-const COUPLE_ORBIT = { centre: [0, 0, FLOOR_CENTER_Z] as Vec3, radius: 1.2, beatsPerTurn: 16 };
+const COUPLE_ORBIT = { centre: [0, 0, FLOOR_CENTER_Z] as Vec3, radius: 1.0, beatsPerTurn: 16 };
 export const couple: readonly Performer[] = [
-  { look: 'bride', position: [0, 0, FLOOR_CENTER_Z], rotationY: 0, scale: 1.5, orbit: { ...COUPLE_ORBIT, phase: 0 } },
-  { look: 'groom', position: [0, 0, FLOOR_CENTER_Z], rotationY: 0, scale: 1.5, orbit: { ...COUPLE_ORBIT, phase: -1.19 } }, // ~1.35 m apart: their larger arms meet in between
+  { look: 'bride', position: [0, 0, FLOOR_CENTER_Z], rotationY: 0, scale: 1.2, orbit: { ...COUPLE_ORBIT, phase: 0 } },
+  { look: 'groom', position: [0, 0, FLOOR_CENTER_Z], rotationY: 0, scale: 1.2, orbit: { ...COUPLE_ORBIT, phase: -1.14 } }, // ~1.1 m apart: their slightly larger arms meet in between
 ];
 
 /** Traditional wedding musicians on the stage: two zurna players around the davul. */

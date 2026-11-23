@@ -16,12 +16,40 @@ const MIME: Readonly<Record<string, string>> = {
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
   '.glb': 'model/gltf-binary',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
 };
 
 function cacheControl(pathname: string, type: string): string {
   if (type.startsWith('text/html')) return 'no-cache'; // pages must always pick up a new build
   if (pathname.startsWith('/assets/')) return 'public, max-age=31536000, immutable'; // content-hashed filenames
   return 'public, max-age=3600';
+}
+
+/**
+ * Reads a `Range` header for a file of `size` bytes: a single byte range (`bytes=0-99`, `bytes=100-`, `bytes=-500`).
+ * Returns null when there is no range (serve the whole file), 'invalid' when it cannot be satisfied (416), else the
+ * inclusive byte range. Browsers need this to loop or seek in an audio file.
+ */
+export function parseRange(header: string | undefined, size: number): { start: number; end: number } | 'invalid' | null {
+  if (header === undefined) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match || (match[1] === '' && match[2] === '')) return 'invalid';
+  let start: number;
+  let end: number;
+  if (match[1] === '') {
+    const suffix = Number(match[2]); // the last `suffix` bytes
+    if (suffix === 0) return 'invalid';
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    start = Number(match[1]);
+    end = match[2] === '' ? size - 1 : Math.min(Number(match[2]), size - 1);
+  }
+  if (start >= size || start > end) return 'invalid';
+  return { start, end };
 }
 
 function plain(res: ServerResponse, status: number, text: string): void {
@@ -80,12 +108,20 @@ export function createStaticHandler(rootDir: string) {
       }
 
       const type = MIME[extname(target).toLowerCase()] ?? 'application/octet-stream';
-      res.writeHead(200, { 'content-type': type, 'content-length': info.size, 'cache-control': cacheControl(pathname, type), 'x-content-type-options': 'nosniff' });
+      const headers = { 'content-type': type, 'cache-control': cacheControl(pathname, type), 'x-content-type-options': 'nosniff', 'accept-ranges': 'bytes' };
+      const range = parseRange(req.headers.range, info.size);
+      if (range === 'invalid') {
+        res.writeHead(416, { ...headers, 'content-range': `bytes */${info.size}` });
+        res.end();
+        return true;
+      }
+      if (range) res.writeHead(206, { ...headers, 'content-length': range.end - range.start + 1, 'content-range': `bytes ${range.start}-${range.end}/${info.size}` });
+      else res.writeHead(200, { ...headers, 'content-length': info.size });
       if (req.method === 'HEAD') {
         res.end();
         return true;
       }
-      createReadStream(real)
+      createReadStream(real, range ? { start: range.start, end: range.end } : undefined)
         .on('error', () => res.destroy())
         .pipe(res);
       return true;

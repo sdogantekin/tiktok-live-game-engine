@@ -9,6 +9,7 @@ import { Crowd } from '../../game-renderer/Crowd';
 import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { EffectDirector } from '../../game-renderer/effect-director';
 import { Effects } from '../../game-renderer/Effects';
+import { SoundDirector } from '../../game-renderer/audio/SoundDirector';
 import { perf, perfParam } from '../../game-renderer/perf';
 import { type SlotOccupant, slotKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
@@ -16,12 +17,13 @@ import { Lighting, PrimitiveCourtyard } from './Courtyard';
 import { ModelCourtyard } from './ModelCourtyard';
 import { ModelCrowd } from './ModelCrowd';
 import { Performers } from './Performers';
+import { soundDesign } from './sound-design';
 import { animationRules, AVATAR_CAP, avatarModels, CROWD_CAPACITY, effectRecipes, formation, lineMotion, looks, TEAM_IDS } from './scene-config';
 
 const TEAMS: readonly string[] = TEAM_IDS;
 
 /** Mahalle Halayı's 3D scene: the courtyard, the halay lines, the crowd, and celebration effects. */
-export function Scene({ roster, teams, cues, tags }: SceneProps) {
+export function Scene({ roster, teams, cues, tags, audio, phase, paused, secondsLeft }: SceneProps) {
   // `?perf=1&cap=..&crowd=..` overrides, for performance sweeps only.
   const avatarCap = perfParam('cap') ?? AVATAR_CAP;
   const crowdCapacity = perfParam('crowd') ?? CROWD_CAPACITY;
@@ -113,6 +115,18 @@ export function Scene({ roster, teams, cues, tags }: SceneProps) {
         </Suspense>
       </Boundary>
       <Effects director={director} store={store} />
+      {audio && (
+        <SoundDirector
+          engine={audio}
+          design={soundDesign}
+          clock={clock}
+          energyOf={(now) => Math.max(...TEAMS.map((teamId) => energy.get(teamId, now)))}
+          phase={phase}
+          paused={paused}
+          secondsLeft={secondsLeft}
+          cues={cues}
+        />
+      )}
     </>
   );
 }

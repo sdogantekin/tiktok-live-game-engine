@@ -369,6 +369,19 @@ describe('operator commands', () => {
     expect(score('gelin')).toBe(0);
   });
 
+  it('keeps the broadcast sound settings, and rejects out-of-range or empty changes', () => {
+    const { engine } = createTestEngine();
+    expect(engine.state.hud().sound).toEqual({ muted: false, volume: 0.7 });
+    expect(engine.operator({ type: 'set_sound', muted: true })).toEqual({ ok: true });
+    expect(engine.operator({ type: 'set_sound', volume: 0.25 })).toEqual({ ok: true });
+    expect(engine.state.hud().sound).toEqual({ muted: true, volume: 0.25 }); // each command changes only what it names
+    expect(engine.state.snapshot().sound).toEqual({ muted: true, volume: 0.25 }); // a refreshed view gets it too
+    expect(engine.operator({ type: 'set_sound' })).toEqual({ ok: false, reason: 'nothing_to_change' });
+    expect(engine.operator({ type: 'set_sound', volume: 1.5 }).ok).toBe(false);
+    expect(engine.operator({ type: 'set_sound', volume: -0.1 }).ok).toBe(false);
+    expect(engine.state.hud().sound).toEqual({ muted: true, volume: 0.25 });
+  });
+
   it('triggers only configured celebrations', () => {
     const { engine, presentation } = createTestEngine();
     expect(engine.operator({ type: 'trigger_celebration', effect: 'big_celebration' })).toEqual({ ok: true });

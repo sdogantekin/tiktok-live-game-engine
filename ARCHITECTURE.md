@@ -291,6 +291,16 @@ The core engine knows that a game mode can receive a normalized `GameAction`; it
 
 On the web, the same rule holds: `game-renderer/`, `operator/`, `broadcast/` and `realtime/` contain no game words. A game supplies its scene, its wording, its viewer words and an `AnimationRules` object (which of the renderer's generic animations a viewer action plays) from `game-modes/<game>/`. `engine-boundary.test.ts` enforces this by scanning the shared folders for game words.
 
+### Game music
+
+Sound lives in `game-renderer/audio/` and is game-neutral: a Web Audio engine (master compressor and soft clip, music bus with ducking, effects bus with voice limits), a beat-locked step scheduler for synthesised music, and a `TrackPlayer` for music files. A game supplies a `SoundDesign` from its own folder: an optional synthesised `score`, an optional `track` (a file URL, with an optional `bpm` and `firstBeatSeconds` if it has one steady tempo), the music mode for each phase, and the mapping from cues to effects. The renderer never imports a game's sound data.
+
+- A `track` is streamed through an audio element (long files are never decoded into memory), faded in and out with the phase, and, if it states a `bpm`, the scene's beat clock locks to it so the dancers dance to the file. Without a `bpm` the dancers keep their own energy-driven beat.
+- **The built-in sound effects stay silent while a file is in use** (they would break the file's music); a game can opt back in with `effectsOverTrack`. Game-specific effects are the game producer's to put in the file.
+- While the file is loading, if it fails to load, or if the game has no file, the synthesised `score` plays (and a game with neither is silent apart from effects).
+- **The game producer owns the rights to a supplied file.** The engine ships only original synthesised music.
+- Files are served from the game's `public/` folder (the production server supports byte ranges, which browsers need to loop and seek).
+
 ### Future mode example
 
 `osmanli-kusatmasi` would add its own teams, actions, scoring, scene, and assets. It should reuse core player, team, event, round, state, and operator services. It is not implemented in the MVP.
