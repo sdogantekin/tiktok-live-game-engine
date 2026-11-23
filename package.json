@@ -1,5 +1,6 @@
 {
   "name": "tiktok-live-game-engine",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.21.0",

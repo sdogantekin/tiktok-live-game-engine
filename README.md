@@ -119,6 +119,10 @@ ARCHITECTURE.md       Technical architecture and decisions
 CLAUDE.md             Working instructions for Claude Code sessions
 ```
 
+## License
+
+MIT, see [`LICENSE`](LICENSE). The optional TikTok LIVE reader depends on `tiktok-live-connector`, which is AGPL-3.0 with an additional permission for TikTok LIVE games; its conditions are in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). The music file `halay.mp3` is not part of the repository and is not covered by this licence.
+
 ## Documentation
 
 - [`docs/building-a-game.md`](docs/building-a-game.md): how to add your own game to the engine.
