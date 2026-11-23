@@ -202,7 +202,8 @@ export class GameState {
       const teams = this.standings();
       this._lastResult = {
         round,
-        winner: decideWinner(teams.map((team) => ({ id: team.id, score: team.score }))),
+        // A game that ranks individuals has no winning team; the ranking says who won.
+        winner: this.rankingSource ? null : decideWinner(teams.map((team) => ({ id: team.id, score: team.score }))),
         teams,
         ...(this.rankingSource ? { ranking: [...this.rankingSource()] } : {}),
       };

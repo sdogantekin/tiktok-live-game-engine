@@ -64,3 +64,40 @@ test('Takı Takma Töreni can be played from the dashboard: `tak` scores, a bigg
     await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
   }
 });
+
+test('At Yarışı can be played from the dashboard: viewers join with 1, ten race, the rest wait, likes and gifts boost a horse', async ({ context }) => {
+  const operator = await openOperator(context);
+  const broadcast = await openBroadcast(context);
+
+  try {
+    await startFreshGame(operator);
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('at-yarisi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('At Yarışı');
+
+    await button(operator, 'Start game').click();
+    await addViewers(operator, 14); // the simulator's viewers join with `1`
+    await button(operator, 'Start round now').click();
+    await expect(operator.getByTestId('phase')).toHaveText('active');
+
+    // Ten race, four wait, and the standings list the racers (no team score boxes in this game).
+    await expect(broadcast.getByTestId('lap')).toContainText('Tur 1 / 6');
+    await expect(broadcast.getByText('Yarışçı 10/10 · Sırada 4')).toBeVisible();
+    await expect(broadcast.getByTestId('standing-row')).toHaveCount(10);
+    await expect(broadcast.locator('.scores')).toHaveCount(0);
+
+    // Likes and a gift from a racer reach the server and the race goes on.
+    await operator.getByLabel('Likes').fill('200');
+    await button(operator, 'Send likes').click();
+    await operator.getByLabel('Gift').selectOption('rose');
+    await button(operator, 'Send gift').click();
+    await expect(operator.getByTestId('last-result')).toHaveText('sim_gift: ok');
+    await expect(broadcast.getByTestId('standing-row')).toHaveCount(10);
+  } finally {
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('mahalle-halayi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
+  }
+});

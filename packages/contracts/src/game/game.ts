@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MODE_IDS = ['mahalle-halayi', 'taki-takma'] as const;
+export const MODE_IDS = ['mahalle-halayi', 'taki-takma', 'at-yarisi'] as const;
 export const ModeIdSchema = z.enum(MODE_IDS);
 export type ModeId = z.infer<typeof ModeIdSchema>;
 
@@ -138,7 +138,7 @@ export const PresentationEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('player_joined'), playerId: PlayerIdSchema, teamId: TeamIdSchema }),
   z.object({ type: z.literal('player_action'), playerId: PlayerIdSchema, animation: z.string().min(1).max(64) }),
   z.object({ type: z.literal('celebration'), effect: z.string().min(1).max(64), playerId: PlayerIdSchema.optional() }),
-  z.object({ type: z.literal('hint'), playerId: PlayerIdSchema, reason: z.enum(['no_team', 'switch_locked']) }),
+  z.object({ type: z.literal('hint'), playerId: PlayerIdSchema, reason: z.enum(['no_team', 'switch_locked', 'queued']) }),
   /** A conversational comment from a joined player, already moderated and shortened by the server. Text only: never markup. */
   z.object({ type: z.literal('chat'), playerId: PlayerIdSchema, text: z.string().min(1).max(200) }),
 ]);

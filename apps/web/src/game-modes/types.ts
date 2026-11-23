@@ -20,8 +20,8 @@ export interface ModePresentation {
   /** The mode's music and sound effects (also rendered offline by the loudness check). */
   soundDesign: SoundDesign;
   /**
-   * Whether the broadcast shows the team score boxes (default true). A game that ranks individuals, such as a race,
-   * turns them off and draws its own standings in `Overlay`.
+   * Whether the broadcast shows the team score boxes and the team result banner (default true). A game that ranks
+   * individuals, such as a race, turns them off and draws its own standings and results in `Overlay`.
    */
   showTeamScores?: boolean;
   /** Extra HUD over the scene, drawn by the game itself (a leaderboard, a legend). It reads the live view from `live`. */

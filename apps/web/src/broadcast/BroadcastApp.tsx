@@ -119,7 +119,7 @@ export function BroadcastApp() {
             {presentation.Overlay && <presentation.Overlay hud={hud} live={liveFeed} />}
             <section className="arena">{hud.phase !== 'results' && <CommandHelp presentation={presentation} />}</section>
             <JoinTicker hud={hud} presentation={presentation} />
-            {hud.phase === 'results' && hud.lastResult && (
+            {hud.phase === 'results' && hud.lastResult && presentation.showTeamScores !== false && (
               <ResultBanner result={hud.lastResult} presentation={presentation} />
             )}
             {hud.paused && <PausedBanner presentation={presentation} />}

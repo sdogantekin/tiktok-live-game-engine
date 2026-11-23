@@ -5,7 +5,7 @@ import type { FeedEvent } from '../realtime/store';
 /** Stable fallback: a selector must not return a fresh array on every call. */
 const NO_TEAMS: readonly TeamStanding[] = [];
 
-const HINT_TEXT = { no_team: 'must pick a team first', switch_locked: 'tried to switch teams mid-round' } as const;
+const HINT_TEXT = { no_team: 'must pick a team first', switch_locked: 'tried to switch teams mid-round', queued: 'is waiting for a place in the next race' } as const;
 
 export function EventFeed() {
   const feed = useRealtime((state) => state.feed);

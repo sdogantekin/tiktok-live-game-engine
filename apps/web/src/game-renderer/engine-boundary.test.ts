@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  */
 const REPO = new URL('../../../../', import.meta.url).pathname;
 const SHARED = ['apps/web/src/game-renderer', 'apps/web/src/operator', 'apps/web/src/broadcast', 'apps/web/src/realtime', 'apps/server/src/core', 'apps/server/src/realtime', 'apps/server/src/operator'];
-const GAME_WORDS = /halay|gelin|damat|z[ıi]pla|mahalle|mend[ıi]l|kuşatma|kusatma|taki-takma|bilezik|kolye|anahtar|takma/i;
+const GAME_WORDS = /halay|gelin|damat|z[ıi]pla|mahalle|mend[ıi]l|kuşatma|kusatma|taki-takma|bilezik|kolye|anahtar|takma|at-yarisi|yar[ıi]ş|yar[ıi]s/i;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

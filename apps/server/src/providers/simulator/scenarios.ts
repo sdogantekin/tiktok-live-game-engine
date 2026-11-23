@@ -32,9 +32,17 @@ export const TAKI_VOCABULARY: Vocabulary = {
   gifts: ['rose', 'gg', 'big_celebration'],
 };
 
+export const YARIS_VOCABULARY: Vocabulary = {
+  joinWords: ['1'],
+  actions: [{ value: '1', weight: 1 }],
+  chatter: ['hadi!', 'koş koş', 'kim önde?', 'şans bizimle', 'ben geldim'],
+  gifts: ['rose', 'gg', 'big_celebration'],
+  likeShare: 0.6, // most of what a race audience does is tap
+};
+
 /** The simulated audience's words for each game (the simulator is a provider, so it is wired to games here, not in the games). */
 export function vocabularyFor(modeId: string): Vocabulary {
-  return modeId === 'taki-takma' ? TAKI_VOCABULARY : MAHALLE_VOCABULARY;
+  return modeId === 'taki-takma' ? TAKI_VOCABULARY : modeId === 'at-yarisi' ? YARIS_VOCABULARY : MAHALLE_VOCABULARY;
 }
 
 export interface ScenarioOptions {

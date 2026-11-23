@@ -1,5 +1,6 @@
 import type { ModeId } from '@live-game/contracts';
 import { mahalleHalayiPresentation } from './mahalle-halayi/presentation';
+import { atYarisiPresentation } from './at-yarisi/presentation';
 import { takiTakmaPresentation } from './taki-takma/presentation';
 import type { ModePresentation } from './types';
 
@@ -7,6 +8,7 @@ import type { ModePresentation } from './types';
 const PRESENTATIONS: Record<ModeId, ModePresentation> = {
   'mahalle-halayi': mahalleHalayiPresentation,
   'taki-takma': takiTakmaPresentation,
+  'at-yarisi': atYarisiPresentation,
 };
 
 export function getPresentation(modeId: ModeId): ModePresentation {

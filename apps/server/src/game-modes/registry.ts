@@ -1,5 +1,6 @@
 import type { ModeId } from '@live-game/contracts';
 import type { GameMode } from '../core/mode';
+import { createAtYarisiMode } from './at-yarisi/rules';
 import { createMahalleHalayiMode } from './mahalle-halayi/rules';
 import { createTakiTakmaMode } from './taki-takma/rules';
 
@@ -7,6 +8,7 @@ import { createTakiTakmaMode } from './taki-takma/rules';
 const MODES: Record<ModeId, () => GameMode> = {
   'mahalle-halayi': createMahalleHalayiMode,
   'taki-takma': createTakiTakmaMode,
+  'at-yarisi': () => createAtYarisiMode(),
 };
 
 export function getGameMode(id: ModeId): GameMode {
