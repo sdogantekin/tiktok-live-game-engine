@@ -4,6 +4,7 @@ import { useNow, useRealtime, useRealtimeClient } from '../realtime/react';
 import { formatClock, remainingMs } from '../realtime/time';
 import { EventFeed } from './EventFeed';
 import { GameControls, Scoreboard } from './GameControls';
+import { GamePanel } from './GamePanel';
 import { PlayersPanel } from './PlayersPanel';
 import { SimulatorPanel } from './SimulatorPanel';
 import { TikTokPanel } from './TikTokPanel';
@@ -72,6 +73,7 @@ export function OperatorApp() {
       </div>
       <div className="columns">
         <div className="column">
+          <GamePanel run={run} />
           <GameControls run={run} />
           <SoundPanel run={run} />
           <Scoreboard />

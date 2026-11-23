@@ -26,8 +26,8 @@ export interface MahalleHalayiConfig extends GameModeConfig {
 
 export const mahalleHalayiConfig: MahalleHalayiConfig = {
   teams: [
-    { id: 'gelin', name: 'Gelin Takımı' },
-    { id: 'damat', name: 'Damat Takımı' },
+    { id: 'gelin', name: 'Gelin Tarafı' },
+    { id: 'damat', name: 'Damat Tarafı' },
   ],
   timings: { countdownMs: 15_000, roundMs: 180_000, resultsMs: 15_000, autoNext: true },
   commands: {

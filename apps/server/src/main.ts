@@ -16,7 +16,8 @@ if (webDir && !existsSync(join(webDir, 'index.html'))) {
 }
 
 const server = createGameServer({
-  mode: getGameMode('mahalle-halayi'),
+  mode: getGameMode(config.game),
+  modes: getGameMode,
   operatorToken,
   staticDir: webDir,
   tiktok: {

@@ -1,4 +1,5 @@
 import {
+  type ModeId,
   NormalizedEventSchema,
   type OperatorCommand,
   OperatorCommandSchema,
@@ -41,6 +42,13 @@ export interface EngineOptions {
   onPresentation?: (event: PresentationEvent, meta: { ingestedAt: number }) => void;
   /** Receives unexpected errors thrown while processing a single queued item. */
   onError?: (error: unknown) => void;
+  /**
+   * Builds a game mode by id, for the operator's `select_game`. The runtime supplies it (the core must not know the games);
+   * without it, game selection is unavailable.
+   */
+  modes?: (id: ModeId) => GameMode;
+  /** Called after the game was switched, so the runtime can send every client a fresh snapshot. */
+  onModeChanged?: () => void;
 }
 
 export type IngestOutcome = 'queued' | 'invalid' | 'ignored' | 'duplicate' | 'rate_limited' | 'queue_full';
@@ -59,6 +67,8 @@ export interface EngineStats {
   cooldownBlocked: number;
   errors: number;
   maxQueueDepth: number;
+  /** Gift scores dropped: the game did not opt in, or the sender was not a team member in a scoring round. */
+  giftScoreRefused: number;
 }
 
 type ViewerItem =
@@ -73,15 +83,15 @@ type QueueItem = (ViewerItem | OperatorItem) & { ingestedAt: number; enqueuedPer
  * relative order is deterministic. Call `drain()` after `ingest()` (or let the runtime schedule it).
  */
 export class GameEngine {
-  readonly state: GameState;
-  private readonly mode: GameMode;
+  private _state!: GameState;
+  private mode!: GameMode;
   private readonly clock: Clock;
   private readonly config: EngineConfig;
   private readonly commands = new Map<string, CommandConfig>();
-  private readonly celebrations: ReadonlySet<string>;
-  private readonly dedupe: RecentIdCache;
-  private readonly userLimiter: KeyedRateLimiter;
-  private readonly globalLimiter: TokenBucket;
+  private celebrations: ReadonlySet<string> = new Set();
+  private dedupe!: RecentIdCache;
+  private userLimiter!: KeyedRateLimiter;
+  private globalLimiter!: TokenBucket;
   private readonly globalCooldowns = new Map<string, number>();
   private readonly queue: QueueItem[] = [];
   private draining = false;
@@ -99,30 +109,47 @@ export class GameEngine {
     cooldownBlocked: 0,
     errors: 0,
     maxQueueDepth: 0,
+    giftScoreRefused: 0,
   };
 
   constructor(private readonly options: EngineOptions) {
-    this.mode = options.mode;
     this.clock = options.clock ?? systemClock;
     this.config = { ...DEFAULT_ENGINE_CONFIG, ...options.config };
-    this.celebrations = new Set(this.mode.config.celebrations);
+    this.configureMode(options.mode);
+  }
 
-    for (const [word, config] of Object.entries(this.mode.config.commands)) {
+  /** The authoritative game state. Replaced as a whole when the game is switched, so always read it through the engine. */
+  get state(): GameState {
+    return this._state;
+  }
+
+  /**
+   * (Re)builds everything that depends on the game mode: the command table, celebrations, state, deduplication, rate
+   * limiters and the queue. Settings that belong to the running server (sound, provider) are carried over.
+   */
+  private configureMode(mode: GameMode): void {
+    const previous = this._state as GameState | undefined;
+    this.mode = mode;
+    this.celebrations = new Set(mode.config.celebrations);
+    this.commands.clear();
+    for (const [word, config] of Object.entries(mode.config.commands)) {
       const key = normalizeComment(word);
       if (key === null || this.commands.has(key)) throw new Error(`Invalid or duplicate command word: ${word}`);
       this.commands.set(key, config);
     }
-
-    this.state = new GameState({
-      modeId: this.mode.id,
-      teams: this.mode.config.teams,
-      timings: this.mode.config.timings,
+    this._state = new GameState({
+      modeId: mode.id,
+      teams: mode.config.teams,
+      timings: mode.config.timings,
       clock: this.clock,
       maxPlayers: this.config.maxPlayers,
     });
+    if (previous) this._state.carryOverFrom(previous);
     this.dedupe = new RecentIdCache(this.config.dedupeCapacity);
     this.userLimiter = new KeyedRateLimiter(this.config.userRate);
     this.globalLimiter = new TokenBucket(this.config.globalRate, this.clock.now());
+    this.globalCooldowns.clear();
+    this.queue.length = 0;
   }
 
   get stats(): Readonly<EngineStats> {
@@ -271,10 +298,25 @@ export class GameEngine {
           giftKey: item.giftKey,
           count: item.count,
         });
-        for (const effect of effects) this.emit(effect.event);
+        for (const effect of effects) {
+          if (effect.type === 'present') this.emit(effect.event);
+          else this.applyGiftScore(known ?? null, effect.points);
+        }
         return;
       }
     }
+  }
+
+  /**
+   * A gift's team points. Applied only if the game declared `giftsMayScore`, and then only for a registered player on a team
+   * during an actively scoring round (a gift from a stranger has nobody to credit). Anything else is dropped and counted.
+   */
+  private applyGiftScore(player: Player | null, points: number): void {
+    if (!this.mode.config.giftsMayScore || !player || player.teamId === null || !Number.isFinite(points) || points <= 0) {
+      this._stats.giftScoreRefused++;
+      return;
+    }
+    if (!this.state.addEnergy(player.id, points).ok) this._stats.giftScoreRefused++;
   }
 
   private applyEffects(player: Player, effects: readonly ModeEffect[]): void {
@@ -316,6 +358,19 @@ export class GameEngine {
         return rounds.endRound();
       case 'reset_round_score':
         return this.state.resetRoundScore();
+      case 'select_game': {
+        if (!this.options.modes) return { ok: false, reason: 'game_selection_unavailable' };
+        if (rounds.phase !== 'stopped') return { ok: false, reason: 'game_running' }; // switching resets everything: stop first
+        let next: GameMode;
+        try {
+          next = this.options.modes(command.modeId);
+        } catch {
+          return { ok: false, reason: 'unknown_game' };
+        }
+        this.configureMode(next);
+        this.options.onModeChanged?.();
+        return { ok: true };
+      }
       case 'set_sound':
         if (command.muted === undefined && command.volume === undefined) return { ok: false, reason: 'nothing_to_change' };
         this.state.setSound({ muted: command.muted, volume: command.volume });

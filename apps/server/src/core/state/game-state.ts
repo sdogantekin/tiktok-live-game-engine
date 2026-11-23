@@ -108,6 +108,16 @@ export class GameState {
     this._providerStatus = status;
   }
 
+  /**
+   * Adopts the settings that belong to the running server, not to a game, from the state this one replaces (the operator's
+   * sound settings, the active provider's status and what it reports), so switching games does not lose them.
+   */
+  carryOverFrom(previous: GameState): void {
+    this._sound = previous._sound;
+    this._providerStatus = previous._providerStatus;
+    this.providerInfoSource = previous.providerInfoSource;
+  }
+
   /** How the HUD learns what the active provider is doing; read each time the HUD is built, so it is always current. */
   setProviderInfoSource(source: () => ProviderInfo): void {
     this.providerInfoSource = source;

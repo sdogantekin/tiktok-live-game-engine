@@ -27,6 +27,14 @@ export class Publisher {
     this.maxActions = options.maxActionsPerBatch ?? DEFAULT_MAX_ACTIONS_PER_BATCH;
   }
 
+  /** Forgets what was last sent, after the game was switched: clients get a fresh snapshot, so deltas restart from nothing. */
+  resync(): void {
+    this.buffer = [];
+    this.oldestIngestedAt = undefined;
+    this.lastHudKey = null;
+    this.roster.clear();
+  }
+
   /** Queues a transient cue for the next batch. */
   onPresentation(event: PresentationEvent, ingestedAt?: number): void {
     this.buffer.push(event);

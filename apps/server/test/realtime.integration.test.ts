@@ -111,6 +111,39 @@ describe('realtime server', () => {
     expect(snapshot.teams.map((t) => t.id)).toEqual(['gelin', 'damat']);
   });
 
+  it('switching the game gives every client a fresh snapshot of the new game, and only while stopped', async () => {
+    const other = () =>
+      createMahalleHalayiMode({
+        ...mahalleHalayiConfig,
+        teams: [
+          { id: 'a', name: 'A Tarafı' },
+          { id: 'b', name: 'B Tarafı' },
+        ],
+        commands: { katıl: { droppable: false, behavior: { kind: 'join', teamId: 'a' } } },
+        gifts: {},
+      });
+    const { viewer, operator } = await start({ modes: other });
+    const watching = await viewer();
+    const operating = await operator();
+    const before = { viewer: watching.of(SOCKET_EVENTS.snapshot).length, operator: operating.of(SOCKET_EVENTS.snapshot).length };
+
+    expect(await operating.command({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: true });
+    await watching.waitUntil(() => watching.of(SOCKET_EVENTS.snapshot).length > before.viewer);
+    await operating.waitUntil(() => operating.of(SOCKET_EVENTS.snapshot).length > before.operator);
+    for (const client of [watching, operating]) {
+      const snapshot = PublicSnapshotSchema.parse(client.of(SOCKET_EVENTS.snapshot).at(-1));
+      expect(snapshot.teams.map((team) => team.id)).toEqual(['a', 'b']);
+      expect(snapshot.players).toEqual([]);
+    }
+
+    // Once a game runs, switching is refused and nothing is sent.
+    expect(await operating.command({ type: 'start_game' })).toEqual({ ok: true });
+    const seen = watching.of(SOCKET_EVENTS.snapshot).length;
+    expect(await operating.command({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: false, reason: 'game_running' });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(watching.of(SOCKET_EVENTS.snapshot)).toHaveLength(seen);
+  });
+
   describe('operator authentication', () => {
     it.each([
       ['no token', undefined],

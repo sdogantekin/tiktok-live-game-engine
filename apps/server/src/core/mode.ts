@@ -20,6 +20,13 @@ export interface GameModeConfig {
   cooldowns: Readonly<Record<string, number>>;
   /** Celebration effects the operator may trigger manually. */
   celebrations: readonly string[];
+  /**
+   * Whether this game lets gifts add points to the sender's team. Default `false`: gifts are then purely cosmetic and the
+   * engine drops any score a gift handler returns. A game opts in by setting this to `true` (a product decision made per
+   * game, never by default). Even then the engine applies a gift score only for a registered player on a team during an
+   * actively scoring round.
+   */
+  giftsMayScore?: boolean;
 }
 
 /** Read-only facts and cooldown helpers the engine gives a mode for one action. */
@@ -43,8 +50,11 @@ export type ModeEffect =
   | { type: 'score'; points: number }
   | { type: 'present'; event: PresentationEvent };
 
-/** Gift handlers can only return presentation effects, so a gift can never change a score. */
-export type GiftEffect = Extract<ModeEffect, { type: 'present' }>;
+/**
+ * What a gift handler may return: presentation effects, and (only in a game that declares `giftsMayScore`) team points.
+ * The engine enforces the capability, so a game that did not opt in cannot score from gifts by accident.
+ */
+export type GiftEffect = Extract<ModeEffect, { type: 'present' | 'score' }>;
 
 export interface GameMode {
   id: ModeId;

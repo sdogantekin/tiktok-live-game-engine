@@ -80,7 +80,8 @@ Needs:
 - **Halaybaşı (added 2026-11-23):** each team's line is led by two halaybaşı, one at each end (a halay has two ends), who are the team's two most recently active players (re-chosen with a delay so it does not flicker). They stand at the ends of the line, step slightly out in front, hold the neighbour's hand with one hand and wave a team-coloured napkin (mendil) with the other, and flourish with it when they comment `halay` or `oyna`. A gift may trigger a cosmetic mendil flourish. Being halaybaşı gives **no scoring bonus**; gifts never buy the role.
 - **Traditional wedding musicians** on the stage (davul and zurna, in traditional dress) playing instruments that are part of their models.
 - **Sound (added to Product Phase 1):** music and sound effects, with mute/volume control for the operator (held by the server). The engine ships original synthesised music (a brisk halay whose tempo and intensity follow the group energy) and effects for joins, jumps, gifts, the countdown, round start and results. **A game may instead supply its own music file** (decided 2026-11-23): the engine streams it, fades it with the game phase, and can lock the dancers' beat to it when the file states its tempo. **Rights to a supplied file are the responsibility of the game producer** (and the platform's own music rules apply once it is streamed publicly); while a file is in use the engine's built-in effects are silent (they would break the music) unless the game opts in; the engine's built-in music and effects remain the fallback when a file is absent or fails to load. Mahalle Halayı's default music is `halay.mp3`, supplied by the producer and kept out of the repository by default (see `.gitignore`).
-- Two teams: Gelin Takımı and Damat Takımı.
+- Two sides (the engine calls them teams): Gelin Tarafı and Damat Tarafı.
+- **Gifts are cosmetic by default; a game may opt in to scoring (decided 2026-11-23).** The engine enforces a per-game capability (`giftsMayScore`, off unless the game declares it) and applies a gift score only for a registered player on a team in an actively scoring round. Mahalle Halayı stays cosmetic-only; Takı Takma Töreni opts in. Before a public TikTok LIVE with gift scoring, TikTok's LIVE Monetization Guidelines and Creator Code of Conduct must be read (still open).
 - Player registration from simulated viewer events.
 - Comment-command simulation.
 - Gift-event simulation.
@@ -119,8 +120,8 @@ A playful Turkish wedding celebration. Viewers join either the bride's side or t
 6. **Results:** the game announces the winning team (or a draw), shows the score, and returns to the lobby for the next round.
 
 ### Teams
-- `gelin` → Gelin Takımı
-- `damat` → Damat Takımı
+- `gelin` → Gelin Tarafı
+- `damat` → Damat Tarafı
 
 A player can select a team during the lobby. During an active round, team switching is disabled by default to discourage score manipulation. A late viewer may join an available team during a round, but their participation starts from the moment they join. The operator may correct a team assignment.
 
@@ -130,8 +131,8 @@ Commands are matched as complete comments after trimming whitespace and applying
 
 | Comment | Behavior | Score impact |
 |---|---|---|
-| `gelin` | Join Gelin Takımı | No direct points |
-| `damat` | Join Damat Takımı | No direct points |
+| `gelin` | Join Gelin Tarafı | No direct points |
+| `damat` | Join Damat Tarafı | No direct points |
 | `halay` | Trigger a halay action | Adds a small, cooldown-limited team energy contribution |
 | `zıpla` | Trigger a jump/dance variation | Visual action only in MVP |
 | `oyna` | Trigger a random approved dance animation | Visual action only in MVP |

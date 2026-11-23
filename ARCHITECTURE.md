@@ -294,6 +294,9 @@ The core engine knows that a game mode can receive a normalized `GameAction`; it
 
 On the web, the same rule holds: `game-renderer/`, `operator/`, `broadcast/` and `realtime/` contain no game words. A game supplies its scene, its wording, its viewer words and an `AnimationRules` object (which of the renderer's generic animations a viewer action plays) from `game-modes/<game>/`. `engine-boundary.test.ts` enforces this by scanning the shared folders for game words.
 
+### Game capabilities and game selection
+The core offers capabilities; a game's config turns them on, so decisions that differ between games stay in the game. Today: `giftsMayScore` (gifts may add team points; default off, enforced by the engine). The operator can switch games with `select_game` while the game is stopped: `GameEngine.setMode` rebuilds the state, command table, deduplication, rate limiters and queue, carries over the server-level settings (sound, provider), and the server sends every client a fresh snapshot. The engine gets games from an injected `modes(id)` factory (it must not import games). `GAME=<id>` chooses the starting game.
+
 ### Game music
 
 Sound lives in `game-renderer/audio/` and is game-neutral: a Web Audio engine (master compressor and soft clip, music bus with ducking, effects bus with voice limits), a beat-locked step scheduler for synthesised music, and a `TrackPlayer` for music files. A game supplies a `SoundDesign` from its own folder: an optional synthesised `score`, an optional `track` (a file URL, with an optional `bpm` and `firstBeatSeconds` if it has one steady tempo), the music mode for each phase, and the mapping from cues to effects. The renderer never imports a game's sound data.

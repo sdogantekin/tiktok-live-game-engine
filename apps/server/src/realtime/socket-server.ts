@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import {
   HelloSchema,
+  type ModeId,
   type PresentationEvent,
   SOCKET_EVENTS,
   SOCKET_NAMESPACES,
@@ -23,6 +24,8 @@ import { createStaticHandler } from './static-files';
 
 export interface GameServerOptions {
   mode: GameMode;
+  /** Builds a game by id, so the operator can switch games (while stopped). Without it, selection is unavailable. */
+  modes?: (id: ModeId) => GameMode;
   operatorToken: string;
   clock?: Clock;
   /** Engine tick and presentation flush interval. */
@@ -67,8 +70,11 @@ export function createGameServer(options: GameServerOptions) {
 
   // The engine and publisher reference each other; this indirection breaks the construction cycle.
   const cues: { forward?: (event: PresentationEvent, ingestedAt: number) => void } = {};
+  const switched: { resync?: () => void } = {};
   const engine = new GameEngine({
     mode: options.mode,
+    modes: options.modes,
+    onModeChanged: () => switched.resync?.(),
     clock,
     onPresentation: (event, meta) => cues.forward?.(event, meta.ingestedAt),
     onError,
@@ -82,6 +88,12 @@ export function createGameServer(options: GameServerOptions) {
     },
   });
   cues.forward = (event, ingestedAt) => publisher.onPresentation(event, ingestedAt);
+  // After a game switch every client gets a fresh snapshot (the roster and scores restart), and the publisher starts over.
+  switched.resync = () => {
+    publisher.resync();
+    broadcast.emit(SOCKET_EVENTS.snapshot, engine.snapshot());
+    operator.emit(SOCKET_EVENTS.snapshot, engine.snapshot());
+  };
 
   // Provider events are queued immediately and drained once per macrotask, so a burst is one drain pass.
   let drainScheduled = false;

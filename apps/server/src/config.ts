@@ -1,3 +1,4 @@
+import { type ModeId, ModeIdSchema } from '@live-game/contracts';
 import { z } from 'zod';
 
 const ConfigSchema = z.object({
@@ -5,6 +6,8 @@ const ConfigSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535).default(3001),
   OPERATOR_TOKEN: z.string().min(8).max(128).optional(),
   WEB_DIR: z.string().min(1).optional(),
+  /** The game to start with (the operator can switch while stopped). */
+  GAME: ModeIdSchema.default('mahalle-halayi'),
   /** `on` lets the operator read a TikTok LIVE. Off by default: the unofficial access it uses is a deliberate, accepted risk. */
   TIKTOK_LIVE: z.enum(['on', 'off']).default('off'),
   /** Optional API key of the signing service the TikTok library depends on. A secret: never logged, never committed. */
@@ -18,6 +21,7 @@ export interface Config {
   operatorToken?: string;
   /** Directory of the built web app to serve (production mode). */
   webDir?: string;
+  game: ModeId;
   tiktokEnabled: boolean;
   signApiKey?: string;
 }
@@ -29,6 +33,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     port: parsed.PORT,
     operatorToken: parsed.OPERATOR_TOKEN,
     webDir: parsed.WEB_DIR,
+    game: parsed.GAME,
     tiktokEnabled: parsed.TIKTOK_LIVE === 'on',
     signApiKey: parsed.EULER_API_KEY,
   };

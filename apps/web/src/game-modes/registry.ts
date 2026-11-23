@@ -10,3 +10,8 @@ const PRESENTATIONS: Record<ModeId, ModePresentation> = {
 export function getPresentation(modeId: ModeId): ModePresentation {
   return PRESENTATIONS[modeId];
 }
+
+/** Every game the web app can present, for the operator's game picker. */
+export function listPresentations(): readonly { id: ModeId; title: string }[] {
+  return (Object.keys(PRESENTATIONS) as ModeId[]).map((id) => ({ id, title: PRESENTATIONS[id].title }));
+}

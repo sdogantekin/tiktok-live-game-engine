@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { GameMode } from '../src/core/mode';
 import { ManualClock } from '../src/core/clock';
 import { GameEngine } from '../src/core/engine';
+import { mahalleHalayiConfig } from '../src/game-modes/mahalle-halayi/config';
 import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules';
 import { createTestEngine } from './helpers';
 
@@ -481,5 +482,156 @@ describe('latency instrumentation', () => {
 
     engine.operator({ type: 'trigger_celebration', effect: 'gg' });
     expect(seen.at(-1)).toEqual({ type: 'celebration', ingestedAt: clock.now() });
+  });
+});
+
+describe('gift scoring is a per-game capability', () => {
+  const halay = createMahalleHalayiMode();
+  /** A game whose gift handler always tries to give the sender's team 5 points (and shows an effect). */
+  const scoringGame = (giftsMayScore: boolean | undefined, points = 5): GameMode => ({
+    ...halay,
+    config: { ...halay.config, giftsMayScore },
+    handleGift: () => [
+      { type: 'score', points },
+      { type: 'present', event: { type: 'celebration', effect: 'gg' } },
+    ],
+  });
+
+  it('is off by default: a game that did not opt in cannot score from gifts, whatever its handler returns', () => {
+    for (const flag of [undefined, false]) {
+      const { engine, say, give, score, startActiveRound, presentation } = createTestEngine({ mode: scoringGame(flag) });
+      say('a', 'gelin');
+      startActiveRound();
+      presentation.length = 0;
+      give('a', 'rose');
+      expect(score('gelin')).toBe(0);
+      expect(engine.stats.giftScoreRefused).toBe(1);
+      expect(presentation).toEqual([{ type: 'celebration', effect: 'gg' }]); // the cosmetic part still plays
+    }
+  });
+
+  it('Mahalle Halayı keeps gifts cosmetic: no score field, nothing refused, nothing scored', () => {
+    const { engine, say, give, score, startActiveRound } = createTestEngine();
+    say('a', 'gelin');
+    startActiveRound();
+    give('a', 'rose');
+    give('a', 'big_celebration');
+    expect(score('gelin')).toBe(0);
+    expect(engine.stats.giftScoreRefused).toBe(0);
+  });
+
+  it('a game that opts in scores the sender\'s team, in an active round, for a registered player on a team', () => {
+    const { engine, say, give, score, startActiveRound } = createTestEngine({ mode: scoringGame(true) });
+    say('a', 'gelin');
+    say('b', 'damat');
+    startActiveRound();
+    give('a', 'rose');
+    give('a', 'rose');
+    give('b', 'rose');
+    expect(score('gelin')).toBe(10);
+    expect(score('damat')).toBe(5);
+    expect(engine.stats.giftScoreRefused).toBe(0);
+  });
+
+  it('still refuses when there is nobody to credit or nothing is scoring', () => {
+    const { engine, say, give, score, startActiveRound, clock } = createTestEngine({ mode: scoringGame(true) });
+    give('stranger', 'rose'); // not a registered player
+    say('nobody-team', 'halay'); // registered (a command registers) but has no team
+    give('nobody-team', 'rose');
+    say('a', 'gelin');
+    give('a', 'rose'); // the game is stopped: no round is scoring
+    expect(score('gelin')).toBe(0);
+    expect(engine.stats.giftScoreRefused).toBe(3);
+
+    startActiveRound();
+    engine.operator({ type: 'pause' });
+    give('a', 'rose'); // paused
+    expect(score('gelin')).toBe(0);
+    expect(engine.stats.giftScoreRefused).toBe(4);
+    engine.operator({ type: 'resume' });
+    clock.advance(5_000); // the per-viewer rate limit is not what is being tested
+    give('a', 'rose');
+    expect(score('gelin')).toBe(5);
+  });
+
+  it('refuses nonsense point values even from an opted-in game', () => {
+    for (const points of [0, -3, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const { engine, say, give, score, startActiveRound } = createTestEngine({ mode: scoringGame(true, points) });
+      say('a', 'gelin');
+      startActiveRound();
+      give('a', 'rose');
+      expect(score('gelin'), String(points)).toBe(0);
+      expect(engine.stats.giftScoreRefused).toBe(1);
+    }
+  });
+});
+
+describe('game selection', () => {
+  /** Another game on the same contract: different sides, different words, no gifts. */
+  const otherGame = () =>
+    createMahalleHalayiMode({
+      ...mahalleHalayiConfig,
+      teams: [
+        { id: 'a', name: 'A Tarafı' },
+        { id: 'b', name: 'B Tarafı' },
+      ],
+      commands: { katıl: { droppable: false, behavior: { kind: 'join', teamId: 'a' } } },
+      gifts: {},
+    });
+
+  it('is unavailable unless the runtime supplied a way to build games', () => {
+    const { engine } = createTestEngine();
+    expect(engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: false, reason: 'game_selection_unavailable' });
+  });
+
+  it('switches only while stopped, because it resets players, scores and rounds', () => {
+    const { engine, say, startActiveRound } = createTestEngine({ modes: otherGame });
+    say('a', 'gelin');
+    expect(engine.operator({ type: 'start_game' })).toEqual({ ok: true });
+    expect(engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: false, reason: 'game_running' });
+    startActiveRound();
+    expect(engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: false, reason: 'game_running' });
+    expect(engine.state.teams.ids()).toEqual(['gelin', 'damat']); // nothing changed
+    expect(engine.state.players.count).toBe(1);
+  });
+
+  it('starts the new game from scratch, with its own sides and words, and forgets the old ones', () => {
+    let changed = 0;
+    const { engine, say, give } = createTestEngine({ modes: otherGame, onModeChanged: () => changed++ });
+    say('old', 'gelin');
+    give('old', 'rose');
+    expect(engine.state.players.count).toBe(1);
+
+    expect(engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: true });
+    expect(changed).toBe(1);
+    expect(engine.state.teams.ids()).toEqual(['a', 'b']);
+    expect(engine.state.players.count).toBe(0);
+    expect(engine.state.hud().teams.map((t) => t.name)).toEqual(['A Tarafı', 'B Tarafı']);
+
+    expect(say('x', 'gelin')).toBe('ignored'); // the old game's word means nothing now
+    expect(say('x', 'katıl')).toBe('queued');
+    expect(engine.state.players.get('test:x')?.teamId).toBe('a');
+  });
+
+  it('keeps what belongs to the running server, not the game: the sound settings and the provider status', () => {
+    const { engine } = createTestEngine({ modes: otherGame });
+    engine.operator({ type: 'set_sound', muted: true, volume: 0.2 });
+    engine.state.setProviderStatus('disconnected');
+    engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' });
+    expect(engine.state.hud().sound).toEqual({ muted: true, volume: 0.2 });
+    expect(engine.state.hud().providerStatus).toBe('disconnected');
+  });
+
+  it('drops anything still queued from the old game, and reports an unknown game or a bad id without changing anything', () => {
+    const { engine, say } = createTestEngine({
+      modes: () => {
+        throw new Error('no such game');
+      },
+    });
+    say('a', 'gelin');
+    expect(engine.operator({ type: 'select_game', modeId: 'mahalle-halayi' })).toEqual({ ok: false, reason: 'unknown_game' });
+    expect(engine.operator({ type: 'select_game', modeId: 'nope' }).ok).toBe(false); // not a known game id at all
+    expect(engine.operator({ type: 'select_game' }).ok).toBe(false);
+    expect(engine.state.players.count).toBe(1);
   });
 });

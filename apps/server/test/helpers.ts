@@ -1,17 +1,21 @@
-import type { PresentationEvent } from '@live-game/contracts';
+import type { ModeId, PresentationEvent } from '@live-game/contracts';
 import { ManualClock } from '../src/core/clock';
 import { type EngineConfig, GameEngine } from '../src/core/engine';
 import type { GameMode } from '../src/core/mode';
 import { createMahalleHalayiMode } from '../src/game-modes/mahalle-halayi/rules';
 import type { ScheduledEvent } from '../src/providers/simulator/simulator';
 
-export function createTestEngine(options: { config?: Partial<EngineConfig>; mode?: GameMode; onError?: (e: unknown) => void } = {}) {
+export function createTestEngine(
+  options: { config?: Partial<EngineConfig>; mode?: GameMode; modes?: (id: ModeId) => GameMode; onModeChanged?: () => void; onError?: (e: unknown) => void } = {},
+) {
   const clock = new ManualClock();
   const presentation: PresentationEvent[] = [];
   const engine = new GameEngine({
     mode: options.mode ?? createMahalleHalayiMode(),
     clock,
     config: options.config,
+    modes: options.modes,
+    onModeChanged: options.onModeChanged,
     onPresentation: (event) => presentation.push(event),
     onError: options.onError,
   });

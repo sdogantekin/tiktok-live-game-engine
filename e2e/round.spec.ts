@@ -32,7 +32,7 @@ test('an operator plays a full round and the broadcast follows along', async ({ 
   if (final.gelin === final.damat) {
     await expect(banner).toContainText('Berabere!');
   } else {
-    await expect(banner).toContainText(final.gelin > final.damat ? 'Gelin Takımı' : 'Damat Takımı');
+    await expect(banner).toContainText(final.gelin > final.damat ? 'Gelin Tarafı' : 'Damat Tarafı');
   }
 });
 

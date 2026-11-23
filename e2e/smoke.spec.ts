@@ -4,8 +4,8 @@ import { OPERATOR_TOKEN } from './helpers';
 test('broadcast page renders the HUD from the server snapshot', async ({ page }) => {
   await page.goto('/broadcast/');
   await expect(page.getByTestId('stage')).toBeVisible();
-  await expect(page.getByText('Gelin Takımı')).toBeVisible();
-  await expect(page.getByText('Damat Takımı')).toBeVisible();
+  await expect(page.getByText('Gelin Tarafı')).toBeVisible();
+  await expect(page.getByText('Damat Tarafı')).toBeVisible();
 });
 
 test('operator page connects with the operator token', async ({ page }) => {

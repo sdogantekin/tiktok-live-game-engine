@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PlayerIdSchema, PresentationEventSchema, PublicPlayerSchema, TeamIdSchema } from '../game/game';
+import { ModeIdSchema, PlayerIdSchema, PresentationEventSchema, PublicPlayerSchema, TeamIdSchema } from '../game/game';
 
 export const SOCKET_NAMESPACES = {
   broadcast: '/broadcast',
@@ -56,6 +56,8 @@ export const OperatorCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('start_round') }),
   z.object({ type: z.literal('end_round') }),
   z.object({ type: z.literal('reset_round_score') }),
+  /** Switches to another game. Only while the game is stopped: it resets players, scores and rounds. */
+  z.object({ type: z.literal('select_game'), modeId: ModeIdSchema }),
   /** Sets the broadcast sound; send `muted`, `volume`, or both. */
   z.object({ type: z.literal('set_sound'), muted: z.boolean().optional(), volume: z.number().min(0).max(1).optional() }),
   z.object({ type: z.literal('trigger_celebration'), effect: z.string().min(1).max(64) }),

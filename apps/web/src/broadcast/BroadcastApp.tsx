@@ -89,7 +89,7 @@ export function BroadcastApp() {
         ) : (
           <>
             <div className="scene-layer">
-              <Stage camera={presentation.camera}>
+              <Stage key={hud.modeId} camera={presentation.camera}>
                 <presentation.Scene
                   roster={roster}
                   teams={hud.teams}

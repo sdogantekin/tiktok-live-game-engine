@@ -17,7 +17,7 @@ export const mahalleHalayiPresentation: ModePresentation = {
   text: {
     phase: {
       stopped: 'Oyun yakında başlıyor',
-      lobby: 'Takımını seç!',
+      lobby: 'Tarafını seç!',
       countdown: 'Başlıyor',
       active: 'Halay zamanı!',
       results: 'Sonuç',

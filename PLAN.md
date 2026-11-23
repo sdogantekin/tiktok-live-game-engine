@@ -277,6 +277,11 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 | 2.2 TikTok provider | Built and tested (2026-11-23) | 2026-11-23 | Our own code in `apps/server/src/providers/tiktok/` behind `ingest()` (parsers for untrusted messages, gift streak counted once, failure classes with per-reason retry, kill switch); connector pinned at 2.5.0 (AGPL-3.0 with the section 18 permission for TikTok LIVE games, `THIRD_PARTY_NOTICES.md`); `TIKTOK_LIVE=on` required; one provider per run; verified with a fake connection only |
 | 2.3 Operator controls | Built and tested (2026-11-23) | 2026-11-23 | TikTok LIVE panel (username, Connect, Disconnect = kill switch, live status and counters via `providerInfo` on the HUD) |
 | 2.4–2.5 | Not started | – | Stream path (your LIVE Studio test), private then public LIVE; the real connection is first exercised here |
+| 3.1 Game capabilities and game selection | Built and tested (2026-11-23) | 2026-11-23 | Approved plan: `~/.claude/plans/eager-mixing-fern-of-5d5c40d6-4477-4dfd-817b-3764fee1ca01.md`. Gift scoring is a per-game capability (`giftsMayScore`, default off; the engine enforces it); operator `select_game` (only while stopped), `GameEngine.setMode`, `GAME=` at startup, operator Game panel, scene remount per game |
+| 3.2 Viewers' comments on screen | Not started | – | Joined players only, on by default, operator off-switch, filters |
+| 3.3 Takı Takma Töreni: rules | Not started | – | Server mode; gifts add bonus points (this game only) |
+| 3.4 Takı Takma Töreni: scene, characters, sound | Not started | – | Largest piece |
+| 3.5 Second game: performance, e2e, docs | Not started | – | |
 
 ## 12. Product Phase 2 — TikTok LIVE integration (outline only)
 

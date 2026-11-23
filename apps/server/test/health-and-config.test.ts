@@ -18,6 +18,12 @@ describe('config', () => {
     expect(loadConfig({ EULER_API_KEY: '' }).signApiKey).toBeUndefined();
   });
 
+  it('starts with Mahalle Halayı unless another known game is chosen', () => {
+    expect(loadConfig({}).game).toBe('mahalle-halayi');
+    expect(loadConfig({ GAME: 'mahalle-halayi' }).game).toBe('mahalle-halayi');
+    expect(() => loadConfig({ GAME: 'no-such-game' })).toThrow();
+  });
+
   it('reads and validates the operator token and port', () => {
     expect(loadConfig({ OPERATOR_TOKEN: 'long-enough-token' }).operatorToken).toBe('long-enough-token');
     expect(loadConfig({ OPERATOR_TOKEN: '' }).operatorToken).toBeUndefined(); // empty means "generate one"
