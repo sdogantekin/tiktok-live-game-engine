@@ -7,6 +7,7 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e/perf',
+  testIgnore: '**/soak.spec.ts', // the soak has its own config and takes 30 minutes
   workers: 1,
   fullyParallel: false,
   timeout: 20 * 60_000,

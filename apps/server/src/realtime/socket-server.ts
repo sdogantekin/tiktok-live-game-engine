@@ -15,6 +15,7 @@ import { handleOperatorMessage } from '../operator/commands';
 import { SimulatorProvider, type SimulatorProviderOptions } from '../providers/simulator/provider';
 import { Histogram } from '../core/metrics';
 import { Publisher } from './publisher';
+import { createStaticHandler } from './static-files';
 
 export interface GameServerOptions {
   mode: GameMode;
@@ -26,6 +27,8 @@ export interface GameServerOptions {
   stateMs?: number;
   maxActionsPerBatch?: number;
   simulator?: Pick<SimulatorProviderOptions, 'seed' | 'joinSpreadMs'>;
+  /** Directory of the built web app to serve (production mode). Omit in development, where Vite serves the pages. */
+  staticDir?: string;
   onError?: (error: unknown) => void;
 }
 
@@ -38,13 +41,16 @@ export function createGameServer(options: GameServerOptions) {
   const stateMs = options.stateMs ?? 100;
   const onError = options.onError ?? ((error: unknown) => console.error('[server]', error));
 
+  const serveStatic = options.staticDir ? createStaticHandler(options.staticDir) : null;
   const http = createServer((req, res) => {
     if (req.url === '/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok' }));
       return;
     }
-    res.writeHead(404).end();
+    void (serveStatic ? serveStatic(req, res) : Promise.resolve(false)).then((handled) => {
+      if (!handled && !res.headersSent) res.writeHead(404).end();
+    });
   });
   const io = new Server(http, { maxHttpBufferSize: MAX_MESSAGE_BYTES });
   const broadcast = io.of(SOCKET_NAMESPACES.broadcast);

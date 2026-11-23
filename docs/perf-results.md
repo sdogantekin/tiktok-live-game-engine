@@ -38,7 +38,7 @@ Raw data: `docs/perf/*.json`.
 - **Snapshot size** for 200 participants: 23 KB (sent once per (re)connect). Steady-state traffic is a few KB/s per client.
 - **Heartbeat work** (p95 / p99 / max, ms), S1: engine tick 0.014 / 0.03 / 0.4; presentation flush 0.78 / 1.5 / 4.3; state publish 0.9 / 1.5 / 3.7. In S2 the worst single outliers were 85 ms (flush) and 57 ms (publish), which looks like one-off garbage collection or JIT warm-up during the first burst; they are the "max" values, not typical.
 - **Event-loop delay** (excess over the 10 ms sampling resolution): mean ~1 ms, p99 under 8 ms; rare spikes up to ~150 ms (S2) coincide with the outliers above.
-- **Memory:** no growth within these runs (the 30-minute soak is Step 1.8).
+- **Memory:** no growth within these runs; the 30-minute soak (Step 1.8) is in `docs/mvp-acceptance.md`: server memory slope -0.255 MB/min, browser heap slope -0.045 MB/min, constant graphics resources, 60 FPS throughout.
 
 **Batch interval 50 ms vs 100 ms** (S1, 60 s): 753 vs 524 messages, 4.7 vs 4.6 KB/s per client. A longer interval saves messages but not bytes, and adds about 25 ms of average delay to what viewers see. **Kept at 50 ms.**
 
@@ -97,7 +97,7 @@ No configuration was changed.
 - **GPU time was not measured directly.** FPS and frame time stand in for it.
 - **No capture tool was running** (no OBS or TikTok LIVE Studio). A streaming tool encoding video at the same time will take GPU and CPU; this must be re-measured with the tool that is actually used (Step 1.8 capture check; Product Phase 2 decides the tool).
 - **One machine, one browser, one tab** (Apple M3). Other hardware, power modes, thermal throttling over long sessions, and other browsers were not tested.
-- **Short windows:** 20 s per browser run and 30–60 s per server run. The 30-minute soak (memory growth, leaks) belongs to Step 1.8.
+- **Short windows:** 20 s per browser run and 30–60 s per server run. A 30-minute soak (memory growth, leaks) was run in Step 1.8 (`docs/mvp-acceptance.md`); anything longer, such as a multi-hour stream, was not.
 - **Simulated traffic only:** real TikTok traffic patterns (and real gift streaks) are a Product Phase 2 question.
 - **Server and load generator share a process,** and the 3 test clients are in the same process.
 - **Latency ends at a frame boundary** (two animation frames after delivery); the true photon time (display latency) is not included, and a streaming pipeline adds its own delay before viewers see anything.
@@ -108,6 +108,7 @@ No configuration was changed.
 ```bash
 pnpm perf:load -- --scenarios s1,s2,s3,s4,s5 --seconds 60 --json docs/perf/my-run.json   # headless server scenarios
 pnpm perf:browser                                                                         # headed Chrome, production build (needs a visible window; close heavy apps first)
+pnpm perf:soak                                                                            # 30-minute soak on `pnpm start` (SOAK_MINUTES to change)
 PERF_OUT=docs/perf/stress.json pnpm perf:browser -g "stress"                              # only the stress sweep
 ```
 

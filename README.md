@@ -10,7 +10,7 @@ A modular, real-time game engine for livestreams. Viewers become players through
 
 | | Milestone | Status |
 |---|---|---|
-| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | In progress (implementation Steps 1.0–1.4 done; capture readiness and the final acceptance run remaining) |
+| **Product Phase 1** | **Standalone MVP**: engine + Mahalle Halayı, driven by the Local Simulator | Complete: implementation Steps 1.0–1.8 are done; acceptance is pending (`docs/mvp-acceptance.md`) |
 | **Product Phase 2** | **TikTok LIVE integration**: feasibility research first, then a TikTok event provider. Success means a public TikTok LIVE stream where real viewers can join and play through the game mechanics | Planned (starts after Product Phase 1 is accepted) |
 
 "Phase" means a product milestone; "Step" means an implementation step. Each phase has its own steps in [`PLAN.md`](PLAN.md): `Step 1.x` for Product Phase 1 and `Step 2.x` for Product Phase 2.
@@ -30,17 +30,17 @@ Requirements: Node.js 22.13 or newer, [pnpm](https://pnpm.io) 12.21.0 (`npm i -g
 
 ```bash
 pnpm install
-pnpm dev
+pnpm start        # production: builds the web app, then one server on http://127.0.0.1:3001 serves everything
+# or, while developing:
+pnpm dev          # game server on :3001 + Vite dev server on :5173 (hot reload)
 ```
 
-`pnpm dev` starts the game server on `http://127.0.0.1:3001` and the web app on `http://127.0.0.1:5173`.
+| View | `pnpm start` | `pnpm dev` |
+|---|---|---|
+| Broadcast (9:16, for window capture) | `http://127.0.0.1:3001/broadcast/` | `http://127.0.0.1:5173/broadcast/` |
+| Operator | `http://127.0.0.1:3001/operator/#token=<token>` | `http://127.0.0.1:5173/operator/#token=<token>` |
 
-| View | URL |
-|---|---|
-| Broadcast (9:16, for window capture) | `http://127.0.0.1:5173/broadcast/` |
-| Operator | `http://127.0.0.1:5173/operator/#token=<token>` |
-
-The server prints a one-time operator token and a ready-to-open operator URL when it starts. Without the token the operator page asks you to paste it. To use a fixed token, set `OPERATOR_TOKEN` (at least 8 characters). The token travels in the URL fragment, so it is never sent to a server in a request.
+The server prints a one-time operator token and a ready-to-open operator URL when it starts. Without the token the operator page asks you to paste it. To use a fixed token, set `OPERATOR_TOKEN` (at least 8 characters). The token travels in the URL fragment, so it is never sent to a server in a request. How to show the broadcast view for capture is in `docs/capture-notes.md`.
 
 A first run: open both views, click **Start game**, add simulated viewers in the **Simulator** panel, click **Start round now**, then send a **burst** of `halay`. The broadcast view shows the scores update; **End round** shows the result.
 
@@ -53,11 +53,13 @@ Copy `.env.example` to `.env` to override defaults. Secrets are never committed.
 | `HOST` | `127.0.0.1` | Server bind address. Keep it on loopback: the operator interface must not be exposed publicly. |
 | `PORT` | `3001` | Server port. |
 | `OPERATOR_TOKEN` | random each run | Operator access token. |
+| `WEB_DIR` | unset | Directory of the built web app to serve (`pnpm start` sets it to `apps/web/dist`). |
 
 ## Commands
 
 ```bash
-pnpm dev          # server + web app
+pnpm start        # production: build, then serve everything from the server on :3001
+pnpm dev          # server + Vite dev server (development)
 pnpm typecheck    # TypeScript, all packages
 pnpm lint         # ESLint, including architecture boundary rules
 pnpm test         # Vitest unit and integration tests
@@ -66,6 +68,7 @@ pnpm build        # production build of the web app
 pnpm assets:build # rebuild the 3D models from their Blender scripts (needs Blender)
 pnpm perf:load    # headless server load scenarios (see docs/perf-results.md)
 pnpm perf:browser # headed-Chrome performance run against the production build
+pnpm perf:soak    # 30-minute soak (memory trends) in a visible Chrome window
 ```
 
 ## How it works
