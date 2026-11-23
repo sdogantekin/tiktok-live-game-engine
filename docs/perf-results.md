@@ -117,3 +117,15 @@ PERF_OUT=docs/perf/stress.json pnpm perf:browser -g "stress"                    
 ```
 
 Sweeps use URL overrides in perf mode only: `/broadcast/?perf=1&cap=36&crowd=60`. `?perf=1` also shows a live overlay; `window.__perf.windowStats()` returns the numbers used here.
+
+## Takı Takma Töreni (Step 3.5, 2026-11-23)
+
+Same method as above (headed Chrome with the GPU, production build, 200 participants, active round, steady simulated chat traffic with `tak`/`alkış` and gifts), 20 s per run, 24 avatars and 48 crowd figures on screen:
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Slow frames | Draw calls | Triangles | Mixer ms/frame | Event latency p95 |
+|---|---|---|---|---|---|---|---|---|---|
+| Default | 1080x1920 | 58.5 (one 533 ms stall at start) | 54.3 | 17.6 ms | 0.1% | 116 | 53 k | 0.22 | 85 ms |
+| Default | 720x1280 | 60.0 | 54.9 | 17.6 ms | 0.1% | 118 | 54 k | 0.24 | 83 ms |
+| Gift burst (3x ev anahtarı, gg, roses) | 1080x1920 | 60.0 | 55.2 | 17.6 ms | 0% | 112 | 53 k | 0.22 | 81 ms |
+
+No long tasks, heap about 20-25 MB, draw calls under the 150 budget. The first run's single 533 ms frame happened in its first measured second (likely shader compilation or a tab focus change) and did not repeat in the two later runs; it is worth watching on the real stream machine. Raw numbers: `docs/perf/taki-results.json`; run with `pnpm perf:browser -g "Takı"`.

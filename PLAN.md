@@ -281,7 +281,7 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 | 3.2 Viewers' comments on screen | Done, awaiting review | – | Joined players only, on by default, operator off-switch, filters, speech bubbles (Mahalle Halayı opts in) |
 | 3.3 Takı Takma Töreni: rules | Done, awaiting review | – | Server mode `taki-takma` (`tak` +1 per 8 s, `alkış`; gifts add bonus points: rose 3, gg 10, big_celebration 30, placeholders), simulator vocabulary per game, playable from the dashboard with a placeholder scene borrowed from Mahalle Halayı. The "every 25 points" takı shower is a visual the Step 3.4 scene derives from the scores, not a rule |
 | 3.4 Takı Takma Töreni: scene, characters, sound | Done, awaiting review | – | Eight new Blender characters on the shared rig (guest per side, bride, groom, four parents; clips walk, pin, clap, receive, thank, wipe_tears, cheer), wedding hall, two guest queues whose members walk up and pin takı, gold meters, takı shower every 25 points, hicaz-flavoured synthesised music |
-| 3.5 Second game: performance, e2e, docs | Not started | – | |
+| 3.5 Second game: performance, e2e, docs | Done, awaiting review | 2026-11-23 | Browser performance of Takı at 200 participants: about 60 FPS, 112-118 draw calls (budget 150), see `docs/perf-results.md`. e2e plays a Takı round from the dashboard. Engine-boundary test covers Takı words. Open before a public stream: TikTok monetization policy read, gift tiers mapping, tuning of point values |
 
 ## 12. Product Phase 2 — TikTok LIVE integration (outline only)
 
