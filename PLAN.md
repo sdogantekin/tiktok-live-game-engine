@@ -279,7 +279,7 @@ Plan approved as written; the recommended defaults below stand unless changed. I
 | 2.4–2.5 | Not started | – | Stream path (your LIVE Studio test), private then public LIVE; the real connection is first exercised here |
 | 3.1 Game capabilities and game selection | Built and tested (2026-11-23) | 2026-11-23 | Approved plan: `~/.claude/plans/eager-mixing-fern-of-5d5c40d6-4477-4dfd-817b-3764fee1ca01.md`. Gift scoring is a per-game capability (`giftsMayScore`, default off; the engine enforces it); operator `select_game` (only while stopped), `GameEngine.setMode`, `GAME=` at startup, operator Game panel, scene remount per game |
 | 3.2 Viewers' comments on screen | Done, awaiting review | – | Joined players only, on by default, operator off-switch, filters, speech bubbles (Mahalle Halayı opts in) |
-| 3.3 Takı Takma Töreni: rules | Not started | – | Server mode; gifts add bonus points (this game only) |
+| 3.3 Takı Takma Töreni: rules | Done, awaiting review | – | Server mode `taki-takma` (`tak` +1 per 8 s, `alkış`; gifts add bonus points: rose 3, gg 10, big_celebration 30, placeholders), simulator vocabulary per game, playable from the dashboard with a placeholder scene borrowed from Mahalle Halayı. The "every 25 points" takı shower is a visual the Step 3.4 scene derives from the scores, not a rule |
 | 3.4 Takı Takma Töreni: scene, characters, sound | Not started | – | Largest piece |
 | 3.5 Second game: performance, e2e, docs | Not started | – | |
 

@@ -19,6 +19,7 @@ test('a joined viewer\'s comment appears as a bubble; unsafe text and switched-o
 
   // Joined: the comment appears, as plain text.
   await send('misafir', 'gelin');
+  await expect(operator.getByRole('heading', { name: 'Players (1)' })).toBeVisible(); // joined before they speak
   await send('misafir', 'çok güzel <b>halay</b>');
   await expect(bubbles).toHaveCount(1);
   await expect(bubbles.first()).toHaveText('çok güzel <b>halay</b>');

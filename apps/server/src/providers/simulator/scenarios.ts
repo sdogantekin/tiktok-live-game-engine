@@ -20,6 +20,21 @@ export const MAHALLE_VOCABULARY: Vocabulary = {
   gifts: ['rose', 'gg', 'big_celebration'],
 };
 
+export const TAKI_VOCABULARY: Vocabulary = {
+  joinWords: ['gelin', 'damat'],
+  actions: [
+    { value: 'tak', weight: 70 },
+    { value: 'alkış', weight: 30 },
+  ],
+  chatter: ['hayırlı olsun', 'mutluluklar', 'çok güzel!', 'bizim taraf önde', 'ben geldim'],
+  gifts: ['rose', 'gg', 'big_celebration'],
+};
+
+/** The simulated audience's words for each game (the simulator is a provider, so it is wired to games here, not in the games). */
+export function vocabularyFor(modeId: string): Vocabulary {
+  return modeId === 'taki-takma' ? TAKI_VOCABULARY : MAHALLE_VOCABULARY;
+}
+
 export interface ScenarioOptions {
   seed: number;
   viewers: number;

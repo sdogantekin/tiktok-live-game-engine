@@ -13,6 +13,7 @@ import { GameEngine } from '../core/engine';
 import type { GameMode } from '../core/mode';
 import { isValidOperatorToken } from '../operator/auth';
 import { handleOperatorMessage } from '../operator/commands';
+import { vocabularyFor } from '../providers/simulator/scenarios';
 import { SimulatorProvider, type SimulatorProviderOptions } from '../providers/simulator/provider';
 import type { ConnectionFactory } from '../providers/tiktok/connection';
 import type { GiftMap } from '../providers/tiktok/gift-map';
@@ -112,6 +113,7 @@ export function createGameServer(options: GameServerOptions) {
   const hubRef: { current?: ProviderHub } = {};
   const simulator = new SimulatorProvider({
     ...options.simulator,
+    vocabulary: () => vocabularyFor(engine.state.hud().modeId),
     now: () => clock.now(),
     emit: deliver,
     onStatusChange: () => hubRef.current?.refresh(),

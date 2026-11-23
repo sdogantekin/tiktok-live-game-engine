@@ -16,7 +16,8 @@ export interface SimulatorProviderOptions {
   emit: (raw: unknown) => void;
   now?: () => number;
   seed?: number;
-  vocabulary?: Vocabulary;
+  /** The audience's words; a function so it can follow the game being played. */
+  vocabulary?: Vocabulary | (() => Vocabulary);
   /** Window over which newly added viewers send their join comment. */
   joinSpreadMs?: number;
   pumpIntervalMs?: number;
@@ -39,7 +40,6 @@ export class SimulatorProvider {
   private _status: ProviderStatus = 'connected';
   private readonly rng: Rng;
   private readonly now: () => number;
-  private readonly vocabulary: Vocabulary;
   private readonly joinSpreadMs: number;
   private readonly pumpIntervalMs: number;
   private readonly manual = new EventFactory('manual');
@@ -50,10 +50,14 @@ export class SimulatorProvider {
   private burstCursor = 0;
   private lastEvent: unknown = null;
 
+  private vocabulary(): Vocabulary {
+    const { vocabulary } = this.options;
+    return typeof vocabulary === 'function' ? vocabulary() : (vocabulary ?? MAHALLE_VOCABULARY);
+  }
+
   constructor(private readonly options: SimulatorProviderOptions) {
     this.rng = new Rng(options.seed ?? Date.now());
     this.now = options.now ?? Date.now;
-    this.vocabulary = options.vocabulary ?? MAHALLE_VOCABULARY;
     this.joinSpreadMs = options.joinSpreadMs ?? 2_000;
     this.pumpIntervalMs = options.pumpIntervalMs ?? 25;
   }
@@ -124,7 +128,7 @@ export class SimulatorProvider {
         const atMs = this.rng.int(this.joinSpreadMs + 1);
         return {
           atMs,
-          raw: this.manual.comment(viewer, this.rng.pick(this.vocabulary.joinWords), startedAt + atMs),
+          raw: this.manual.comment(viewer, this.rng.pick(this.vocabulary().joinWords), startedAt + atMs),
         };
       }),
     );
@@ -162,7 +166,7 @@ export class SimulatorProvider {
       seed: this.rng.int(2 ** 31),
       viewers,
       startAt: this.now(),
-      vocabulary: this.vocabulary,
+      vocabulary: this.vocabulary(),
       idPrefix: `run${++this.runCount}`,
     };
     this.play(

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const MODE_IDS = ['mahalle-halayi'] as const;
+export const MODE_IDS = ['mahalle-halayi', 'taki-takma'] as const;
 export const ModeIdSchema = z.enum(MODE_IDS);
 export type ModeId = z.infer<typeof ModeIdSchema>;
 
