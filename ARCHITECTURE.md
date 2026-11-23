@@ -289,6 +289,8 @@ Server-side mode logic and client-side rendering live in separate folders but us
 
 The core engine knows that a game mode can receive a normalized `GameAction`; it does not know what `halay`, `gelin`, or `mancınık` means.
 
+On the web, the same rule holds: `game-renderer/`, `operator/`, `broadcast/` and `realtime/` contain no game words. A game supplies its scene, its wording, its viewer words and an `AnimationRules` object (which of the renderer's generic animations a viewer action plays) from `game-modes/<game>/`. `engine-boundary.test.ts` enforces this by scanning the shared folders for game words.
+
 ### Future mode example
 
 `osmanli-kusatmasi` would add its own teams, actions, scoring, scene, and assets. It should reuse core player, team, event, round, state, and operator services. It is not implemented in the MVP.

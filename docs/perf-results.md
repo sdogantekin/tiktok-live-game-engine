@@ -76,6 +76,8 @@ Columns: average FPS · 1%-low FPS · frame ms p50/p95/p99/max · share of frame
 
 Even with **200 individually animated, skinned characters and a 400-figure crowd** (4× the planned draw calls and 4× the triangles), the frame rate held at 60 FPS. There was no knee within what I could test, so the real limit on this machine is higher than this.
 
+**Re-run after Step 1.9 (2026-11-23, beat-synced lines, bride and groom, traditional musicians):** the default scene is now 93 draw calls and 55 k triangles with ~0.2 ms mixer time; the 200-avatar + 200-crowd stress case runs at 59.9 FPS (1% low 56.5 FPS, frame p95 17.2 ms), latency p95 85 ms. The raw numbers are in `docs/perf/browser-results.json`.
+
 ## Findings
 
 1. **Performance is not the constraint.** The default scene costs about 95 draw calls and 52 k triangles, animation-mixer time is ~0.2 ms per frame, JS heap stays around 25 MB, there were no long tasks in any run, and the draw-call budget set in Step 1.6 (provisionally < 150) is respected at the planned configuration.

@@ -272,6 +272,10 @@ body,
 .name-tag.left {
   transform: translate(-100%, -50%);
 }
+.name-tag.leader::before {
+  content: '★ '; /* the halaybaşı leads the line */
+  color: #ffd35a;
+}
 .name-tag.emphasized {
   z-index: 2;
   max-width: calc(var(--u) * 30);

@@ -44,17 +44,17 @@ function pose(anim: Anim | undefined, now: number, idle: number): Pose {
   const arc = Math.sin(Math.PI * p);
 
   switch (anim.kind) {
-    case 'halay': {
+    case 'flourish': {
       const step = elapsed / 1000 * 7 + anim.phase;
       return { x: 0.14 * Math.sin(step), y: 0.12 * Math.abs(Math.sin(step)), rotY: 0.12 * Math.sin(step * 0.5), squash: 1 };
     }
-    case 'zipla':
+    case 'jump':
       return { x: 0, y: 0.95 * arc, rotY: 0, squash: 1 + 0.12 * Math.cos(Math.PI * 2 * p) * (1 - p) };
     case 'spin':
       return { x: 0, y: 0.25 * arc, rotY: Math.PI * 2 * p, squash: 1 };
     case 'wiggle':
       return { x: 0.1 * Math.sin(p * Math.PI * 8), y: 0.08 * arc, rotY: 0.35 * Math.sin(p * Math.PI * 6), squash: 1 + 0.1 * Math.sin(p * Math.PI * 8) };
-    case 'rose':
+    case 'special':
       return { x: 0, y: 0.25 * arc, rotY: Math.PI * 2 * p, squash: 1 };
     case 'hop':
       return { x: 0, y: 0.6 * Math.abs(Math.sin(p * Math.PI * 2)) * (1 - p * 0.3), rotY: 0, squash: 1 };

@@ -75,6 +75,11 @@ Needs:
 ### In scope
 - One playable game mode: Mahalle Halayı.
 - One stylized 3D wedding courtyard environment.
+- **Living halay (added after the first playtest):** the Gelin and Damat teams stay face to face in two lines, but the whole scene moves on a shared beat: both lines continuously dance a sideways halay step and travel up and down the screen together, and group energy speeds up and intensifies the dance. Individual comments add short flourishes on top of the shared dance, not the only movement.
+- **Bride and groom:** a bride and a groom character in the centre of the dance floor dance their own two-person halay.
+- **Halaybaşı (added 2026-11-23):** each team's line is led by two halaybaşı, one at each end (a halay has two ends), who are the team's two most recently active players (re-chosen with a delay so it does not flicker). They stand at the ends of the line, step slightly out in front, hold the neighbour's hand with one hand and wave a team-coloured napkin (mendil) with the other, and flourish with it when they comment `halay` or `oyna`. A gift may trigger a cosmetic mendil flourish. Being halaybaşı gives **no scoring bonus**; gifts never buy the role.
+- **Traditional wedding musicians** on the stage (davul and zurna, in traditional dress) playing instruments that are part of their models.
+- **Sound (added to Product Phase 1):** original music and sound effects (halay music whose tempo and intensity follow the group energy, plus effects for joins, jumps, gifts, countdown, round start and results), with mute/volume control for the operator. Music and effects must be original or have a clearly documented licence; copyrighted recordings are not used.
 - Two teams: Gelin Takımı and Damat Takımı.
 - Player registration from simulated viewer events.
 - Comment-command simulation.

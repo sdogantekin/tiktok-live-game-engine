@@ -32,7 +32,7 @@ fails the build if one is violated.
 |---|---|
 | Gelin team | `#e0457b` (veil: white and gold) |
 | Damat team | `#2f6fdb` (red fez `#b3261e`) |
-| Band | `#3f8f6b` |
+| Musicians | vest `#8c2f39` / `#2e6b4f`, fez `#b3261e` / `#8c2f39` |
 | Tiles | `#e9c892` / `#d9b274` |
 | Dance floor | `#f3dfb6` / `#ecd0a0`, border `#b0553f` |
 | Roofs | `#b3472f`, `#8f3a2c` |
@@ -45,9 +45,11 @@ is a draft only and must pass the checklist below.
 
 | File | Contents | Triangles | Notes |
 |---|---|---|---|
-| `character_gelin.glb`, `character_damat.glb`, `character_band.glb` | One rigged toy character (12 bones), 3 looks | ~500 each | Clips: `idle`, `halay`, `jump`, `dance_a`, `dance_b`, `rose_special`. One skinned mesh, one draw call. |
+| `character_gelin.glb`, `character_damat.glb` | Team dancers on one rigged toy character (12 bones) | ~500 each | Clips: `idle`, `step_left`, `step_right`, `halay_kick`, `jump`, `dance_a`, `dance_b`, `rose_special`. One skinned mesh, one draw call. |
+| `character_bride.glb`, `character_groom.glb` | The couple, side by side on their own small circle | ~550 each | Clips: `idle`, `step_left`, `step_right` (the same linked side step as the lines). |
+| `character_davulcu.glb`, `character_zurnaci.glb` | Traditional musicians; the davul and zurna are part of the mesh | ~800 each | Clips: `idle`, `davul_play` (1 beat), `zurna_play` (2 beats). |
 | `crowd.glb` | `CrowdBody` (tinted per instance) and `CrowdHead` | ~120 | Drawn with instancing. |
-| `courtyard.glb` | Kit pieces: plaza, dance floor, 3 houses, lamp, 2 banners, stage, davul, zurna, wedding arch, planter | ~3.1 k | Each piece is a named node with its origin on the ground. |
+| `courtyard.glb` | Kit pieces: plaza, dance floor, 3 houses, lamp, 2 banners, stage, wedding arch, planter | ~3.1 k | Each piece is a named node with its origin on the ground. |
 
 Initial budgets (confirmed or revised by measurement in Step 1.7): character ≤ 1,500 triangles, crowd figure
 ≤ 260, courtyard kit ≤ 30,000, all GLBs together ≤ 5 MB, textures ≤ 1024².

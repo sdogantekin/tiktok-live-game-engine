@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeTagAnchors, projectToStage, slotKey, type SlotOccupant, TagBoard } from './name-tags';
+import { computeTagAnchors, projectToStage, slotKey, type SlotOccupant, tagShift, TagBoard } from './name-tags';
 import type { CameraConfig, Formation } from './types';
 
 const camera: CameraConfig = { position: [0, 22, 19], lookAt: [0, 0, -2.2], fov: 52 };
@@ -129,5 +129,26 @@ describe('TagBoard', () => {
     const { board } = setup();
     board.setOccupants([occupant('gelin-0', 'a', '<img src=x onerror=alert(1)>')]);
     expect(board.getSnapshot()[0]!.name).toBe('<img src=x onerror=alert(1)>');
+  });
+});
+
+describe('tags following a travelling line', () => {
+  const anchors = computeTagAnchors(camera, formation, { gelin: 3, damat: 3 });
+
+  it('moves a tag down the screen when its line walks towards the camera, and back up the other way', () => {
+    const { perMetre } = anchors[slotKey('gelin', 1)]!;
+    expect(tagShift(perMetre, [0, 0, 1]).y).toBeGreaterThan(0);
+    expect(tagShift(perMetre, [0, 0, -1]).y).toBeLessThan(0);
+    expect(tagShift(perMetre, [0, 0, 0])).toEqual({ x: 0, y: 0 });
+  });
+
+  it('matches projecting the moved avatar closely enough for the allowed travel', () => {
+    const [x, , z] = formation.avatar('gelin', 1, 3).position;
+    const anchor = anchors[slotKey('gelin', 1)]!;
+    const inward = x < 0 ? 0.5 : -0.5;
+    const exact = projectToStage(camera, [x + inward, 1.1, z + 1.2]);
+    const shift = tagShift(anchor.perMetre, [0, 0, 1.2]);
+    expect(anchor.small.y + shift.y).toBeCloseTo(exact.y, 2);
+    expect(anchor.small.x + shift.x).toBeCloseTo(exact.x, 2);
   });
 });

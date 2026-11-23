@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { BUDGETS, CHARACTER_BONES, CHARACTER_CLIPS, COURTYARD_PIECES, CROWD_NODES, MODEL_URLS } from './assets.manifest';
 import { readGlb } from './glb-info';
-import { avatarModels, bandModels, courtyardLayout } from './scene-config';
+import { avatarModels, brideModels, courtyardLayout, davulModels, groomModels, zurnaModels } from './scene-config';
 
 const file = (url: string) => new URL(`../../../public${url}`, import.meta.url);
 
 describe('character models', () => {
-  for (const [look, url] of Object.entries(MODEL_URLS.characters)) {
+  for (const [look, url] of Object.entries(MODEL_URLS.characters) as [keyof typeof CHARACTER_CLIPS, string][]) {
     describe(look, () => {
       const info = readGlb(file(url));
 
@@ -20,7 +20,7 @@ describe('character models', () => {
 
       it('has the 12-bone rig and exactly the agreed clips', () => {
         expect(info.jointCount).toBe(CHARACTER_BONES);
-        expect([...info.clipNames].sort()).toEqual([...CHARACTER_CLIPS].sort());
+        expect([...info.clipNames].sort()).toEqual([...CHARACTER_CLIPS[look]].sort());
       });
 
       it('has sensible clip lengths', () => {
@@ -74,10 +74,19 @@ describe('asset set', () => {
     const pieces = new Set<string>(COURTYARD_PIECES);
     for (const placed of courtyardLayout) expect(pieces.has(placed.piece), placed.piece).toBe(true);
 
-    const clips = new Set<string>(CHARACTER_CLIPS);
-    for (const models of [avatarModels, bandModels]) {
-      for (const [kind, clip] of Object.entries(models.clips)) expect(clips.has(clip), `${kind} -> ${clip}`).toBe(true);
-      for (const clip of models.looping) expect(clips.has(clip), clip).toBe(true);
+    const configs = [
+      { models: avatarModels, looks: ['gelin', 'damat'] },
+      { models: brideModels, looks: ['bride'] },
+      { models: groomModels, looks: ['groom'] },
+      { models: davulModels, looks: ['davulcu'] },
+      { models: zurnaModels, looks: ['zurnaci'] },
+    ] as const;
+    for (const { models, looks } of configs) {
+      for (const look of looks) {
+        const clips = new Set<string>(CHARACTER_CLIPS[look]);
+        const used = [...Object.values(models.clips), ...models.looping, ...Object.keys(models.loopBeats ?? {}), ...Object.values(models.lineSteps ?? {})];
+        for (const clip of used) expect(clips.has(clip), `${look}: ${clip}`).toBe(true);
+      }
     }
   });
 });

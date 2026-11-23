@@ -10,6 +10,7 @@ export const mahalleHalayiPresentation: ModePresentation = {
   camera,
   Scene,
   tagAnchors: computeTagAnchors(camera, formation, slotCapacities(TEAM_IDS, AVATAR_CAP)),
+  simulatorDefaultWord: 'halay',
   teamColors: { gelin: '#e0457b', damat: '#2f6fdb' },
   text: {
     phase: {

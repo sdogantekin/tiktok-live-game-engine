@@ -1,5 +1,667 @@
 {
-  "measuredAt": "2026-11-22T23:56:56.675Z",
+  "measuredAt": "2026-11-23T08:50:14.740Z",
   "measureSeconds": 20,
-  "results": []
+  "results": [
+    {
+      "label": "default (200 participants)",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 30,
+      "frames": 1196,
+      "avgFps": 59.80209307322192,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 18.69999998807907,
+        "max": 44.89999997615814
+      },
+      "onePercentLowFps": 53.475935862967,
+      "slowFrameShare": 0.0016722408026755853,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.18327759188852183,
+      "jsHeapMB": 19.53226375579834,
+      "latencyMs": {
+        "count": 218,
+        "p50": 63,
+        "p95": 84,
+        "p99": 87,
+        "max": 133
+      },
+      "drawCalls": 93,
+      "triangles": 55488,
+      "avatars": 24,
+      "crowdVisible": 60
+    },
+    {
+      "label": "default (200 participants)",
+      "viewport": "720x1280",
+      "cap": 24,
+      "crowd": 30,
+      "frames": 1201,
+      "avgFps": 60.006795107504715,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.700000017881393,
+        "p99": 18.599999994039536,
+        "max": 35.900000005960464
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0.0008326394671107411,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.1772689430243169,
+      "jsHeapMB": 18.885653495788574,
+      "latencyMs": {
+        "count": 241,
+        "p50": 58,
+        "p95": 82,
+        "p99": 88,
+        "max": 88
+      },
+      "drawCalls": 95,
+      "triangles": 55680,
+      "avatars": 24,
+      "crowdVisible": 60
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 12,
+      "crowd": 0,
+      "frames": 1200,
+      "avgFps": 59.9994000060357,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.099999994039536,
+        "p99": 18.599999994039536,
+        "max": 30.80000001192093
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.12208333310981591,
+      "jsHeapMB": 15.418889999389648,
+      "latencyMs": {
+        "count": 218,
+        "p50": 62,
+        "p95": 85,
+        "p99": 87,
+        "max": 88
+      },
+      "drawCalls": 61,
+      "triangles": 28464,
+      "avatars": 12,
+      "crowdVisible": 0
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 12,
+      "crowd": 30,
+      "frames": 1199,
+      "avgFps": 59.9529976498825,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.299999982118607,
+        "p99": 18.700000017881393,
+        "max": 28.200000017881393
+      },
+      "onePercentLowFps": 53.475935777742016,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.13386155159101573,
+      "jsHeapMB": 22.984161376953125,
+      "latencyMs": {
+        "count": 214,
+        "p50": 66,
+        "p95": 81,
+        "p99": 86,
+        "max": 103
+      },
+      "drawCalls": 69,
+      "triangles": 43344,
+      "avatars": 12,
+      "crowdVisible": 60
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 12,
+      "crowd": 60,
+      "frames": 1201,
+      "avgFps": 60.00229817302397,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.099999994039536,
+        "p99": 18.599999994039536,
+        "max": 19
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.1236469609652034,
+      "jsHeapMB": 23.586756706237793,
+      "latencyMs": {
+        "count": 219,
+        "p50": 60,
+        "p95": 83,
+        "p99": 86,
+        "max": 86
+      },
+      "drawCalls": 69,
+      "triangles": 58224,
+      "avatars": 12,
+      "crowdVisible": 120
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 0,
+      "frames": 1199,
+      "avgFps": 59.95,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.900000005960464,
+        "p99": 18.5,
+        "max": 28.799999982118607
+      },
+      "onePercentLowFps": 54.054054054054056,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.20425354442664043,
+      "jsHeapMB": 22.648852348327637,
+      "latencyMs": {
+        "count": 222,
+        "p50": 62,
+        "p95": 84,
+        "p99": 87,
+        "max": 112
+      },
+      "drawCalls": 87,
+      "triangles": 40800,
+      "avatars": 24,
+      "crowdVisible": 0
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 30,
+      "frames": 1199,
+      "avgFps": 59.95239809587023,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.80000001192093,
+        "p99": 18.599999994039536,
+        "max": 37.39999997615814
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0.0016680567139282735,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.18899082573281417,
+      "jsHeapMB": 22.5485200881958,
+      "latencyMs": {
+        "count": 218,
+        "p50": 63,
+        "p95": 85,
+        "p99": 88,
+        "max": 88
+      },
+      "drawCalls": 93,
+      "triangles": 55488,
+      "avatars": 24,
+      "crowdVisible": 60
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 60,
+      "frames": 1199,
+      "avgFps": 59.95089926343535,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 18.599999994039536,
+        "max": 40.900000005960464
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0.0008340283569641367,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.16655546322377948,
+      "jsHeapMB": 18.922712326049805,
+      "latencyMs": {
+        "count": 214,
+        "p50": 63,
+        "p95": 83,
+        "p99": 86,
+        "max": 88
+      },
+      "drawCalls": 93,
+      "triangles": 70368,
+      "avatars": 24,
+      "crowdVisible": 120
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 36,
+      "crowd": 0,
+      "frames": 1200,
+      "avgFps": 59.95293694444501,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 18.600000023841858,
+        "max": 41.599999994039536
+      },
+      "onePercentLowFps": 53.763440791299985,
+      "slowFrameShare": 0.0008333333333333334,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.2505000001688798,
+      "jsHeapMB": 25.542739868164062,
+      "latencyMs": {
+        "count": 217,
+        "p50": 66,
+        "p95": 85,
+        "p99": 89,
+        "max": 126
+      },
+      "drawCalls": 113,
+      "triangles": 53136,
+      "avatars": 36,
+      "crowdVisible": 0
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 36,
+      "crowd": 30,
+      "frames": 1200,
+      "avgFps": 59.95203836930456,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.700000017881393,
+        "p99": 18.599999994039536,
+        "max": 30.400000005960464
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.23841666631400585,
+      "jsHeapMB": 19.492606163024902,
+      "latencyMs": {
+        "count": 224,
+        "p50": 61,
+        "p95": 84,
+        "p99": 87,
+        "max": 105
+      },
+      "drawCalls": 117,
+      "triangles": 67632,
+      "avatars": 36,
+      "crowdVisible": 60
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 36,
+      "crowd": 60,
+      "frames": 1198,
+      "avgFps": 59.85600583565728,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.099999994039536,
+        "p99": 18.700000017881393,
+        "max": 45.39999997615814
+      },
+      "onePercentLowFps": 53.475935777742016,
+      "slowFrameShare": 0.001669449081803005,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.2212020030403774,
+      "jsHeapMB": 18.078413009643555,
+      "latencyMs": {
+        "count": 204,
+        "p50": 66,
+        "p95": 85,
+        "p99": 89,
+        "max": 140
+      },
+      "drawCalls": 123,
+      "triangles": 83088,
+      "avatars": 36,
+      "crowdVisible": 120
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 48,
+      "crowd": 0,
+      "frames": 1200,
+      "avgFps": 59.95892813426377,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.19999998807907,
+        "p99": 18.599999994039536,
+        "max": 27.19999998807907
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.34858333351711435,
+      "jsHeapMB": 18.024574279785156,
+      "latencyMs": {
+        "count": 205,
+        "p50": 61,
+        "p95": 84,
+        "p99": 87,
+        "max": 87
+      },
+      "drawCalls": 133,
+      "triangles": 64896,
+      "avatars": 48,
+      "crowdVisible": 0
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 48,
+      "crowd": 30,
+      "frames": 1200,
+      "avgFps": 59.95203836930456,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 18.599999994039536,
+        "max": 36.400000005960464
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0.0008333333333333334,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.3177499993890524,
+      "jsHeapMB": 22.18225383758545,
+      "latencyMs": {
+        "count": 216,
+        "p50": 63,
+        "p95": 84,
+        "p99": 87,
+        "max": 89
+      },
+      "drawCalls": 141,
+      "triangles": 79776,
+      "avatars": 48,
+      "crowdVisible": 60
+    },
+    {
+      "label": "sweep",
+      "viewport": "1080x1920",
+      "cap": 48,
+      "crowd": 60,
+      "frames": 1199,
+      "avgFps": 59.900582019833635,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18.200000017881393,
+        "p99": 18.700000017881393,
+        "max": 34.599999994039536
+      },
+      "onePercentLowFps": 53.475935777742016,
+      "slowFrameShare": 0.0008340283569641367,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.34829024144070064,
+      "jsHeapMB": 19.33762550354004,
+      "latencyMs": {
+        "count": 227,
+        "p50": 60,
+        "p95": 84,
+        "p99": 88,
+        "max": 105
+      },
+      "drawCalls": 141,
+      "triangles": 94656,
+      "avatars": 48,
+      "crowdVisible": 120
+    },
+    {
+      "label": "effects burst (gifts)",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 30,
+      "note": "3x big_celebration + gg + roses",
+      "frames": 1518,
+      "avgFps": 59.96278988930643,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.80000001192093,
+        "p99": 18.599999994039536,
+        "max": 41.69999998807907
+      },
+      "onePercentLowFps": 53.76344087744382,
+      "slowFrameShare": 0.0006587615283267457,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.17496706217488125,
+      "jsHeapMB": 21.096291542053223,
+      "latencyMs": {
+        "count": 284,
+        "p50": 62,
+        "p95": 84,
+        "p99": 89,
+        "max": 101
+      },
+      "drawCalls": 93,
+      "triangles": 55488,
+      "avatars": 24,
+      "crowdVisible": 60
+    },
+    {
+      "label": "stress",
+      "viewport": "1080x1920",
+      "cap": 48,
+      "crowd": 60,
+      "frames": 1199,
+      "avgFps": 59.95209832349492,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 18.600000023841858,
+        "max": 38.20000001788139
+      },
+      "onePercentLowFps": 53.763440791299985,
+      "slowFrameShare": 0.0008340283569641367,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.3096747284536067,
+      "jsHeapMB": 29.790656089782715,
+      "latencyMs": {
+        "count": 213,
+        "p50": 66,
+        "p95": 83,
+        "p99": 87,
+        "max": 89
+      },
+      "drawCalls": 141,
+      "triangles": 94656,
+      "avatars": 48,
+      "crowdVisible": 120
+    },
+    {
+      "label": "stress",
+      "viewport": "1080x1920",
+      "cap": 96,
+      "crowd": 60,
+      "frames": 1189,
+      "avgFps": 59.441678165021465,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 18,
+        "p99": 20.799999982118607,
+        "max": 75.40000000596046
+      },
+      "onePercentLowFps": 48.07692311825396,
+      "slowFrameShare": 0.00336417157275021,
+      "longTasks": {
+        "count": 1,
+        "totalMs": 74
+      },
+      "mixerMsPerFrame": 0.6428931879084886,
+      "jsHeapMB": 31.715473175048828,
+      "latencyMs": {
+        "count": 231,
+        "p50": 63,
+        "p95": 84,
+        "p99": 100,
+        "max": 132
+      },
+      "drawCalls": 237,
+      "triangles": 138024,
+      "avatars": 96,
+      "crowdVisible": 99
+    },
+    {
+      "label": "stress",
+      "viewport": "1080x1920",
+      "cap": 144,
+      "crowd": 120,
+      "frames": 1190,
+      "avgFps": 59.451249975002774,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.80000001192093,
+        "p99": 21.099999994039536,
+        "max": 75.5
+      },
+      "onePercentLowFps": 47.393364942297936,
+      "slowFrameShare": 0.004201680672268907,
+      "longTasks": {
+        "count": 1,
+        "totalMs": 73
+      },
+      "mixerMsPerFrame": 0.8921848736139907,
+      "jsHeapMB": 26.04867458343506,
+      "latencyMs": {
+        "count": 217,
+        "p50": 64,
+        "p95": 85,
+        "p99": 127,
+        "max": 190
+      },
+      "drawCalls": 333,
+      "triangles": 175936,
+      "avatars": 144,
+      "crowdVisible": 56
+    },
+    {
+      "label": "stress",
+      "viewport": "1080x1920",
+      "cap": 200,
+      "crowd": 200,
+      "frames": 1199,
+      "avgFps": 59.90118053791515,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.19999998807907,
+        "p99": 17.700000017881393,
+        "max": 56.599999994039536
+      },
+      "onePercentLowFps": 56.49717508416677,
+      "slowFrameShare": 0.0016680567139282735,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 1.091326105013005,
+      "jsHeapMB": 45.132975578308105,
+      "latencyMs": {
+        "count": 206,
+        "p50": 65,
+        "p95": 85,
+        "p99": 88,
+        "max": 105
+      },
+      "drawCalls": 419,
+      "triangles": 208912,
+      "avatars": 187,
+      "crowdVisible": 13
+    },
+    {
+      "label": "burst (200 halay in 1.5 s x3)",
+      "viewport": "1080x1920",
+      "cap": 24,
+      "crowd": 30,
+      "frames": 2290,
+      "avgFps": 60.00010480368588,
+      "frameMs": {
+        "p50": 16.69999998807907,
+        "p95": 17.099999994039536,
+        "p99": 17.600000023841858,
+        "max": 26.200000017881393
+      },
+      "onePercentLowFps": 56.81818174121301,
+      "slowFrameShare": 0,
+      "longTasks": {
+        "count": 0,
+        "totalMs": 0
+      },
+      "mixerMsPerFrame": 0.28004366853091395,
+      "jsHeapMB": 24.205504417419434,
+      "latencyMs": {
+        "count": 91,
+        "p50": 70,
+        "p95": 82,
+        "p99": 85,
+        "max": 85
+      },
+      "drawCalls": 93,
+      "triangles": 55488,
+      "avatars": 24,
+      "crowdVisible": 60
+    }
+  ]
 }

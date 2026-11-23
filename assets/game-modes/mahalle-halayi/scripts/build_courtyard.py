@@ -27,7 +27,7 @@ from assetlib import (  # noqa: E402
 )
 
 TRIANGLE_BUDGET = 30000
-REQUIRED = ["Floor_Plaza", "Floor_Dance", "House_A", "House_B", "House_C", "Lamp", "Banner_Gelin", "Banner_Damat", "Stage", "Davul", "Zurna", "Arch", "Planter"]
+REQUIRED = ["Floor_Plaza", "Floor_Dance", "House_A", "House_B", "House_C", "Lamp", "Banner_Gelin", "Banner_Damat", "Stage", "Arch", "Planter"]
 
 WOOD, DARK_WOOD, STONE, GOLD = "#8c5a3c", "#4a3b34", "#d9c3a0", "#ffd35a"
 
@@ -124,23 +124,6 @@ def stage():
     return m
 
 
-def davul():
-    m = MeshBuilder("Davul")
-    m.cylinder((0, 0, 0.45), 0.4, 0.4, 0.4, "#b8793d", segments=12, rotation=(90, 0, 0))  # drum body, lying on its side
-    for side in (-1, 1):
-        m.cylinder((0, 0.2 * side, 0.45), 0.42, 0.42, 0.05, "#f4ecd8", segments=12, rotation=(90, 0, 0))  # skins
-    m.cylinder((0, 0, 0.45), 0.43, 0.43, 0.06, "#b3261e", segments=12, rotation=(90, 0, 0))  # red band
-    m.limb((0.45, -0.3, 0.7), (0.65, -0.55, 0.75), 0.025, 0.025, "#e8d3a0", segments=4)  # mallet
-    return m
-
-
-def zurna():
-    m = MeshBuilder("Zurna")
-    m.limb((0, 0, 0.03), (0, -0.18, 0.62), 0.05, 0.03, "#d8a24a", segments=6)
-    m.limb((0, -0.18, 0.62), (0, -0.3, 0.88), 0.03, 0.14, "#d8a24a", segments=8)  # flared bell
-    return m
-
-
 def arch():
     m = MeshBuilder("Arch")
     for side in (-1, 1):
@@ -181,8 +164,6 @@ def main():
         banner("Banner_Gelin", "#e0457b"),
         banner("Banner_Damat", "#2f6fdb"),
         stage(),
-        davul(),
-        zurna(),
         arch(),
         planter(),
     ]

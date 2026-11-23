@@ -51,7 +51,16 @@ export interface EffectRecipe {
   musicians?: 'bounce';
 }
 
-export type AnimKind = 'halay' | 'zipla' | 'spin' | 'wiggle' | 'hop' | 'rose';
+/** The renderer's own animation vocabulary. A game maps its viewer actions onto these (see `AnimationRules`). */
+export type AnimKind = 'flourish' | 'jump' | 'spin' | 'wiggle' | 'hop' | 'special';
+
+/** How a game turns what viewers did into avatar animations. Data and a pure function supplied by the mode. */
+export interface AnimationRules {
+  /** How long each animation lasts, in ms. */
+  durations: Readonly<Record<AnimKind, number>>;
+  /** Which animation a viewer's action plays (`animation` is the game's own word from the cue). */
+  forAction(animation: string, random: () => number): AnimKind;
+}
 
 /** Rigged character models for the avatars: one GLB per team (same rig and clips, different colours). */
 export interface AvatarModels {
@@ -61,6 +70,24 @@ export interface AvatarModels {
   clips: Readonly<Record<AnimKind | 'idle', string>>;
   /** Clips that loop while their animation lasts; the rest play once. */
   looping: readonly string[];
+  /** Looping clips locked to the shared beat clock, with the beats one loop lasts. Others free-run. */
+  loopBeats?: Readonly<Record<string, number>>;
+  /** The clips an avatar plays while its line travels, by which side of its body it steps towards. */
+  lineSteps?: { left: string; right: string };
+  /** Models and clips for the leader at the first end of each team's line (first slot), if the game has line leaders. */
+  leader?: AvatarModels;
+  /** ...and at the other end (last slot); the leader's free hand is on the other side there. */
+  tailLeader?: AvatarModels;
+}
+
+/** Where the shared halay lines are right now. Set once a frame by the scene, read by avatars and name tags. */
+export interface LineMotion {
+  /** Offset of every avatar line from its home position, world metres. */
+  offset: Vec3;
+  /** Ground direction (x, z) the lines are currently walking. */
+  heading: readonly [number, number];
+  beats: number;
+  bpm: number;
 }
 
 export interface RosterEntry {

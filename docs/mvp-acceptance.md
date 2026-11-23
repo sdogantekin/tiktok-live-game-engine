@@ -1,5 +1,7 @@
 # MVP acceptance (Product Phase 1)
 
+> **Status (2026-11-23):** reopened. After the first playtest, Steps 1.9 (living halay, bride and groom, traditional musicians) and 1.10 (sound) were added to Product Phase 1; this checklist is re-signed when both are done. The results below are from before those steps.
+
 Checklist for `REQUIREMENTS.md` §11, with the evidence behind each line. "Met" means the evidence exists and was run; anything not verified is said so.
 
 Evidence key: **unit** = Vitest unit/integration tests (`pnpm test`); **e2e** = Playwright browser tests (`pnpm test:e2e`); **perf** = `docs/perf-results.md`; **soak** = the 30-minute run below.

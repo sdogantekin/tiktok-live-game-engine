@@ -13,6 +13,8 @@ export interface ModePresentation {
   Scene: ComponentType<SceneProps>;
   /** Screen anchors of every avatar slot, for the name-tag layer. */
   tagAnchors: Readonly<Record<string, TagAnchor>>;
+  /** The viewer word the operator's simulator panel preselects (the words themselves are `text.commands`). */
+  simulatorDefaultWord: string;
   /** Team accent colours by team id. */
   teamColors: Readonly<Record<string, string>>;
   text: {

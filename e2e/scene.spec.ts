@@ -30,6 +30,32 @@ test('the 3D scene renders and is not blank', async ({ context }, testInfo) => {
   await broadcast.screenshot({ path: testInfo.outputPath('scene-empty.png') });
 });
 
+test('the halay lines walk on the beat, with the couple and the traditional musicians dancing', async ({ context }) => {
+  const operator = await openOperator(context);
+  const broadcast = await openBroadcast(context, '?probe=1');
+  await sceneReady(broadcast);
+  await startFreshGame(operator);
+  await addViewers(operator, 12);
+  await expect.poll(async () => (await perf(broadcast)).avatarsVisible).toBeGreaterThan(0);
+
+  // Everyone (the lines, the halaybaşı leaders and the couple) steps sideways with one of the two step clips, depending on which way they
+  // walk; each musician plays their own clip.
+  await expect
+    .poll(async () => {
+      const clips = (await perf(broadcast)).clipStarts;
+      return [(clips.step_left ?? 0) + (clips.step_right ?? 0), (clips.leader_step_left ?? 0) + (clips.leader_step_right ?? 0), clips.davul_play ?? 0, clips.zurna_play ?? 0].map((n) => n > 0);
+    }, { timeout: 15_000 })
+    .toEqual([true, true, true, true]);
+
+  // Each line has a halaybaşı at both ends, marked on their name tags (two lines, two ends each).
+  await expect.poll(() => broadcast.locator('.name-tag.leader').count()).toBe(4);
+
+  // The lines really move, and the name tags move with them.
+  const tagTop = () => broadcast.locator('.name-tag').first().evaluate((el) => el.getBoundingClientRect().top);
+  const first = await tagTop();
+  await expect.poll(async () => Math.abs((await tagTop()) - first), { timeout: 8000 }).toBeGreaterThan(5);
+});
+
 test('200 participants are tracked while only a bounded number of avatars is animated', async ({ context }, testInfo) => {
   const operator = await openOperator(context);
   const broadcast = await openBroadcast(context, '?probe=1');
@@ -48,7 +74,8 @@ test('200 participants are tracked while only a bounded number of avatars is ani
     expect(counts.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(200);
   }).toPass();
   await expect.poll(async () => (await perf(broadcast)).avatarsVisible).toBe(24);
-  await expect.poll(async () => (await perf(broadcast)).clipStarts.halay ?? 0, { timeout: 10_000 }).toBeGreaterThan(0); // the halay clip really plays
+  await expect.poll(async () => (await perf(broadcast)).clipStarts.halay_kick ?? 0, { timeout: 10_000 }).toBeGreaterThan(0); // the halay flourish really plays
+  await expect.poll(async () => (await perf(broadcast)).clipStarts.mendil_flourish ?? 0, { timeout: 10_000 }).toBeGreaterThan(0); // and the halaybaşı waves the mendil
   const stats = await perf(broadcast);
   expect(stats.crowdVisible).toBeGreaterThan(0);
   expect(stats.crowdVisible).toBeLessThanOrEqual(60);

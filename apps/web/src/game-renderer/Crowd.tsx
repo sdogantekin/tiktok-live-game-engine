@@ -64,7 +64,7 @@ function CrowdTeam({ teamId, capacity, store, formation, energy, look, countRef,
     const head = heads.current;
     if (!body || !head) return;
     const now = performance.now();
-    const t = now / 1000;
+    const beats = store.motion.beats; // the crowd bobs on the same beat as the lines
     const total = countRef.current?.[teamId] ?? 0;
     const visible = Math.min(capacity, Math.max(0, total - store.slots.visibleCount(teamId)));
     const lively = energy.get(teamId, now);
@@ -73,10 +73,9 @@ function CrowdTeam({ teamId, capacity, store, formation, energy, look, countRef,
 
     for (let i = 0; i < visible; i++) {
       const place = placements[i]!;
-      const phase = i * 1.7;
-      const speed = 2 + lively * 5;
-      const hop = (0.04 + 0.16 * lively) * Math.abs(Math.sin(t * speed + phase));
-      const sway = (0.05 + 0.1 * lively) * Math.sin(t * speed * 0.5 + phase);
+      const lag = (i % 4) * 0.12; // a little spread so the crowd is not a single block, but always on the beat
+      const hop = (0.05 + 0.16 * lively) * Math.abs(Math.sin(Math.PI * (beats + lag)));
+      const sway = (0.05 + 0.1 * lively) * Math.sin(Math.PI * (beats + lag));
       const [x, y, z] = place.position;
 
       dummy.position.set(x + sway, y + bodyLift + hop, z);

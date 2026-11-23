@@ -8,14 +8,34 @@ export const MODEL_URLS = {
   characters: {
     gelin: `${MODEL_BASE}/character_gelin.glb`,
     damat: `${MODEL_BASE}/character_damat.glb`,
-    band: `${MODEL_BASE}/character_band.glb`,
+    gelinLeader: `${MODEL_BASE}/character_gelin_leader.glb`,
+    damatLeader: `${MODEL_BASE}/character_damat_leader.glb`,
+    gelinTailLeader: `${MODEL_BASE}/character_gelin_tail_leader.glb`,
+    damatTailLeader: `${MODEL_BASE}/character_damat_tail_leader.glb`,
+    bride: `${MODEL_BASE}/character_bride.glb`,
+    groom: `${MODEL_BASE}/character_groom.glb`,
+    davulcu: `${MODEL_BASE}/character_davulcu.glb`,
+    zurnaci: `${MODEL_BASE}/character_zurnaci.glb`,
   },
   crowd: `${MODEL_BASE}/crowd.glb`,
   courtyard: `${MODEL_BASE}/courtyard.glb`,
 } as const;
 
-/** Every character GLB must contain exactly these animation clips. */
-export const CHARACTER_CLIPS = ['idle', 'halay', 'jump', 'dance_a', 'dance_b', 'rose_special'] as const;
+/** Every character GLB must contain exactly the animation clips listed for its look. */
+const TEAM_CLIPS = ['idle', 'step_left', 'step_right', 'halay_kick', 'jump', 'dance_a', 'dance_b', 'rose_special'] as const;
+const LEADER_CLIPS = ['idle', 'leader_step_left', 'leader_step_right', 'mendil_flourish', 'jump', 'dance_a', 'dance_b', 'rose_special'] as const;
+export const CHARACTER_CLIPS: Readonly<Record<keyof typeof MODEL_URLS.characters, readonly string[]>> = {
+  gelin: TEAM_CLIPS,
+  damat: TEAM_CLIPS,
+  gelinLeader: LEADER_CLIPS,
+  damatLeader: LEADER_CLIPS,
+  gelinTailLeader: LEADER_CLIPS,
+  damatTailLeader: LEADER_CLIPS,
+  bride: ['idle', 'step_left', 'step_right'],
+  groom: ['idle', 'step_left', 'step_right'],
+  davulcu: ['idle', 'davul_play'],
+  zurnaci: ['idle', 'zurna_play'],
+};
 export const CHARACTER_BONES = 12;
 
 /** Named set pieces the courtyard GLB must contain; the scene places them from data. */
@@ -29,8 +49,6 @@ export const COURTYARD_PIECES = [
   'Banner_Gelin',
   'Banner_Damat',
   'Stage',
-  'Davul',
-  'Zurna',
   'Arch',
   'Planter',
 ] as const;

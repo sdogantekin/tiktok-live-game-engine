@@ -32,6 +32,8 @@ export interface TagAnchor {
   big: StagePoint;
   /** Which way the small tag's text runs from its anchor. */
   side: 'left' | 'right';
+  /** How far the tag moves on the stage (fractions of its size) per metre the avatar moves along x and along z. */
+  perMetre: { x: StagePoint; z: StagePoint };
 }
 
 const SMALL_HEIGHT = 1.1; // metres above the ground: about chest height
@@ -46,10 +48,15 @@ export function computeTagAnchors(camera: CameraConfig, formation: Formation, sl
     for (let index = 0; index < count; index++) {
       const [x, , z] = formation.avatar(teamId, index, count).position;
       const inward = x < 0 ? 1 : -1; // avatars on the left put the tag to their right, and vice versa
+      const small = project([x + inward * INWARD_OFFSET, SMALL_HEIGHT, z]);
+      // The lines walk up and down the courtyard; a tag follows with this (nearly linear) screen movement per metre.
+      const alongX = project([x + inward * INWARD_OFFSET + 1, SMALL_HEIGHT, z]);
+      const alongZ = project([x + inward * INWARD_OFFSET, SMALL_HEIGHT, z + 1]);
       anchors[slotKey(teamId, index)] = {
-        small: project([x + inward * INWARD_OFFSET, SMALL_HEIGHT, z]),
+        small,
         big: project([x, BIG_HEIGHT, z]),
         side: inward === 1 ? 'right' : 'left',
+        perMetre: { x: { x: alongX.x - small.x, y: alongX.y - small.y }, z: { x: alongZ.x - small.x, y: alongZ.y - small.y } },
       };
     }
   }
@@ -65,7 +72,15 @@ export interface TagLabel {
   side: 'left' | 'right';
   small: StagePoint;
   big: StagePoint;
+  perMetre: TagAnchor['perMetre'];
+  /** The player leading their team's line. */
+  leader: boolean;
   emphasized: boolean;
+}
+
+/** Where a tag has moved to on the stage when its line is `travel` metres away from home. */
+export function tagShift(perMetre: TagAnchor['perMetre'], travel: Vec3): StagePoint {
+  return { x: travel[0] * perMetre.x.x + travel[2] * perMetre.z.x, y: travel[0] * perMetre.x.y + travel[2] * perMetre.z.y };
 }
 
 export interface SlotOccupant {
@@ -73,6 +88,7 @@ export interface SlotOccupant {
   playerId: string | null;
   name: string;
   teamId: string;
+  leader?: boolean;
 }
 
 export const DEFAULT_EMPHASIS_MS = 2500;
@@ -86,12 +102,18 @@ export class TagBoard {
   private readonly emphasizedUntil = new Map<string, number>(); // player id -> time
   private readonly listeners = new Set<() => void>();
   private occupants: readonly SlotOccupant[] = [];
+  /** How far the avatar lines are from home right now (world metres); set every frame by the scene. */
+  travel: Vec3 = [0, 0, 0];
 
   constructor(
     private readonly anchors: Readonly<Record<string, TagAnchor>>,
     private readonly now: () => number = () => performance.now(),
     private readonly emphasisMs = DEFAULT_EMPHASIS_MS,
   ) {}
+
+  setTravel(travel: Vec3): void {
+    this.travel = travel;
+  }
 
   /** Call whenever slot assignments or names may have changed. Only notifies if something visible changed. */
   setOccupants(occupants: readonly SlotOccupant[]): void {
@@ -135,6 +157,8 @@ export class TagBoard {
         side: anchor.side,
         small: anchor.small,
         big: anchor.big,
+        perMetre: anchor.perMetre,
+        leader: occupant.leader === true,
         emphasized: (this.emphasizedUntil.get(occupant.playerId) ?? 0) > now,
       });
     }
@@ -142,7 +166,7 @@ export class TagBoard {
       next.length !== this.labels.length ||
       next.some((label, i) => {
         const old = this.labels[i];
-        return !old || old.key !== label.key || old.name !== label.name || old.teamId !== label.teamId || old.emphasized !== label.emphasized;
+        return !old || old.key !== label.key || old.name !== label.name || old.teamId !== label.teamId || old.leader !== label.leader || old.emphasized !== label.emphasized;
       });
     if (!changed) return;
     this.labels = next;

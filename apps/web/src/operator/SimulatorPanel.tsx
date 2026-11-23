@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { getPresentation } from '../game-modes/registry';
 import { useRealtime } from '../realtime/react';
 import type { RunCommand } from './OperatorApp';
 
-const WORDS = ['halay', 'zıpla', 'oyna', 'gelin', 'damat'] as const;
 const GIFTS = ['rose', 'gg', 'big_celebration'] as const;
 
 /** Parses a numeric input, clamping into [min, max] and falling back when empty or invalid. */
@@ -13,12 +13,19 @@ function clampInt(value: string, min: number, max: number, fallback: number): nu
 
 export function SimulatorPanel({ run }: { run: RunCommand }) {
   const provider = useRealtime((state) => state.hud?.providerStatus ?? 'none');
+  const modeId = useRealtime((state) => state.hud?.modeId);
+  // The words viewers can type belong to the active game; the panel only offers what that game understands.
+  const presentation = modeId ? getPresentation(modeId) : null;
+  const WORDS: readonly string[] = presentation?.text.commands ?? [];
+  const defaultWord = presentation?.simulatorDefaultWord ?? '';
   const [addCount, setAddCount] = useState('50');
-  const [burstWord, setBurstWord] = useState<string>('halay');
+  const [pickedWord, setBurstWord] = useState<string | null>(null);
   const [burstCount, setBurstCount] = useState('50');
   const [burstSpread, setBurstSpread] = useState('2000');
   const [viewerId, setViewerId] = useState('');
-  const [text, setText] = useState('halay');
+  const [typedText, setText] = useState<string | null>(null);
+  const burstWord = pickedWord ?? defaultWord; // until the operator chooses, the game's default word
+  const text = typedText ?? defaultWord;
   const [gift, setGift] = useState<string>('rose');
   const [scenario, setScenario] = useState<'steady' | 'chaos'>('steady');
   const [scenarioViewers, setScenarioViewers] = useState('100');
