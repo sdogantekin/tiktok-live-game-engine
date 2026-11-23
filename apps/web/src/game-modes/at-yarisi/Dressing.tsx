@@ -1,3 +1,4 @@
+import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { seeded } from './Grandstand';
@@ -7,7 +8,7 @@ import { trackPoint } from './track';
 const BOARD_COLORS = ['#e0457b', '#2f6fdb', '#f2b705', '#58b368', '#ff8a3d', '#8e44ad', '#1f9fb0'];
 
 /** A banner drawn on a canvas, so the text is ours and nothing is fetched. */
-function bannerTexture(text: string, background: string): THREE.CanvasTexture {
+function bannerTexture(text: string | null, background: string): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
   canvas.height = 160;
@@ -17,20 +18,36 @@ function bannerTexture(text: string, background: string): THREE.CanvasTexture {
   g.fillStyle = '#ffffff';
   for (let i = 0; i < 32; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) g.fillRect(i * 32, j * 24, 32, 24);
   for (let i = 0; i < 32; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) g.fillRect(i * 32, 160 - 48 + j * 24, 32, 24);
-  g.fillStyle = '#ffffff';
-  g.font = 'bold 84px system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
+  if (text !== null) {
+    g.fillStyle = '#ffffff';
+    g.font = 'bold 84px system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
+  }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-/** The finish gantry over the start/finish line, with a banner readable from both sides. */
-function Gantry() {
+/** The gantry over the start/finish line, with a banner readable from both sides. It says FINISH only on the last lap (the line is crossed every lap). */
+function Gantry({ finalLap }: { finalLap: { current: boolean } }) {
   const line = trackPoint(shape, 0);
-  const texture = useMemo(() => bannerTexture('BİTİŞ', '#1c1420'), []);
+  const finish = useMemo(() => bannerTexture('FINISH', '#1c1420'), []);
+  const plain = useMemo(() => bannerTexture(null, '#1c1420'), []);
+  const materials = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  const shown = useRef<boolean | null>(null);
+  useFrame(() => {
+    if (shown.current === finalLap.current) return;
+    shown.current = finalLap.current;
+    for (const material of materials.current) {
+      if (!material) continue;
+      const texture = finalLap.current ? finish : plain;
+      material.map = texture;
+      material.emissiveMap = texture;
+      material.needsUpdate = true;
+    }
+  });
   const half = TRACK_HALF_WIDTH + 1.6;
   return (
     <group position={[line.x, 0, line.z]}>
@@ -47,7 +64,7 @@ function Gantry() {
       {[0, Math.PI].map((turn) => (
         <mesh key={turn} position={[0, 6.7, turn === 0 ? 0.36 : -0.36]} rotation={[0, turn, 0]}>
           <planeGeometry args={[2 * half - 0.4, 2 * half * 0.1]} />
-          <meshStandardMaterial map={texture} emissiveMap={texture} emissive="#ffffff" emissiveIntensity={0.25} />
+          <meshStandardMaterial ref={(material) => { materials.current[turn === 0 ? 0 : 1] = material; }} map={plain} emissiveMap={plain} emissive="#ffffff" emissiveIntensity={0.25} />
         </mesh>
       ))}
     </group>
@@ -55,7 +72,7 @@ function Gantry() {
 }
 
 /** Advertising boards on the outside rail, lamp posts, hedges on the inside, and a few clouds: the dressing of the course. */
-export function Dressing() {
+export function Dressing({ finalLap }: { finalLap: { current: boolean } }) {
   const boards = useRef<THREE.InstancedMesh>(null);
   const lamps = useRef<THREE.InstancedMesh>(null);
   const lampHeads = useRef<THREE.InstancedMesh>(null);
@@ -117,7 +134,7 @@ export function Dressing() {
 
   return (
     <>
-      <Gantry />
+      <Gantry finalLap={finalLap} />
       <instancedMesh ref={boards} args={[undefined, undefined, boardCount]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial />

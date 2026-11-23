@@ -2,7 +2,8 @@ import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { seeded } from './Grandstand';
-import { shape, TRACK_HALF_WIDTH } from './scene-config';
+import { type GateState, dividerLaterals } from './gate';
+import { LANE_WIDTH, shape, TRACK_HALF_WIDTH } from './scene-config';
 import { trackPoint } from './track';
 
 /**
@@ -56,6 +57,13 @@ function railRibbon(lateral: number, height: number): THREE.BufferGeometry {
   return geometry;
 }
 
+/** The most stalls the gate has (the scene draws up to 12 horses), and where the stalls lie along the track: from behind the horses' rumps to just in front of their noses. */
+const MAX_DIVIDERS = 13;
+const STALL_CENTRE = -0.1;
+const STALL_LENGTH = 4.4;
+const STALL_FRONT = STALL_CENTRE + STALL_LENGTH / 2;
+const scratch = new THREE.Object3D();
+
 const MOWN_LIGHT = new THREE.Color('#4a9a4f');
 const MOWN_DARK = new THREE.Color('#3f8a45');
 
@@ -63,14 +71,59 @@ const MOWN_DARK = new THREE.Color('#3f8a45');
  * The racing surface and its furniture: mown stripes either side of the track, the dirt with a worn middle and slightly uneven colour, the
  * white running rails on posts, furlong poles, the starting gate behind the grid and the photo-finish tower by the line.
  */
-export function Parcours({ gateUp }: { gateUp: { current: boolean } }) {
+export function Parcours({ gate }: { gate: { current: GateState } }) {
   const posts = useRef<THREE.InstancedMesh>(null);
   const poles = useRef<THREE.InstancedMesh>(null);
   const poleCaps = useRef<THREE.InstancedMesh>(null);
-  const gate = useRef<THREE.InstancedMesh>(null);
-  // The gate stands only while the horses line up; once they are away it is gone (the camera passes the line on every lap).
+  const dividers = useRef<THREE.InstancedMesh>(null);
+  const doors = useRef<THREE.InstancedMesh>(null);
+
+  // The starting gate: a stall for every horse, dividers between the horses (not behind them) and doors at the front that swing open at the
+  // start. It is taken away a moment after the horses are away (the camera passes the line on every lap).
   useFrame(() => {
-    if (gate.current) gate.current.visible = gateUp.current;
+    const { stalls, open, up } = gate.current;
+    const dm = dividers.current;
+    const om = doors.current;
+    if (!dm || !om) return;
+    dm.visible = up;
+    om.visible = up;
+    if (!up) return;
+    const dummy = scratch;
+    const laterals = dividerLaterals(stalls);
+    for (let j = 0; j < MAX_DIVIDERS; j++) {
+      if (j > stalls) {
+        dummy.scale.setScalar(0);
+        dummy.position.set(0, -10, 0);
+      } else {
+        const p = trackPoint(shape, STALL_CENTRE, laterals[j]!);
+        dummy.position.set(p.x, 1.1, p.z);
+        dummy.rotation.set(0, p.heading, 0);
+        dummy.scale.set(0.14, 2.2, STALL_LENGTH);
+      }
+      dummy.updateMatrix();
+      dm.setMatrixAt(j, dummy.matrix);
+    }
+    for (let k = 0; k < MAX_DIVIDERS - 1; k++) {
+      if (k >= stalls) {
+        dummy.scale.setScalar(0);
+        dummy.position.set(0, -10, 0);
+        dummy.updateMatrix();
+      } else {
+        // a door hangs from the divider on one side and swings out of the way, towards the front
+        const hinge = trackPoint(shape, STALL_FRONT, laterals[k]!);
+        const other = trackPoint(shape, STALL_FRONT, laterals[k + 1]!);
+        const along = new THREE.Vector3(Math.cos(hinge.heading), 0, -Math.sin(hinge.heading)); // the stall's sideways direction
+        const sign = Math.sign((other.x - hinge.x) * along.x + (other.z - hinge.z) * along.z) || 1;
+        dummy.position.set(hinge.x, 1.0, hinge.z);
+        dummy.rotation.set(0, hinge.heading + sign * open * (Math.PI / 2), 0);
+        dummy.updateMatrix();
+        const local = new THREE.Matrix4().makeTranslation((sign * (LANE_WIDTH - 0.15)) / 2, 0, 0).multiply(new THREE.Matrix4().makeScale(LANE_WIDTH - 0.15, 2.0, 0.08));
+        dummy.matrix.multiply(local);
+      }
+      om.setMatrixAt(k, dummy.matrix);
+    }
+    dm.instanceMatrix.needsUpdate = true;
+    om.instanceMatrix.needsUpdate = true;
   });
 
   const { dirtEdge, dirtMiddle, mownOutside, mownInside, mownFar } = useMemo(() => {
@@ -120,16 +173,7 @@ export function Parcours({ gateUp }: { gateUp: { current: boolean } }) {
       dummy.updateMatrix();
       poleCaps.current?.setMatrixAt(k, dummy.matrix);
     }
-    // the starting gate: dividers between the lanes, behind where the horses line up
-    for (let k = 0; k < 13; k++) {
-      const p = trackPoint(shape, -4.6, (k - 6) * 1.25 - 0.625 + 0.625);
-      dummy.position.set(p.x, 1.15, p.z);
-      dummy.rotation.set(0, p.heading, 0);
-      dummy.scale.set(0.14, 2.3, 2.8);
-      dummy.updateMatrix();
-      gate.current?.setMatrixAt(k, dummy.matrix);
-    }
-    for (const mesh of [posts.current, poles.current, poleCaps.current, gate.current]) if (mesh) mesh.instanceMatrix.needsUpdate = true;
+    for (const mesh of [posts.current, poles.current, poleCaps.current]) if (mesh) mesh.instanceMatrix.needsUpdate = true;
   }, []);
 
   return (
@@ -166,9 +210,13 @@ export function Parcours({ gateUp }: { gateUp: { current: boolean } }) {
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#c0392b" />
       </instancedMesh>
-      <instancedMesh ref={gate} args={[undefined, undefined, 13]} frustumCulled={false}>
+      <instancedMesh ref={dividers} args={[undefined, undefined, MAX_DIVIDERS]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#2f3a40" />
+      </instancedMesh>
+      <instancedMesh ref={doors} args={[undefined, undefined, MAX_DIVIDERS - 1]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#c0392b" />
       </instancedMesh>
       {/* the photo-finish tower on the inside of the line */}
       <group position={[trackPoint(shape, 0, -TRACK_HALF_WIDTH - 4).x, 0, trackPoint(shape, 0, -TRACK_HALF_WIDTH - 4).z]}>

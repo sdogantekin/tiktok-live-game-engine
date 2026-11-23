@@ -7,6 +7,7 @@ import { Boundary } from '../../game-renderer/Boundary';
 import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { floatingKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
+import { type GateState, gateTimeline } from './gate';
 import { CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
 import { type HorseFrame, Horses } from './Horses';
 import { laneOffset, shape } from './scene-config';
@@ -34,8 +35,10 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
   /** How lively the crowd is (0..1), updated every frame from the race. */
   const mood = useRef(0);
   const fx = useRef<RaceFx | null>(null);
-  /** Whether the starting gate stands: only before the start. */
-  const gate = useRef(true);
+  /** The starting gate (stalls, doors, whether it still stands) and whether the leader is on the last lap, for the course. */
+  const gate = useRef<GateState>({ stalls: 0, open: 0, up: true });
+  const finalLap = useRef(false);
+  const startedAt = useRef<number | null>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
   const sunTarget = useRef<THREE.Object3D>(null);
   const rig = useRef({
@@ -91,7 +94,9 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     const racers = smoother.step(now, dtMs);
     const stage = smoother.stage;
     frame.current = { racers, stage };
-    gate.current = stage === 'grid' || stage === null;
+    if (stage === 'racing' && startedAt.current === null) startedAt.current = now;
+    if (stage === 'grid' || stage === null) startedAt.current = null;
+    gate.current = { stalls: stage === 'grid' || stage === null || startedAt.current === null ? racers.length : gate.current.stalls, ...gateTimeline(startedAt.current === null ? null : (now - startedAt.current) / 1000) };
     clock.tick(now, excitement(now, stage === 'racing')); // before the sound director reads it (it runs later)
     mood.current = excitement(now, stage === 'racing');
 
@@ -100,14 +105,17 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     if (stage === 'grid' || stage === null) {
       r.lastLapSounded = false;
       r.winSounded = false;
+      finalLap.current = false;
     } else if (view && stage === 'racing') {
       const leader = racers.reduce((best, racer) => Math.max(best, racer.distance), 0);
+      finalLap.current = lapOf(leader, view.lapLength, view.laps) === view.laps;
       if (!r.lastLapSounded && view.laps > 1 && lapOf(leader, view.lapLength, view.laps) === view.laps) {
         r.lastLapSounded = true;
         cues.emit({ type: 'celebration', effect: RACE_CUES.lastLap });
       }
     }
     const winnerIndex = racers.findIndex((racer) => racer.place === 1);
+    if (stage === 'finished') finalLap.current = true;
     if (!r.winSounded && winnerIndex >= 0) {
       r.winSounded = true;
       cues.emit({ type: 'celebration', effect: RACE_CUES.won });
@@ -211,7 +219,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
         shadow-bias={-0.0004}
         shadow-normalBias={0.05}
       />
-      <Course excitement={mood} gateUp={gate} />
+      <Course excitement={mood} gate={gate} finalLap={finalLap} />
       <Boundary label="scenery" fallback={null}>
         <Suspense fallback={null}>
           <Scenery />

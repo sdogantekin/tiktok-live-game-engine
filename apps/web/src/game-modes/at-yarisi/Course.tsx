@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Dressing } from './Dressing';
+import type { GateState } from './gate';
 import { Grandstand, seeded } from './Grandstand';
 import { Parcours } from './Parcours';
 import { shape, TRACK_HALF_WIDTH } from './scene-config';
@@ -57,7 +58,7 @@ function Skyline() {
 }
 
 /** The racecourse: a dirt track on grass with white rails, a start line, a pond in the infield, stands and a skyline. */
-export function Course({ excitement, gateUp }: { excitement: { current: number }; gateUp: { current: boolean } }) {
+export function Course({ excitement, gate, finalLap }: { excitement: { current: number }; gate: { current: GateState }; finalLap: { current: boolean } }) {
   const line = trackPoint(shape, 0);
   return (
     <>
@@ -65,7 +66,7 @@ export function Course({ excitement, gateUp }: { excitement: { current: number }
         <planeGeometry args={[600, 600]} />
         <meshStandardMaterial color="#3f8a45" />
       </mesh>
-      <Parcours gateUp={gateUp} />
+      <Parcours gate={gate} />
       {/* the start and finish line across the track, with a chequered edge */}
       <mesh position={[line.x, 0.06, line.z]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2 * TRACK_HALF_WIDTH, 1.2]} />
@@ -83,7 +84,7 @@ export function Course({ excitement, gateUp }: { excitement: { current: number }
         <meshStandardMaterial color="#5aa9d6" />
       </mesh>
       <Grandstand excitement={excitement} />
-      <Dressing />
+      <Dressing finalLap={finalLap} />
       <Skyline />
     </>
   );
