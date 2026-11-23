@@ -14,6 +14,7 @@ const games = join(import.meta.dirname, '..', 'assets', 'game-modes');
 const builds = [
   ...['build_character.py', 'build_crowd.py', 'build_courtyard.py'].map((script) => join(games, 'mahalle-halayi', 'scripts', script)),
   join(games, 'taki-takma', 'scripts', 'build_taki_characters.py'),
+  join(games, 'at-yarisi', 'scripts', 'build_horse.py'),
 ];
 for (const script of builds) {
   const result = spawnSync(blender, ['-b', '--factory-startup', '--python', script], { encoding: 'utf8' });

@@ -42,9 +42,8 @@ export function Overlay({ hud, live }: { hud: HudState; live: LiveFeed }) {
       )}
 
       {hud.phase !== 'results' && (
-        <section style={{ ...panel, left: u(2), right: u(2), bottom: u(34), padding: u(1.6), fontSize: u(3), textAlign: 'center' }}>
-          <div style={{ fontWeight: 700 }}>Katılmak için 1 yaz!</div>
-          <div style={{ opacity: 0.9 }}>Beğeni atarak atını hızlandır · hediyeler ekstra güç verir</div>
+        <section style={{ ...panel, left: '50%', transform: 'translateX(-50%)', bottom: u(47), padding: u(1.2), fontSize: u(3), whiteSpace: 'nowrap' }}>
+          Beğeni = hız · Hediye = ekstra güç
         </section>
       )}
 

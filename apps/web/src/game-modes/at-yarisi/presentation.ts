@@ -1,15 +1,16 @@
+import { floatingAnchors } from '../../game-renderer/name-tags';
 import type { ModePresentation } from '../types';
 import { Overlay } from './Overlay';
 import { Scene } from './Scene';
+import { camera, MAX_RACERS } from './scene-config';
 import { soundDesign } from './sound-design';
 
 export const atYarisiPresentation: ModePresentation = {
   id: 'at-yarisi',
   title: 'At Yarışı',
-  // PLACEHOLDER camera until Step 4.3: straight down over the whole track.
-  camera: { position: [0, 62, 0.01], lookAt: [0, 0, 0], fov: 52 },
+  camera,
   Scene,
-  tagAnchors: {},
+  tagAnchors: floatingAnchors(MAX_RACERS),
   simulatorDefaultWord: '1',
   soundDesign,
   showTeamScores: false,

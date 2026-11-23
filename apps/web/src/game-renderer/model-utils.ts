@@ -29,6 +29,8 @@ export interface BeatState {
   baseClip: string;
   beats: number;
   bpm: number;
+  /** Keep a free-running looping clip's speed following `bpm` every frame (for something whose pace keeps changing, such as a galloping horse), not only when the clip starts. */
+  followTempo?: boolean;
 }
 
 /**
@@ -73,6 +75,7 @@ export function useClipPlayer(gltf: Gltf, models: AvatarModels) {
       current.current = { name, start: marker, loopBeats: synced };
     }
     const active = current.current;
+    if (beat?.followTempo && active && !active.loopBeats) model.actions.get(active.name)?.setEffectiveTimeScale(beat.bpm / CLIP_BPM);
     if (beat && active?.loopBeats) {
       const action = model.actions.get(active.name);
       if (action) action.time = loopPhase(beat.beats, active.loopBeats) * action.getClip().duration;
