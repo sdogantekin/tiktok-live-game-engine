@@ -51,6 +51,14 @@ export function trackPoint(shape: TrackShape, distance: number, lateral = 0): Tr
   return { x: r, z: half - u, heading: Math.PI }; // right straight again, up to the start
 }
 
+/** How far a point on the ground is from the track's centre line, metres (0 on the line; the same inside and outside the oval). */
+export function distanceFromTrack(shape: TrackShape, x: number, z: number): number {
+  const half = shape.straight / 2;
+  const ax = Math.abs(x);
+  const az = Math.abs(z);
+  return az <= half ? Math.abs(ax - shape.radius) : Math.abs(Math.hypot(ax, az - half) - shape.radius);
+}
+
 /** A colour for a racer from its id, so the same viewer keeps the same colour all race. */
 export function racerColor(id: string): string {
   let h = 2166136261;

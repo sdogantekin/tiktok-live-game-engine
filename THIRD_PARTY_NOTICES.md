@@ -12,3 +12,19 @@ This file records licence conditions of dependencies that need more than a menti
 - **Not affiliated with TikTok.** The library is unofficial; see `docs/tiktok-live-feasibility.md` for the Terms-of-Service risk the product owner accepted.
 
 No code, files or assets from any other TikTok game project are used here.
+
+## At Yarışı: free CC0 assets
+
+Both packs are released under **CC0 1.0 Universal** (public domain dedication, https://creativecommons.org/publicdomain/zero/1.0/): no
+attribution is required, but both authors ask for support and are credited here. Downloaded by the product owner on 2026-11-23.
+
+- **Kenney Nature Kit 2.1** (https://kenney.nl/assets/nature-kit), by Kenney. 17 models (trees, bushes, flowers, grass, stones) copied
+  unchanged into `apps/web/public/game-modes/at-yarisi/models/scenery/`; the kit's own `License.txt` is in
+  `assets/third-party/kenney-nature-kit/`. The scene recolours their materials at load time.
+- **Quaternius, "Farm Animals Animated"** (https://quaternius.com, https://www.patreon.com/quaternius). The horse (`Horse.blend`, kept in
+  `assets/third-party/quaternius-farm-animals/`) is the base of `horse.glb`: its mesh, rig and the Run, Idle, Walk and Jump animations are
+  used, split by material and renamed by `assets/game-modes/at-yarisi/scripts/build_horse.py`, with our own jockey added. This pack's zip
+  carried no licence file; the licence (CC0) rests on the author's site, and the author's other pack we downloaded (Stylized Nature
+  MegaKit, not used) says CC0 in its own licence file.
+- **Not used:** Quaternius' Stylized Nature MegaKit (also CC0). Its trees have 6,000+ triangles and 4 MB bark textures, far over this
+  project's budgets (one tree at most a few hundred triangles, textures at most 1024 pixels), so it stayed on the disk.

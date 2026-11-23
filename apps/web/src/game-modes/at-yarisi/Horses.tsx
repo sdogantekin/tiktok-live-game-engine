@@ -7,7 +7,7 @@ import { perf } from '../../game-renderer/perf';
 import { BASE_SPEED, COATS, horseModels, laneOffset, MAX_RACERS, MAX_STRIDE, MIN_STRIDE, shape } from './scene-config';
 import type { ShownRacer } from './smoothing';
 import { racerColor, trackPoint } from './track';
-import { MODEL_URLS } from './assets.manifest';
+import { HORSE_SCALE, MODEL_URLS } from './assets.manifest';
 
 /** What the scene works out once a frame for everyone to read: where every horse is. */
 export interface HorseFrame {
@@ -88,7 +88,7 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
     const running = stage === 'racing' && racer.place === null && racer.speed > 1;
     const stride = Math.min(MAX_STRIDE, Math.max(MIN_STRIDE, racer.speed / BASE_SPEED));
     player.update(delta, celebrating ? victoryStart.current : undefined, now, {
-      baseClip: running ? (racer.boost > 0.25 ? 'gallop_boost' : 'gallop') : racer.place !== null && racer.speed > 1 ? 'gallop' : 'idle',
+      baseClip: running || (racer.place !== null && racer.speed > 1) ? 'gallop' : 'idle',
       beats: 0,
       bpm: 120 * stride,
       followTempo: true,
@@ -98,14 +98,16 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
   return (
     <>
       <group ref={group} visible={false}>
-        <primitive object={player.object} />
+        <group scale={HORSE_SCALE}>
+          <primitive object={player.object} />
+        </group>
       </group>
       <mesh ref={blob} visible={false}>
-        <circleGeometry args={[1.1, 14]} />
+        <circleGeometry args={[1.5, 16]} />
         <meshBasicMaterial color="#000000" transparent opacity={0.28} depthWrite={false} />
       </mesh>
       <mesh ref={glow} visible={false} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.2, 1.7, 20]} />
+        <ringGeometry args={[1.6, 2.2, 22]} />
         <meshBasicMaterial color="#ffd35a" transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
     </>

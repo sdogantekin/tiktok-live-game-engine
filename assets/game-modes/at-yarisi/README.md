@@ -10,16 +10,20 @@ pnpm test           # validates the GLB (budgets, rig, exact clips, the clips th
 
 | File | Contents | Clips |
 |---|---|---|
-| `horse.glb` | One race horse with its jockey: three skinned meshes on one 14-bone skeleton, about 900 triangles | `idle`, `gallop` (one stride per second at the base tempo; the scene scales its speed with the horse's speed), `gallop_boost` (stretched out, jockey low), `victory` (rears up) |
+| `horse.glb` | The **CC0 horse from Quaternius' Farm Animals Animated pack** (its 28-bone rig and animations) with **our own jockey** on its back: four skinned meshes, about 940 triangles | `gallop` (the pack's Run, about 0.8 s a stride at the base tempo; the scene scales its speed with the horse's speed), `idle`, `walk`, `victory` (the pack's Jump) |
+| `models/scenery/*.glb` | 17 trees, bushes, flowers, grass tufts and stones from the **CC0 Kenney Nature Kit**, copied unchanged | none |
 
-The three meshes let the scene colour a horse without textures: **`Coat`** (vertex colour white) is tinted with the horse's coat colour,
-**`Silks`** (the jockey's clothes, cap and saddle cloth) with the racer's colour, and **`Details`** (skin, boots, mane, tail, eyes, hooves)
-keeps its own colours. Each horse gets its own copy of the two tinted materials; every horse is three draw calls.
+The four meshes of the horse let the scene colour a horse without textures: **`Coat`** is tinted with the horse's coat colour, **`Silks`** (the jockey's
+clothes, cap and saddle cloth) with the racer's colour, while **`Details`** (mane, tail, hooves, eyes) and **`Rider`** (skin and boots) keep their own
+colours. Each horse gets its own copies of the two tinted materials; every horse is four draw calls. The model is in the pack's own units, so the scene
+scales it by `HORSE_SCALE` (0.3).
 
-The course, the stands with their spectators, the skyline and its tower, the trees, the blob shadows and the boost rings are built in code
-from primitives in `apps/web/src/game-modes/at-yarisi/` (the stands, crowd, skyline and trees are instanced); there is no course GLB.
+Third-party sources, their licences and what we changed are in `THIRD_PARTY_NOTICES.md` and `assets/third-party/`. Rebuild the horse with `pnpm assets:build`
+(it needs the vendored `Horse.blend`).
+
+The course, the grandstands with their bouncing spectators, the finish gantry, advertising boards, lamps, hedges, the skyline and its tower, the blob
+shadows and the boost rings are built in code from primitives in `apps/web/src/game-modes/at-yarisi/` (all instanced); the trees and plants are the kit models above.
 The tower and skyline are original shapes, not copies of any real place.
 
 Editable `.blend` files are saved in `source-blend/`. No AI-generated meshes or images are used.
-Placeholders to review: horse proportions and the gallop clip (a quick toy-style stride, not studied from real motion), and whether the
-primitive course is good enough on a real stream.
+Placeholders to review: our jockey (simple shapes) and spectators, and whether the primitive course dressing is good enough on a real stream.

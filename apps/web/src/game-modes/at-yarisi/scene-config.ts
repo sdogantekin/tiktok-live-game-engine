@@ -21,7 +21,7 @@ export const MAX_STRIDE = 2.1;
 export const horseModels: AvatarModels = {
   urls: { horse: MODEL_URLS.horse },
   clips: { idle: 'idle', flourish: 'gallop', jump: 'gallop', spin: 'gallop', wiggle: 'gallop', hop: 'gallop', special: 'victory' },
-  looping: ['idle', 'gallop', 'gallop_boost'],
+  looping: ['idle', 'gallop', 'walk'],
 };
 
 /** Coat colours; each horse gets one from its id. Silks (the jockey's clothes and the saddle cloth) take the racer's colour. */

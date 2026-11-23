@@ -13,6 +13,7 @@ import { laneOffset, shape } from './scene-config';
 import { RACE_CUES, soundDesign } from './sound-design';
 import { RaceSmoother } from './smoothing';
 import { Course } from './Course';
+import { Scenery } from './Scenery';
 import { lapOf, trackPoint } from './track';
 
 const TEAM = 'yarisci';
@@ -29,6 +30,8 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
   /** How excited the race is, 0..1: a baseline while it runs, plus what viewers just did. It sets the music's tempo and build. */
   const excitement = (now: number, racing: boolean) => Math.min(1, (racing ? 0.3 : 0) + energy.get(TEAM, now));
   const frame = useRef<HorseFrame>({ racers: [], stage: null });
+  /** How lively the crowd is (0..1), updated every frame from the race. */
+  const mood = useRef(0);
   const rig = useRef({
     last: 0, // set on the first frame
     gridSince: 0,
@@ -78,6 +81,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     const stage = smoother.stage;
     frame.current = { racers, stage };
     clock.tick(now, excitement(now, stage === 'racing')); // before the sound director reads it (it runs later)
+    mood.current = excitement(now, stage === 'racing');
 
     // Moments in the race itself that get a sound: the leader starting the last lap, and the first horse home.
     const view = smoother.current;
@@ -153,7 +157,12 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       <fog attach="fog" args={['#a8d4f0', 140, 420]} />
       <hemisphereLight args={['#ffffff', '#6a8a5a', 1.5]} />
       <directionalLight position={[40, 70, 30]} intensity={1.8} color="#fff1d6" />
-      <Course />
+      <Course excitement={mood} />
+      <Boundary label="scenery" fallback={null}>
+        <Suspense fallback={null}>
+          <Scenery />
+        </Suspense>
+      </Boundary>
       <Boundary label="horses" fallback={null}>
         <Suspense fallback={null}>
           <Horses frame={frame} />

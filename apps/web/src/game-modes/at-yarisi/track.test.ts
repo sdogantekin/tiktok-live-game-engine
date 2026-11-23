@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lapOf, racerColor, trackPoint, trackShape } from './track';
+import { distanceFromTrack, lapOf, racerColor, trackPoint, trackShape } from './track';
 
 const shape = trackShape(400);
 
@@ -56,5 +56,18 @@ describe('laps and colours', () => {
     expect(racerColor('tiktok:123')).toBe(racerColor('tiktok:123'));
     expect(racerColor('tiktok:123')).not.toBe(racerColor('tiktok:124'));
     expect(racerColor('x')).toMatch(/^hsl\(\d+, 78%, 55%\)$/);
+  });
+});
+
+describe('distanceFromTrack', () => {
+  it('is zero on the centre line and grows away from it, inside and outside', () => {
+    for (let d = 0; d < 400; d += 13) {
+      const p = trackPoint(shape, d);
+      expect(distanceFromTrack(shape, p.x, p.z)).toBeCloseTo(0, 5);
+      const wide = trackPoint(shape, d, 9);
+      expect(distanceFromTrack(shape, wide.x, wide.z)).toBeCloseTo(9, 5);
+    }
+    expect(distanceFromTrack(shape, 0, 0)).toBeCloseTo(shape.radius, 5); // the middle of the infield
+    expect(distanceFromTrack(shape, 200, 0)).toBeGreaterThan(150);
   });
 });

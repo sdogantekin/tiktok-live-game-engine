@@ -50,7 +50,7 @@ export interface ChaseTuning {
   ahead: number;
 }
 
-export const CHASE: ChaseTuning = { behind: 30, height: 21, ahead: 14 };
+export const CHASE: ChaseTuning = { behind: 25, height: 17, ahead: 12 };
 export const WIDE: ChaseTuning = { behind: 48, height: 34, ahead: 6 };
 
 /** A camera behind and above `focus`, looking a little way ahead of it along its heading. */

@@ -141,3 +141,15 @@ Same method (headed Chrome with the GPU, production build, 20 s per run): ten ho
 | Gift burst (3x big celebration, 2x rose, GG) | 1080x1920 | 60.0 | 55.9 | 17.5 ms | 0.07% | 45 | 18.5 k | 0.16 | 277 ms |
 
 No long tasks, heap 14-18 MB. The draw-call count varies with how much of the course and stands the camera sees. **Event latency is higher than in the other games** (p95 about 200-280 ms against 85 ms): likes are summed and handed to the game from the 10 Hz step, and the sample is small (about 35 cues in a run), so treat it as an order of magnitude; nothing in the race depends on it. Raw numbers: `docs/perf/race-results.json`; run with `pnpm perf:browser -g "At Yarışı"`.
+
+### At Yarışı after the art upgrade (2026-11-23)
+
+The Quaternius horse (four meshes per horse), the Kenney scenery (hundreds of instanced trees, bushes, flowers and grass tufts), the grandstand with its bouncing crowd and the course dressing, measured the same way:
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Draw calls | Triangles |
+|---|---|---|---|---|---|---|
+| Default | 1080x1920 | 60.0 | 53.5 | 18.1 ms | 117 | 184 k |
+| Default | 720x1280 | 60.0 | 53.5 | 18.2 ms | 111 | 184 k |
+| Gift burst | 1080x1920 | 60.0 | 53.2 | 18.2 ms | 90 | 184 k |
+
+Still 60 FPS and under the 150 draw-call budget; triangles rose from about 18 k to 184 k because of the instanced scenery, which a GPU handles easily (the machine used here has one). The draw-call count varies with how much of the course the camera sees. Not measured on a weaker GPU.
