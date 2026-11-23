@@ -1,15 +1,19 @@
 import { useFrame } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { SoundDirector } from '../../game-renderer/audio/SoundDirector';
+import { BeatClock } from '../../game-renderer/beat-clock';
 import { Boundary } from '../../game-renderer/Boundary';
+import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { floatingKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
 import { CHASE, chaseCamera, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
 import { type HorseFrame, Horses } from './Horses';
 import { laneOffset, shape } from './scene-config';
+import { RACE_CUES, soundDesign } from './sound-design';
 import { RaceSmoother } from './smoothing';
 import { Course } from './Course';
-import { trackPoint } from './track';
+import { lapOf, trackPoint } from './track';
 
 const TEAM = 'yarisci';
 const TAG_HEIGHT = 3.0;
@@ -18,8 +22,12 @@ const TAG_HEIGHT = 3.0;
  * At Yarışı's 3D scene: the course, the horses with their jockeys, and a camera that follows the leaders. The server's race
  * views (about ten a second) are eased into smooth motion; nothing here decides anything.
  */
-export function Scene({ live, tags, cues }: SceneProps) {
+export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: SceneProps) {
   const smoother = useMemo(() => new RaceSmoother(), []);
+  const clock = useMemo(() => new BeatClock(), []);
+  const energy = useMemo(() => new EnergyMeter(), []);
+  /** How excited the race is, 0..1: a baseline while it runs, plus what viewers just did. It sets the music's tempo and build. */
+  const excitement = (now: number, racing: boolean) => Math.min(1, (racing ? 0.3 : 0) + energy.get(TEAM, now));
   const frame = useRef<HorseFrame>({ racers: [], stage: null });
   const rig = useRef({
     last: 0, // set on the first frame
@@ -31,6 +39,8 @@ export function Scene({ live, tags, cues }: SceneProps) {
     ready: false,
     ids: '',
     point: new THREE.Vector3(),
+    lastLapSounded: false,
+    winSounded: false,
   });
 
   // The newest race view goes to the smoother; viewers' comments become speech bubbles over their horse.
@@ -42,7 +52,16 @@ export function Scene({ live, tags, cues }: SceneProps) {
     take();
     return live.subscribe(take);
   }, [live, smoother]);
-  useEffect(() => cues.subscribe((cue) => cue.type === 'chat' && tags.say(cue.playerId, cue.text)), [cues, tags]);
+  useEffect(
+    () =>
+      cues.subscribe((cue) => {
+        const now = performance.now();
+        if (cue.type === 'chat') tags.say(cue.playerId, cue.text);
+        else if (cue.type === 'player_action') energy.bump(TEAM, 0.06, now); // a burst of likes
+        else if (cue.type === 'celebration' && cue.effect !== RACE_CUES.lastLap && cue.effect !== RACE_CUES.won) energy.bump(TEAM, 0.15, now); // a gift
+      }),
+    [cues, tags, energy],
+  );
 
   useFrame((state) => {
     const now = performance.now();
@@ -58,6 +77,24 @@ export function Scene({ live, tags, cues }: SceneProps) {
     const racers = smoother.step(now, dtMs);
     const stage = smoother.stage;
     frame.current = { racers, stage };
+    clock.tick(now, excitement(now, stage === 'racing')); // before the sound director reads it (it runs later)
+
+    // Moments in the race itself that get a sound: the leader starting the last lap, and the first horse home.
+    const view = smoother.current;
+    if (stage === 'grid' || stage === null) {
+      r.lastLapSounded = false;
+      r.winSounded = false;
+    } else if (view && stage === 'racing') {
+      const leader = racers.reduce((best, racer) => Math.max(best, racer.distance), 0);
+      if (!r.lastLapSounded && view.laps > 1 && lapOf(leader, view.lapLength, view.laps) === view.laps) {
+        r.lastLapSounded = true;
+        cues.emit({ type: 'celebration', effect: RACE_CUES.lastLap });
+      }
+    }
+    if (!r.winSounded && racers.some((racer) => racer.place === 1)) {
+      r.winSounded = true;
+      cues.emit({ type: 'celebration', effect: RACE_CUES.won });
+    }
     if (stage !== r.previousStage) {
       if (stage === 'grid' || stage === null) r.gridSince = now;
       r.previousStage = stage;
@@ -122,6 +159,9 @@ export function Scene({ live, tags, cues }: SceneProps) {
           <Horses frame={frame} />
         </Suspense>
       </Boundary>
+      {audio && (
+        <SoundDirector engine={audio} design={soundDesign} clock={clock} energyOf={(now) => excitement(now, smoother.stage === 'racing')} phase={phase} paused={paused} secondsLeft={secondsLeft} cues={cues} />
+      )}
     </>
   );
 }

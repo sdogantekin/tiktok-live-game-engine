@@ -127,3 +127,42 @@ test("the game's music file loads and takes over from the built-in music (when t
     .poll(() => broadcast.evaluate(() => (window as unknown as { __soundEngine: { stats: { track: string } } | null }).__soundEngine?.stats.track), { timeout: 20_000 })
     .toBe('ready');
 });
+
+test('At Yarışı\'s music is audible, does not clip, and builds with the race without getting wild', async ({ context }) => {
+  const operator = await openOperator(context);
+  await startFreshGame(operator);
+  await button(operator, 'Stop game').click();
+  await operator.getByLabel('Game', { exact: true }).selectOption('at-yarisi');
+  await button(operator, 'Switch game').click();
+  await expect(operator.getByTestId('current-game')).toContainText('At Yarışı');
+
+  try {
+    // (`openBroadcast` waits for the team score boxes, which this game does not have: `render` waits for the sound probe instead.)
+    const broadcast = await context.newPage();
+    await broadcast.goto('/broadcast/?probe=1');
+    const calm = await render(broadcast, { seconds: 12, bpm: 112, energy: 0, mode: 'calm' });
+    const medium = await render(broadcast, { seconds: 12, bpm: 128, energy: 0.4 });
+    const high = await render(broadcast, { seconds: 12, bpm: 150, energy: 1 });
+    for (const stats of [calm, medium, high]) {
+      expect(stats.hasInvalidSamples).toBe(false);
+      expect(stats.peak).toBeGreaterThan(0.05);
+      expect(stats.peak).toBeLessThanOrEqual(0.99);
+      expect(stats.rms).toBeGreaterThan(0.005);
+    }
+    expect(high.audibleFraction).toBeGreaterThan(0.8);
+    expect(high.rms).toBeGreaterThan(calm.rms);
+    expect(high.rms / calm.rms).toBeLessThan(5);
+
+    // The race's own effects, all at once, still stay under the limit.
+    const names = ['pop', 'whoosh', 'sparkle', 'chime', 'tick', 'go', 'fanfare', 'cheer'];
+    const effects = Array.from({ length: 300 }, (_, i) => ({ at: 1 + (i % 40) * 0.05, request: { name: names[i % names.length]!, velocity: 1 } }));
+    const storm = await render(broadcast, { seconds: 6, bpm: 150, energy: 1, effects });
+    expect(storm.hasInvalidSamples).toBe(false);
+    expect(storm.peak).toBeLessThanOrEqual(0.99);
+  } finally {
+    // The game was switched while stopped and never started, so it is already stopped: just switch back.
+    await operator.getByLabel('Game', { exact: true }).selectOption('mahalle-halayi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
+  }
+});
