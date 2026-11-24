@@ -8,13 +8,15 @@ import { EnergyMeter } from '../../game-renderer/crowd-energy';
 import { floatingKey } from '../../game-renderer/name-tags';
 import type { SceneProps } from '../../game-renderer/types';
 import { type GateState, gateTimeline } from './gate';
-import { CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
+import { CHASE_FOV, PIP, pipActive, railCamera, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, type Subject, WIDE } from './camera';
 import { type HorseFrame, Horses } from './Horses';
 import { laneOffset, shape } from './scene-config';
 import { type RaceFx, RaceEffects } from './RaceEffects';
 import { RACE_CUES, soundDesign } from './sound-design';
+import { leadingRacers, RAIL_TAG_COUNT, railTags } from './railtags';
 import { RaceSmoother } from './smoothing';
 import { Course } from './Course';
+import { HiddenInPip, PipRegistry } from './Pip';
 import { Scenery } from './Scenery';
 import { lapOf, trackPoint } from './track';
 
@@ -39,6 +41,12 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
   const gate = useRef<GateState>({ stalls: 0, open: 0, up: true });
   const finalLap = useRef(false);
   const startedAt = useRef<number | null>(null);
+  /** The small rail-camera view: its camera, the parts it leaves out, and whether it is showing. */
+  const pipCamera = useMemo(() => new THREE.PerspectiveCamera(34, PIP.width / PIP.height, 0.5, 700), []);
+  const pipHidden = useMemo(() => new PipRegistry(), []);
+  const pipOn = useRef(false);
+  const pipFocus = useRef(0);
+  const pipSize = useMemo(() => new THREE.Vector2(), []);
   const sun = useRef<THREE.DirectionalLight>(null);
   const sunTarget = useRef<THREE.Object3D>(null);
   const rig = useRef({
@@ -185,6 +193,30 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       r.ids = ids;
       tags.setOccupants(racers.map((racer, i) => ({ slotKey: floatingKey(i), playerId: racer.id, name: racer.name, teamId: TEAM })));
     }
+    // The rail camera: while it is showing it keeps pace with the leader, seen side-on from the infield.
+    pipOn.current = pipActive(view);
+    if (pipOn.current) {
+      const firstThree = leadingRacers(racers, RAIL_TAG_COUNT);
+      pipFocus.current = firstThree[0]?.distance ?? 0;
+      const rail = railCamera(firstThree.map((racer) => racer.distance));
+      pipCamera.position.set(...rail.position);
+      pipCamera.lookAt(...rail.lookAt);
+      // (the field of view is changed through the focal length, which is how three.js lets it be set)
+      const fovNow = damp(pipCamera.fov, rail.fov, 4, dt);
+      pipCamera.setFocalLength((0.5 * pipCamera.getFilmHeight()) / Math.tan(THREE.MathUtils.degToRad(fovNow) / 2));
+      pipCamera.updateMatrixWorld();
+
+      // The names of the first three, over their jockeys: worked out through the rail camera, placed inside its window.
+      railTags.current = leadingRacers(racers, RAIL_TAG_COUNT).map((racer, rank) => {
+        const index = racers.indexOf(racer);
+        const p = trackPoint(shape, racer.distance, laneOffset(index, racers.length));
+        r.point.set(p.x, 3.1, p.z).project(pipCamera);
+        return { id: racer.id, name: racer.name, rank: rank + 1, x: (r.point.x + 1) / 2, y: (1 - r.point.y) / 2, visible: r.point.z > -1 && r.point.z < 1 && Math.abs(r.point.x) < 1 && Math.abs(r.point.y) < 1 };
+      });
+    } else if (railTags.current.length > 0) {
+      railTags.current = [];
+    }
+
     subjects.forEach((subject, i) => {
       r.point.set(subject.x, TAG_HEIGHT, subject.z).project(state.camera);
       const visible = r.point.z > -1 && r.point.z < 1 && Math.abs(r.point.x) < 1.05 && Math.abs(r.point.y) < 1.05;
@@ -193,6 +225,33 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
       tags.setDynamic(floatingKey(i), { small: { x: x + 0.012, y }, big: { x, y: y - 0.04 }, visible });
     });
   }, -2);
+
+  // Drawing is taken over here (a frame callback with a priority above zero does that): the main view, then, when it is showing, the small
+  // rail-camera view in its corner of the same canvas, without the crowd, scenery and effects.
+  useFrame((state) => {
+    const { gl, scene, camera } = state;
+    gl.info.autoReset = false; // count both passes together
+    gl.info.reset();
+    gl.getSize(pipSize);
+    gl.setScissorTest(false);
+    gl.setViewport(0, 0, pipSize.x, pipSize.y);
+    gl.render(scene, camera);
+    if (!pipOn.current) return;
+    const unit = pipSize.x / 100;
+    const w = PIP.width * unit;
+    const h = PIP.height * unit;
+    const x = pipSize.x - PIP.right * unit - w;
+    const y = pipSize.y - PIP.top * unit - h; // three measures y from the bottom
+    pipHidden.hide(pipFocus.current, 70);
+    gl.setScissorTest(true);
+    gl.setViewport(x, y, w, h);
+    gl.setScissor(x, y, w, h);
+    gl.clearDepth();
+    gl.render(scene, pipCamera);
+    pipHidden.show();
+    gl.setScissorTest(false);
+    gl.setViewport(0, 0, pipSize.x, pipSize.y);
+  }, 1);
 
   return (
     <>
@@ -219,16 +278,20 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
         shadow-bias={-0.0004}
         shadow-normalBias={0.05}
       />
-      <Course excitement={mood} gate={gate} finalLap={finalLap} />
+      <Course excitement={mood} gate={gate} finalLap={finalLap} pip={pipHidden} />
       <Boundary label="scenery" fallback={null}>
         <Suspense fallback={null}>
-          <Scenery />
+          <HiddenInPip registry={pipHidden}>
+            <Scenery />
+          </HiddenInPip>
         </Suspense>
       </Boundary>
       <Boundary label="horses" fallback={null}>
         <Suspense fallback={null}>
-          <Horses frame={frame} />
-          <RaceEffects frame={frame} fxRef={fx} />
+          <Horses frame={frame} pip={pipHidden} />
+          <HiddenInPip registry={pipHidden}>
+            <RaceEffects frame={frame} fxRef={fx} />
+          </HiddenInPip>
         </Suspense>
       </Boundary>
       {audio && (

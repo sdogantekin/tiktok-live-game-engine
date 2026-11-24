@@ -1,6 +1,8 @@
 import type { HudState, RaceView } from '@live-game/contracts';
-import { type CSSProperties, useEffect, useState, useSyncExternalStore } from 'react';
+import { type CSSProperties, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { LiveFeed } from '../../game-renderer/live-feed';
+import { PIP, pipActive } from './camera';
+import { RAIL_TAG_COUNT, railTags, separateTags } from './railtags';
 import { lapOf, racerColor } from './track';
 
 /** Everything is sized in stage units (`--u` is 1% of the stage width), like the rest of the broadcast. */
@@ -10,6 +12,56 @@ const panel: CSSProperties = { position: 'absolute', background: 'rgba(15, 24, 1
 function useRace(live: LiveFeed): RaceView | null {
   const view = useSyncExternalStore(live.subscribe, live.latest);
   return view?.kind === 'race' ? view : null;
+}
+
+/**
+ * The names over the first three horses in the rail-camera window. The scene fills `railTags` every frame; this moves a few fixed elements
+ * to match, straight in the DOM (no React renders), and sets their text as plain text (names come from viewers).
+ */
+function RailTags() {
+  const slots = useRef<(HTMLSpanElement | null)[]>([]);
+  useEffect(() => {
+    let frame = 0;
+    const follow = () => {
+      // Tags of horses that are close together are kept from lying on top of one another.
+      const shown = railTags.current.slice(0, RAIL_TAG_COUNT).map((tag) => (tag.visible ? tag : null));
+      const ys = separateTags(shown.filter((tag) => tag !== null).map((tag) => ({ x: tag.x, y: tag.y })));
+      let next = 0;
+      for (let i = 0; i < RAIL_TAG_COUNT; i++) {
+        const el = slots.current[i];
+        if (!el) continue;
+        const tag = shown[i];
+        if (!tag) {
+          el.style.display = 'none';
+          continue;
+        }
+        el.style.display = 'block';
+        el.style.left = `${tag.x * 100}%`;
+        el.style.top = `${ys[next++]! * 100}%`;
+        el.style.borderLeftColor = racerColor(tag.id);
+        const text = `${tag.rank}  ${tag.name}`;
+        if (el.textContent !== text) el.textContent = text;
+      }
+      frame = requestAnimationFrame(follow);
+    };
+    frame = requestAnimationFrame(follow);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: u(0.8) }} aria-hidden="true">
+      {Array.from({ length: RAIL_TAG_COUNT }, (_, i) => (
+        <span
+          key={i}
+          ref={(el) => {
+            slots.current[i] = el;
+          }}
+          data-testid="rail-tag"
+          style={{ position: 'absolute', display: 'none', transform: 'translate(-50%, -100%)', maxWidth: u(22), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: `${u(0.3)} ${u(1)}`, background: 'rgba(15, 24, 15, 0.82)', color: '#fff', fontSize: u(2.3), fontWeight: 700, borderRadius: u(0.8), borderLeft: `${u(0.7)} solid #ffd35a` }}
+        />
+      ))}
+    </div>
+  );
 }
 
 /** The race's own HUD: standings, the lap, who is waiting, a legend, and the ranking once it is over. */
@@ -50,6 +102,16 @@ export function Overlay({ hud, live }: { hud: HudState; live: LiveFeed }) {
             {view.waiting > 0 ? ` · Sırada ${view.waiting}` : ''}
           </div>
         </section>
+      )}
+
+      {pipActive(view) && (
+        <div
+          data-testid="rail-cam"
+          style={{ position: 'absolute', top: u(PIP.top), right: u(PIP.right), width: u(PIP.width), height: u(PIP.height), border: `${u(0.5)} solid #ffffff`, borderRadius: u(1.2), boxShadow: '0 0 0 2px rgba(0,0,0,0.35)', pointerEvents: 'none' }}
+        >
+          <RailTags />
+          <span style={{ position: 'absolute', left: u(1), top: u(0.8), padding: `${u(0.3)} ${u(1)}`, background: 'rgba(192,57,43,0.92)', color: '#fff', fontSize: u(2.4), fontWeight: 700, borderRadius: u(0.8) }}>RAIL CAM</span>
+        </div>
       )}
 
       {winner && bannerKey !== dismissedKey && hud.phase !== 'results' && (

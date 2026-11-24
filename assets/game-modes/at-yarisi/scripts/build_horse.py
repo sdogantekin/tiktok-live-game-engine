@@ -5,9 +5,10 @@ Run:  blender -b --factory-startup --python build_horse.py [-- preview]
 The horse is the CC0 horse from Quaternius' "Farm Animals Animated" pack (`assets/third-party/quaternius-farm-animals/Horse.blend`): its
 mesh, 28-bone rig and animations are kept as they are. This script
   - keeps four of its animations and renames them: Run -> gallop, Idle -> idle, Walk -> walk, Jump -> victory,
-  - splits the mesh by material into `Coat` (the scene tints it with the horse's colour) and `Details` (mane, tail, hooves, eyes),
-  - adds our own jockey on the horse's back: `Silks` (clothes, cap and saddle cloth: the scene tints it with the racer's colour)
-    and `Rider` (skin and boots, fixed colours), all bound to the horse's Torso bone so the jockey moves with the gallop.
+  - splits the mesh by material into `Coat` (the scene tints it with the horse's colour) and the dark details (mane, tail, hooves, eyes),
+  - adds our own jockey and tack on the horse: `Silks` (clothes, cap, saddle cloth and blinkers: the scene tints it with the racer's colour)
+    and `Rider` (everything with a fixed colour: skin, boots, saddle, bridle and, merged in, the horse's own dark details), the jockey bound
+    to the horse's Torso bone so he moves with the gallop. Three meshes in all: three draw calls a horse.
 The horse faces -Y and stands with its hooves at 0, in the pack's own units (about 4 units to its back): the scene scales the whole model
 by `HORSE_SCALE` (see assets.manifest.ts).
 """
@@ -36,6 +37,7 @@ CLIPS = {"Run": "gallop", "Idle": "idle", "Walk": "walk", "Jump": "victory"}
 COAT_RGB = (0.175, 0.074, 0.047)  # a bay brown; the scene tints it per horse
 DETAIL_RGB = (0.03, 0.025, 0.025)
 SILKS = "#ffffff"
+DETAIL_HEX = "#1c1513"  # the horse's mane, tail, hooves and eyes
 SKIN = "#e8bd98"
 BOOTS = "#3b2a20"
 
@@ -103,6 +105,12 @@ def build_jockey(bone_names):
     rider.limb((0, -0.6, 6.55), (0, -0.6, 6.68), 0.58, 0.58, "#ffffff", bone, segments=8)  # helmet band
     rider.box((0, -1.12, 6.6), (0.8, 0.55, 0.09), dark, bone)  # peak
     rider.box((0, -1.02, 6.4), (0.84, 0.16, 0.26), "#7fc4e8", bone)  # goggles
+    rider.limb((0, -0.4, 5.92), (0, -0.5, 6.08), 0.66, 0.66, "#ffffff", bone, segments=8)  # a white collar
+    for side in (-1, 1):
+        rider.limb((0.7 * side, -1.62, 4.98), (0.62 * side, -1.8, 4.95), 0.34, 0.34, "#ffffff", bone, segments=5)  # white cuffs
+    # blinkers on the horse, in the racer's colours
+    for side in (-1, 1):
+        silks.box((0.58 * side, -3.95, 6.05), (0.2, 0.55, 0.55), SILKS, "Head")
     # legs: white breeches, black boots, stirrups on leathers
     for side in (-1, 1):
         rider.limb((0.6 * side, 0.55, 4.55), (1.05 * side, 0.15, 3.75), 0.46, 0.4, "#f4f4f4", bone, segments=5)
@@ -152,7 +160,24 @@ def build(preview=False):
         if hasattr(strip, "action_slot") and len(action.slots) > 0:
             strip.action_slot = action.slots[0]
 
-    objects = [coat, details, *jockey]
+    # one mesh for everything with a fixed colour: the horse's dark details get a vertex colour and join the rider and tack
+    layer = details.data.color_attributes.get("Col") or details.data.color_attributes.new("Col", "BYTE_COLOR", "CORNER")
+    dark = assetlib.srgb(DETAIL_HEX)
+    for item in layer.data:
+        item.color = dark
+    details.data.color_attributes.active_color = layer
+    details.data.materials.clear()
+    details.data.materials.append(toy)
+    rider = next(o for o in jockey if o.name.startswith("Rider"))
+    bpy.ops.object.select_all(action="DESELECT")
+    details.select_set(True)
+    rider.select_set(True)
+    bpy.context.view_layer.objects.active = rider
+    bpy.ops.object.join()
+    rider.name = "Rider"
+    rider.data.name = "Rider"
+    jockey = [o for o in jockey if o.name != "Rider" and o.name.startswith("Silks")] + [rider]
+    objects = [coat, *jockey]
     tris = sum(triangle_count(o) for o in objects)
     low, high = world_bounds(objects)
     height = (high.z - low.z) * HORSE_SCALE

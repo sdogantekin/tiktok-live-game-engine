@@ -173,3 +173,13 @@ After the finish, dust, shadow and boost effects (2026-11-24): hoof dust behind 
 | Gift burst | 1080x1920 | 59.9 | 53.5 | 18.0 ms | 125 | 241 k |
 
 Still 60 FPS, and just under the 150 draw-call budget at the busiest moment (the count includes the shadow pass, and varies with how much of the course the camera sees). **There is no headroom left in draw calls:** any further detail should first merge meshes (for example the spectator parts, the rails and the horses' four meshes) or drop something. Not measured on a weaker GPU.
+
+After merging the horse's fixed-colour meshes, the starting gate redesign and the rail-camera picture-in-picture (2026-11-24): each horse is now three meshes (coat, silks, and one with everything of a fixed colour), the finish-line squares are one instanced mesh, and a small second view (the "rail cam", a low side-on tracking shot from the infield) shows for the last 200 m of the last lap and the finish. It is a second pass over the scene without the crowd, scenery, skyline, effects, pond and dressing, and only with the horses near the leader.
+
+| Run | Viewport | Avg FPS | 1% low | Frame p95 | Draw calls | Triangles |
+|---|---|---|---|---|---|---|
+| Default (mid-race) | 1080x1920 | 59.9 | 53.8 | 18.1 ms | 125 | 242 k |
+| Default (mid-race) | 720x1280 | 60.0 | 53.8 | 18.1 ms | 126 | 242 k |
+| Gift burst | 1080x1920 | 59.9 | 53.5 | 18.3 ms | 121 | 242 k |
+
+Mid-race draw calls are back under the budget (about 120-126). **While the rail cam is showing (the last 200 m, about 13 seconds) the count is about 155** (measured once in headless Chrome with the perf overlay, 119 before it appeared), a little over the provisional 150, with the frame rate unchanged at 60. Not measured on a weaker GPU.

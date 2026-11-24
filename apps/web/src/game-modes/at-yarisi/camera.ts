@@ -1,4 +1,5 @@
 import type { TrackShape } from './track';
+import { shape as course, TRACK_HALF_WIDTH } from './scene-config';
 import { trackPoint } from './track';
 
 export type Vec3 = readonly [number, number, number];
@@ -93,4 +94,34 @@ export function chaseFor(remaining: number, window = 70): { tuning: ChaseTuning;
     tuning: { behind: mix(CHASE.behind, RUN_IN.behind, t), height: mix(CHASE.height, RUN_IN.height, t), ahead: mix(CHASE.ahead, RUN_IN.ahead, t) },
     fov: mix(CHASE_FOV, RUN_IN_FOV, t),
   };
+}
+
+/** The picture-in-picture window, in stage units (1 unit = 1% of the stage width), from the top and right edges. */
+export const PIP = { top: 36, right: 2, width: 40, height: 30 } as const;
+
+/** How far from the line the picture-in-picture comes on, metres. */
+export const PIP_WINDOW = 200;
+
+/** Whether the picture-in-picture shows: the leader in the last stretch of the last lap, and the finish itself. */
+export function pipActive(view: { stage: 'grid' | 'racing' | 'finished'; laps: number; lapLength: number; racers: readonly { distance: number }[] } | null): boolean {
+  if (!view || view.racers.length === 0) return false;
+  if (view.stage === 'finished') return true;
+  if (view.stage !== 'racing') return false;
+  const leader = view.racers.reduce((best, racer) => Math.max(best, racer.distance), 0);
+  return view.laps * view.lapLength - leader <= PIP_WINDOW;
+}
+
+/**
+ * The rail camera: low on the infield side of the track, looking across at the first horses (the TV's side-on tracking shot). It is aimed at the
+ * middle of the group `distances` (metres run by each of the horses to show) and, the more the group is spread out, the further back and wider
+ * it goes, so the first three can all be in the window while the race is close.
+ */
+export function railCamera(distances: readonly number[]): CameraPose & { fov: number } {
+  const near = Math.min(...distances);
+  const far = Math.max(...distances);
+  const middle = (near + far) / 2;
+  const spread = Math.min(40, far - near);
+  const behind = trackPoint(course, middle - 6 - spread * 0.2, -(TRACK_HALF_WIDTH + 3 + spread * 0.32));
+  const target = trackPoint(course, middle + 2, 0);
+  return { position: [behind.x, 2.4 + spread * 0.04, behind.z], lookAt: [target.x, 1.4, target.z], fov: 34 + spread * 0.3 };
 }

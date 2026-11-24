@@ -8,7 +8,7 @@ const file = (url: string) => new URL(`../../../public${url}`, import.meta.url);
 describe('the horse model', () => {
   const info = readGlb(file(MODEL_URLS.horse));
 
-  it('is four skinned meshes (coat, details, silks, rider) within the triangle budget', () => {
+  it('is three skinned meshes (coat, silks, rider) within the triangle budget', () => {
     expect([...info.meshNames].sort()).toEqual([...HORSE_MESHES].sort());
     for (const name of HORSE_MESHES) expect(info.primitivesPerMesh[name], name).toBe(1);
     expect(info.triangles).toBeLessThanOrEqual(BUDGETS.horseTriangles);

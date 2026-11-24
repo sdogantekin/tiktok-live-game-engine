@@ -2,10 +2,34 @@ import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Dressing } from './Dressing';
 import type { GateState } from './gate';
+import { HiddenInPip, type PipRegistry } from './Pip';
 import { Grandstand, seeded } from './Grandstand';
 import { Parcours } from './Parcours';
 import { shape, TRACK_HALF_WIDTH } from './scene-config';
 import { trackPoint } from './track';
+
+/** The chequered edge of the start/finish line: one instanced mesh of black squares (the white line itself is drawn separately). */
+function ChequeredEdge() {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const line = trackPoint(shape, 0);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < 17; i++) {
+      dummy.position.set(line.x - TRACK_HALF_WIDTH + 0.5 + i * 1, 0.07, line.z + (i % 2 === 0 ? -0.3 : 0.3));
+      dummy.rotation.set(-Math.PI / 2, 0, 0);
+      dummy.scale.set(0.6, 0.6, 1);
+      dummy.updateMatrix();
+      mesh.current?.setMatrixAt(i, dummy.matrix);
+    }
+    if (mesh.current) mesh.current.instanceMatrix.needsUpdate = true;
+  }, []);
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, 17]} frustumCulled={false}>
+      <planeGeometry args={[1, 1]} />
+      <meshStandardMaterial color="#1c1420" />
+    </instancedMesh>
+  );
+}
 
 /** A ring of city buildings in the distance and one tall observation tower: original shapes, nothing copied from a real place. */
 function Skyline() {
@@ -58,7 +82,7 @@ function Skyline() {
 }
 
 /** The racecourse: a dirt track on grass with white rails, a start line, a pond in the infield, stands and a skyline. */
-export function Course({ excitement, gate, finalLap }: { excitement: { current: number }; gate: { current: GateState }; finalLap: { current: boolean } }) {
+export function Course({ excitement, gate, finalLap, pip }: { excitement: { current: number }; gate: { current: GateState }; finalLap: { current: boolean }; pip: PipRegistry }) {
   const line = trackPoint(shape, 0);
   return (
     <>
@@ -72,20 +96,21 @@ export function Course({ excitement, gate, finalLap }: { excitement: { current: 
         <planeGeometry args={[2 * TRACK_HALF_WIDTH, 1.2]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
-      {Array.from({ length: 17 }, (_, i) => (
-        <mesh key={i} position={[line.x - TRACK_HALF_WIDTH + 0.5 + i * 1, 0.07, line.z + (i % 2 === 0 ? -0.3 : 0.3)]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.6, 0.6]} />
-          <meshStandardMaterial color="#1c1420" />
+      <ChequeredEdge />
+      <HiddenInPip registry={pip}>
+        {/* a pond in the middle of the infield */}
+        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 3.2, 1]}>
+          <circleGeometry args={[shape.radius * 0.55, 24]} />
+          <meshStandardMaterial color="#5aa9d6" />
         </mesh>
-      ))}
-      {/* a pond in the middle of the infield */}
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 3.2, 1]}>
-        <circleGeometry args={[shape.radius * 0.55, 24]} />
-        <meshStandardMaterial color="#5aa9d6" />
-      </mesh>
-      <Grandstand excitement={excitement} />
-      <Dressing finalLap={finalLap} />
-      <Skyline />
+      </HiddenInPip>
+      <HiddenInPip registry={pip}>
+        <Grandstand excitement={excitement} />
+        <Skyline />
+      </HiddenInPip>
+      <HiddenInPip registry={pip}>
+        <Dressing finalLap={finalLap} />
+      </HiddenInPip>
     </>
   );
 }

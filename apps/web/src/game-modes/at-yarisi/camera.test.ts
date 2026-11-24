@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CHASE, CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, RUN_IN, RUN_IN_FOV, turnBetween } from './camera';
-import { trackShape } from './track';
+import { CHASE, CHASE_FOV, chaseCamera, chaseFor, damp, dampAngle, focusOf, gridCamera, pipActive, railCamera, RUN_IN, RUN_IN_FOV, turnBetween } from './camera';
+import { trackPoint, trackShape } from './track';
 
 describe('damping', () => {
   it('approaches the target without overshooting, at the same speed whatever the frame rate', () => {
@@ -80,5 +80,43 @@ describe('the finish run-in', () => {
       previous = tuning.behind;
     }
     expect(chaseFor(-20)).toEqual(chaseFor(0));
+  });
+});
+
+describe('the picture-in-picture', () => {
+  const racers = (leader: number) => [{ distance: leader }, { distance: leader - 30 }];
+  const view = (stage: 'grid' | 'racing' | 'finished', leader: number) => ({ stage, laps: 6, lapLength: 400, racers: racers(leader) });
+
+  it('comes on for the last 200 m and the finish only', () => {
+    expect(pipActive(null)).toBe(false);
+    expect(pipActive(view('grid', 0))).toBe(false);
+    expect(pipActive(view('racing', 1000))).toBe(false);
+    expect(pipActive(view('racing', 2199))).toBe(false);
+    expect(pipActive(view('racing', 2200))).toBe(true);
+    expect(pipActive(view('racing', 2399))).toBe(true);
+    expect(pipActive(view('finished', 2400))).toBe(true);
+    expect(pipActive({ stage: 'racing', laps: 6, lapLength: 400, racers: [] })).toBe(false);
+  });
+
+  it('puts the rail camera low, beside the track on the infield side, a little behind the leader and looking at it', () => {
+    const rail = railCamera([100]);
+    expect(rail.position[1]).toBeLessThan(4);
+    const leader = trackPoint(trackShape(400), 100, 0);
+    const horizontal = Math.hypot(rail.position[0] - leader.x, rail.position[2] - leader.z);
+    expect(horizontal).toBeGreaterThan(7); // across the track, not on it
+    expect(horizontal).toBeLessThan(20);
+    expect(Math.hypot(rail.lookAt[0] - leader.x, rail.lookAt[2] - leader.z)).toBeLessThan(4);
+  });
+
+  it('backs off and widens when the first horses are spread out, within limits, and is the same wherever the group is listed', () => {
+    const together = railCamera([100, 101, 102]);
+    const strung = railCamera([100, 120, 140]);
+    const huge = railCamera([100, 400, 900]);
+    const middle = trackPoint(trackShape(400), 120, 0);
+    const distance = (c: { position: readonly number[] }) => Math.hypot(c.position[0]! - middle.x, c.position[2]! - middle.z);
+    expect(distance(strung)).toBeGreaterThan(distance(together));
+    expect(strung.fov).toBeGreaterThan(together.fov);
+    expect(huge.fov).toBeLessThanOrEqual(34 + 40 * 0.3 + 1e-9); // capped
+    expect(railCamera([140, 100, 120])).toEqual(strung);
   });
 });

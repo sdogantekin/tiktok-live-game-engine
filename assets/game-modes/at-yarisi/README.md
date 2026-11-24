@@ -10,12 +10,12 @@ pnpm test           # validates the GLB (budgets, rig, exact clips, the clips th
 
 | File | Contents | Clips |
 |---|---|---|
-| `horse.glb` | The **CC0 horse from Quaternius' Farm Animals Animated pack** (its 28-bone rig and animations) with **our own jockey** on its back: four skinned meshes, about 940 triangles | `gallop` (the pack's Run, about 0.8 s a stride at the base tempo; the scene scales its speed with the horse's speed), `idle`, `walk`, `victory` (the pack's Jump) |
+| `horse.glb` | The **CC0 horse from Quaternius' Farm Animals Animated pack** (its 28-bone rig and animations) with **our own jockey** on its back: three skinned meshes, about 1,300 triangles | `gallop` (the pack's Run, about 0.8 s a stride at the base tempo; the scene scales its speed with the horse's speed), `idle`, `walk`, `victory` (the pack's Jump) |
 | `models/scenery/*.glb` | 17 trees, bushes, flowers, grass tufts and stones from the **CC0 Kenney Nature Kit**, copied unchanged | none |
 
-The four meshes of the horse let the scene colour a horse without textures: **`Coat`** is tinted with the horse's coat colour, **`Silks`** (the jockey's
-clothes, cap and saddle cloth) with the racer's colour, while **`Details`** (mane, tail, hooves, eyes) and **`Rider`** (skin and boots) keep their own
-colours. Each horse gets its own copies of the two tinted materials; every horse is four draw calls. The model is in the pack's own units, so the scene
+The three meshes of the horse let the scene colour a horse without textures: **`Coat`** is tinted with the horse's coat colour, **`Silks`** (the jockey's
+clothes, cap, saddle cloth and the blinkers on the horse) with the racer's colour, while **`Rider`** (the horse's mane, tail, hooves and eyes, and the jockey's skin, boots, saddle and bridle) keeps its own
+colours. Each horse gets its own copies of the two tinted materials; every horse is three draw calls. The model is in the pack's own units, so the scene
 scales it by `HORSE_SCALE` (0.3).
 
 Effects (all code, no assets): hoof dust, speed streaks behind boosted horses and the winner's confetti are fixed-size particle pools drawn as three instanced meshes (`RaceEffects.tsx`, `particles.ts`); a sun shadow follows the leaders (cast by the horses' coats and the jockeys' silks only); a boosted jockey glows in his silks colour; the camera drops in close and low over the last 70 m (`camera.ts`).

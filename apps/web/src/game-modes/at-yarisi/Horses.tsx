@@ -8,6 +8,7 @@ import { BASE_SPEED, COATS, horseModels, laneOffset, MAX_RACERS, MAX_STRIDE, MIN
 import type { ShownRacer } from './smoothing';
 import { racerColor, trackPoint } from './track';
 import { HORSE_SCALE, MODEL_URLS } from './assets.manifest';
+import type { PipRegistry } from './Pip';
 
 /** What the scene works out once a frame for everyone to read: where every horse is. */
 export interface HorseFrame {
@@ -21,7 +22,7 @@ export const coatOf = (id: string): string => {
   return COATS[h % COATS.length]!;
 };
 
-function Horse({ index, frame }: { index: number; frame: { current: HorseFrame } }) {
+function Horse({ index, frame, pip }: { index: number; frame: { current: HorseFrame }; pip: PipRegistry }) {
   const gltf = useLoader(GLTFLoader, MODEL_URLS.horse);
   const player = useClipPlayer(gltf, horseModels);
   const group = useRef<THREE.Group>(null);
@@ -54,6 +55,7 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
     const root = group.current;
     if (!root) return;
     root.visible = racer !== undefined;
+    root.userData.distance = racer?.distance; // for the small view, which only draws the horses near its subject
     if (glow.current) glow.current.visible = racer !== undefined;
     if (!racer) {
       shownId.current = null;
@@ -95,7 +97,15 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
 
   return (
     <>
-      <group ref={group} visible={false}>
+      <group
+        ref={(root) => {
+          group.current = root;
+          if (!root) return;
+          pip.addHorse(root);
+          return () => pip.removeHorse(root);
+        }}
+        visible={false}
+      >
         <group scale={HORSE_SCALE}>
           <primitive object={player.object} />
         </group>
@@ -109,7 +119,7 @@ function Horse({ index, frame }: { index: number; frame: { current: HorseFrame }
 }
 
 /** One animated horse and jockey for every place on the grid. Suspends while the model loads. */
-export function Horses({ frame }: { frame: { current: HorseFrame } }) {
+export function Horses({ frame, pip }: { frame: { current: HorseFrame }; pip: PipRegistry }) {
   useEffect(() => {
     perf.modelsLoaded.avatars = true;
     return () => {
@@ -119,7 +129,7 @@ export function Horses({ frame }: { frame: { current: HorseFrame } }) {
   return (
     <>
       {Array.from({ length: MAX_RACERS }, (_, i) => (
-        <Horse key={i} index={i} frame={frame} />
+        <Horse key={i} index={i} frame={frame} pip={pip} />
       ))}
     </>
   );
