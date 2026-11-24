@@ -15,12 +15,22 @@ export function seeded(seed: number) {
   };
 }
 
+/**
+ * The two stands look different so a viewer can tell which is which: the MAIN STAND (beside the start and finish line, on the right of the
+ * track) is red and gold, with a red roof; the BACK STAND (on the far straight) is teal and blue, with a teal roof. The crowd in each wears
+ * the colours of its stand, and each has a sign over its roof.
+ */
+const STANDS = {
+  main: { roof: '#c0392b', fronts: ['#c0392b', '#f4f1ea'], shirts: ['#c0392b', '#f4f1ea', '#f2b705', '#e0457b', '#8c2f39', '#ff8a3d'], hats: ['#c0392b', '#f2b705', '#f4f1ea', '#1c1420'], scarves: ['#c0392b', '#f2b705', '#ffffff'], sign: 'MAIN STAND', signColor: '#8c2f39' },
+  back: { roof: '#1f7a8c', fronts: ['#1f7a8c', '#f2b705'], shirts: ['#1f7a8c', '#2f6fdb', '#58b368', '#f4f1ea', '#1f9fb0', '#2b3a67'], hats: ['#2f6fdb', '#58b368', '#f4f1ea', '#1c1420'], scarves: ['#2f6fdb', '#58b368', '#ffffff'], sign: 'BACK STAND', signColor: '#1b4f5c' },
+} as const;
+/** Side +1 is the main stand (the start and finish line is on that side), side -1 the back stand. */
+const standOf = (side: number) => (side > 0 ? STANDS.main : STANDS.back);
+
 const SHIRTS = ['#e0457b', '#2f6fdb', '#f2b705', '#f4f1ea', '#58b368', '#c0392b', '#8e44ad', '#ff8a3d', '#1f9fb0', '#2b2b3a'];
 const SKINS = ['#f1c9a5', '#e8bd98', '#d9a982', '#c68e6a', '#a9714f', '#7a4b33'];
 const HAIR = ['#2a1d18', '#3b2a20', '#6b4423', '#c9a24a', '#8a8a8a', '#1c1420'];
 
-const HATS = ['#c0392b', '#2f6fdb', '#f2b705', '#1c1420', '#f4f1ea', '#58b368'];
-const SCARVES = ['#e0457b', '#2f6fdb', '#f2b705', '#ffffff', '#c0392b'];
 
 const TIERS = 6;
 const LENGTH = 96;
@@ -80,12 +90,12 @@ export function Grandstand({ excitement }: { excitement: { current: number } }) 
             z: -LENGTH / 2 + (k + 0.2 + rnd() * 0.6) * (LENGTH / PER_ROW),
             phase: rnd() * Math.PI * 2,
             skin: new THREE.Color(SKINS[Math.floor(rnd() * SKINS.length)]),
-            shirt: new THREE.Color(SHIRTS[Math.floor(rnd() * SHIRTS.length)]),
+            shirt: new THREE.Color(standOf(side).shirts[Math.floor(rnd() * standOf(side).shirts.length)]!),
             hair: new THREE.Color(HAIR[Math.floor(rnd() * HAIR.length)]),
             cheering: rnd() < 0.35,
             size: rnd() < 0.12 ? 0.72 : 0.92 + rnd() * 0.2, // some children, the rest a little different from each other
-            hat: rnd() < 0.3 ? new THREE.Color(HATS[Math.floor(rnd() * HATS.length)]) : null,
-            scarf: rnd() < 0.4 ? new THREE.Color(SCARVES[Math.floor(rnd() * SCARVES.length)]) : null,
+            hat: rnd() < 0.3 ? new THREE.Color(standOf(side).hats[Math.floor(rnd() * standOf(side).hats.length)]!) : null,
+            scarf: rnd() < 0.4 ? new THREE.Color(standOf(side).scarves[Math.floor(rnd() * standOf(side).scarves.length)]!) : null,
           });
         }
       }
@@ -128,12 +138,13 @@ export function Grandstand({ excitement }: { excitement: { current: number } }) 
         // a seat bench along its top, and a coloured band on its front face (two colours in turn, like painted seats)
         put(seats.current, t, side * (INNER + tier * TIER_DEPTH + 0.55), (tier + 1) * TIER_RISE + 0.12, 0, 0.55, 0.12, LENGTH - 1);
         put(fronts.current, t, side * (INNER + tier * TIER_DEPTH - 0.02), (tier + 0.5) * TIER_RISE + 0.5 * TIER_RISE * 0, 0, 0.06, TIER_RISE * 0.8, LENGTH - 0.5);
-        fronts.current?.setColorAt(t, color.set(tier % 2 === 0 ? '#2f6fdb' : '#f4f1ea'));
+        fronts.current?.setColorAt(t, color.set(standOf(side).fronts[tier % 2]!));
         t++;
       }
       // the roof over the upper rows, on posts at the back
       const roofX = side * (INNER + 3.5 * TIER_DEPTH + 1.5);
       put(roof.current, side === -1 ? 0 : 1, roofX, TIERS * TIER_RISE + 4.2, 0, TIER_DEPTH * 4.4, 0.35, LENGTH + 2);
+      roof.current?.setColorAt(side === -1 ? 0 : 1, color.set(standOf(side).roof));
       for (let k = 0; k <= 8; k++) put(posts.current, p++, side * (INNER + TIERS * TIER_DEPTH + 0.2), (TIERS * TIER_RISE + 4.2) / 2, -LENGTH / 2 + (k * LENGTH) / 8, 0.35, TIERS * TIER_RISE + 4.2, 0.35);
       // a white rail along the front of the stand: posts and a top bar
       for (let k = 0; k <= 24; k++) put(fenceMesh.current, rail++, side * (INNER - 0.9), 0.55, -LENGTH / 2 + (k * LENGTH) / 24, 0.12, 1.1, 0.12);
@@ -233,7 +244,7 @@ export function Grandstand({ excitement }: { excitement: { current: number } }) 
       </instancedMesh>
       <instancedMesh ref={roof} args={[undefined, undefined, 2]} frustumCulled={false}>
         {box}
-        <meshStandardMaterial color="#c0392b" />
+        <meshStandardMaterial />
       </instancedMesh>
       <instancedMesh ref={posts} args={[undefined, undefined, 18]} frustumCulled={false}>
         {box}
@@ -271,10 +282,44 @@ export function Grandstand({ excitement }: { excitement: { current: number } }) 
         {box}
         <meshStandardMaterial color="#c9c9c9" />
       </instancedMesh>
+      <StandSigns />
       <instancedMesh ref={flagCloths} args={[undefined, undefined, flags.length]} frustumCulled={false}>
         {box}
         <meshStandardMaterial />
       </instancedMesh>
+    </>
+  );
+}
+
+/** A sign for a stand, drawn on a canvas so the text is ours. */
+function signTexture(text: string, color: string): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 128;
+  const g = canvas.getContext('2d')!;
+  g.fillStyle = color;
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.fillStyle = '#ffffff';
+  g.font = 'bold 84px system-ui, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/** The two signs over the stands' roofs, readable from the track. */
+function StandSigns() {
+  const textures = useMemo(() => [-1, 1].map((side) => signTexture(standOf(side).sign, standOf(side).signColor)), []);
+  return (
+    <>
+      {[-1, 1].map((side, i) => (
+        <mesh key={side} position={[side * (INNER + 3.5 * TIER_DEPTH + 0.1), TIERS * TIER_RISE + 5.6, 0]} rotation={[0, side > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}>
+          <planeGeometry args={[34, 4.2]} />
+          <meshBasicMaterial map={textures[i]} />
+        </mesh>
+      ))}
     </>
   );
 }

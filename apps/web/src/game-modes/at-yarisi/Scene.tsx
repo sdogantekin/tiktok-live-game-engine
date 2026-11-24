@@ -188,7 +188,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     }
 
     // Name tags follow the horses: the tag layer is told where each one is on the stage every frame.
-    const ids = racers.map((racer) => racer.id).join('|');
+    const ids = racers.map((racer) => `${racer.id}:${racer.name}`).join('|'); // names too, so a viewer whose name changes is relabelled
     if (ids !== r.ids) {
       r.ids = ids;
       tags.setOccupants(racers.map((racer, i) => ({ slotKey: floatingKey(i), playerId: racer.id, name: racer.name, teamId: TEAM })));

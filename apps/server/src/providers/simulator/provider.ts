@@ -164,9 +164,16 @@ export class SimulatorProvider {
   }
 
   private runScenario(name: 'steady' | 'chaos', viewers: number, durationMs: number): SimulatorResult {
+    // The scenario plays the session's own viewers (adding more to the pool if it has fewer), so viewers added by hand and the scenario
+    // are the same people: an id never turns up under two different names.
+    if (this.pool.length < viewers) {
+      if (viewers > MAX_VIEWERS) return { ok: false, reason: 'viewer_limit' };
+      this.pool.push(...createViewers(viewers - this.pool.length, this.rng, this.pool.length + 1));
+    }
     const options = {
       seed: this.rng.int(2 ** 31),
       viewers,
+      audience: this.pool,
       startAt: this.now(),
       vocabulary: this.vocabulary(),
       idPrefix: `run${++this.runCount}`,

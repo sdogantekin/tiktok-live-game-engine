@@ -214,3 +214,33 @@ describe('likes', () => {
     for (const event of likes) expect(NormalizedEventSchema.safeParse(event.raw).success).toBe(true);
   });
 });
+
+describe('viewers added by hand and scenario viewers', () => {
+  it('are the same people: an id never turns up under two names', () => {
+    const { provider, emitted } = setup();
+    provider.handle({ type: 'sim_add_viewers', count: 5 });
+    vi.advanceTimersByTime(500);
+    provider.handle({ type: 'sim_scenario', name: 'steady', viewers: 8, durationMs: 5_000 });
+    vi.advanceTimersByTime(6_000);
+    const names = new Map<string, Set<string>>();
+    for (const raw of emitted as { userId?: string; displayName?: string }[]) {
+      if (!raw.userId || !raw.displayName) continue;
+      names.set(raw.userId, (names.get(raw.userId) ?? new Set()).add(raw.displayName));
+    }
+    expect(names.size).toBe(8); // five by hand, three more brought by the scenario
+    for (const set of names.values()) expect(set.size).toBe(1);
+    expect(provider.viewerCount).toBe(8);
+  });
+
+  it('a scenario smaller than the pool uses the first viewers of it', () => {
+    const { provider, emitted } = setup();
+    provider.handle({ type: 'sim_add_viewers', count: 10 });
+    vi.advanceTimersByTime(500);
+    const before = emitted.length;
+    provider.handle({ type: 'sim_scenario', name: 'steady', viewers: 4, durationMs: 5_000 });
+    vi.advanceTimersByTime(6_000);
+    const ids = new Set((emitted.slice(before) as { userId?: string }[]).map((raw) => raw.userId));
+    expect(ids.size).toBeLessThanOrEqual(4);
+    expect(provider.viewerCount).toBe(10);
+  });
+});

@@ -105,7 +105,9 @@ describe('the picture-in-picture', () => {
     const horizontal = Math.hypot(rail.position[0] - leader.x, rail.position[2] - leader.z);
     expect(horizontal).toBeGreaterThan(7); // across the track, not on it
     expect(horizontal).toBeLessThan(20);
-    expect(Math.hypot(rail.lookAt[0] - leader.x, rail.lookAt[2] - leader.z)).toBeLessThan(4);
+    // it looks a little way ahead of the leader (into the track the horses run into), not back at empty track
+    const ahead = trackPoint(trackShape(400), 107, 0);
+    expect(Math.hypot(rail.lookAt[0] - ahead.x, rail.lookAt[2] - ahead.z)).toBeLessThan(1);
   });
 
   it('backs off and widens when the first horses are spread out, within limits, and is the same wherever the group is listed', () => {
@@ -116,7 +118,7 @@ describe('the picture-in-picture', () => {
     const distance = (c: { position: readonly number[] }) => Math.hypot(c.position[0]! - middle.x, c.position[2]! - middle.z);
     expect(distance(strung)).toBeGreaterThan(distance(together));
     expect(strung.fov).toBeGreaterThan(together.fov);
-    expect(huge.fov).toBeLessThanOrEqual(34 + 40 * 0.3 + 1e-9); // capped
+    expect(huge.fov).toBeLessThanOrEqual(36 + 18 * 0.3 + 1e-9); // capped
     expect(railCamera([140, 100, 120])).toEqual(strung);
   });
 });

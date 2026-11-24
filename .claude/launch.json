@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "race",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["PORT=3001", "GAME=at-yarisi", "OPERATOR_TOKEN=demo-operator-token", "pnpm", "dev"],
+      "port": 5173
+    }
+  ]
+}

@@ -112,16 +112,16 @@ export function pipActive(view: { stage: 'grid' | 'racing' | 'finished'; laps: n
 }
 
 /**
- * The rail camera: low on the infield side of the track, looking across at the first horses (the TV's side-on tracking shot). It is aimed at the
- * middle of the group `distances` (metres run by each of the horses to show) and, the more the group is spread out, the further back and wider
- * it goes, so the first three can all be in the window while the race is close.
+ * The rail camera: low on the infield side of the track, looking across at the first horses (the TV's side-on tracking shot). It sits abeam of
+ * the group, a little ahead of it, and looks at a point ahead of the group, so the horses stay on the trailing side of the picture with the
+ * track they are running into in front of them (not empty track behind them). The more the first horses are spread out, the further back and
+ * wider it goes (up to a limit), so a close race gets all three in the window.
  */
 export function railCamera(distances: readonly number[]): CameraPose & { fov: number } {
-  const near = Math.min(...distances);
-  const far = Math.max(...distances);
-  const middle = (near + far) / 2;
-  const spread = Math.min(40, far - near);
-  const behind = trackPoint(course, middle - 6 - spread * 0.2, -(TRACK_HALF_WIDTH + 3 + spread * 0.32));
-  const target = trackPoint(course, middle + 2, 0);
-  return { position: [behind.x, 2.4 + spread * 0.04, behind.z], lookAt: [target.x, 1.4, target.z], fov: 34 + spread * 0.3 };
+  const lead = Math.max(...distances);
+  const spread = Math.min(18, lead - Math.min(...distances));
+  const centre = lead - spread * 0.3; // weighted towards the leader, who is the star of the picture
+  const camera = trackPoint(course, centre + 3, -(TRACK_HALF_WIDTH + 2 + spread * 0.5));
+  const target = trackPoint(course, centre + 7 + spread * 0.2, 0);
+  return { position: [camera.x, 2.4 + spread * 0.04, camera.z], lookAt: [target.x, 1.4, target.z], fov: 36 + spread * 0.3 };
 }

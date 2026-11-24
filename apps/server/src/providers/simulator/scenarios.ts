@@ -53,7 +53,15 @@ export interface ScenarioOptions {
   vocabulary?: Vocabulary;
   /** Event id prefix; set it when playing several scenarios into one session. */
   idPrefix?: string;
+  /**
+   * The viewers to play (the first `viewers` of them). Pass the session's own viewers so a scenario and viewers added by hand are the same
+   * people: a viewer id never has two names. Without it the scenario invents its own, numbered from 1.
+   */
+  audience?: readonly SimViewer[];
 }
+
+const audienceOf = (options: ScenarioOptions, rng: Rng): SimViewer[] =>
+  options.audience && options.audience.length >= options.viewers ? options.audience.slice(0, options.viewers) : createViewers(options.viewers, rng);
 
 const byTime = (a: ScheduledEvent, b: ScheduledEvent) => a.atMs - b.atMs;
 
@@ -72,7 +80,7 @@ export function steadyScenario(options: SteadyOptions): ScheduledEvent[] {
   const rng = new Rng(options.seed);
   const vocabulary = options.vocabulary ?? MAHALLE_VOCABULARY;
   const factory = new EventFactory(options.idPrefix);
-  const viewers = createViewers(options.viewers, rng);
+  const viewers = audienceOf(options, rng);
   const meanIntervalMs = (options.viewers / options.eventsPerSecond) * 1000;
   const events: ScheduledEvent[] = [];
 
@@ -109,7 +117,7 @@ export interface BurstOptions extends ScenarioOptions {
 export function burstScenario(options: BurstOptions): ScheduledEvent[] {
   const rng = new Rng(options.seed);
   const factory = new EventFactory(options.idPrefix);
-  return createViewers(options.viewers, rng)
+  return audienceOf(options, rng)
     .map((viewer) => {
       const atMs = options.atMs + rng.int(options.spreadMs);
       return { atMs, raw: factory.comment(viewer, options.text, options.startAt + atMs) };
@@ -140,7 +148,7 @@ export function chaosScenario(options: ChaosOptions): ScheduledEvent[] {
   const rng = new Rng(options.seed);
   const vocabulary = options.vocabulary ?? MAHALLE_VOCABULARY;
   const factory = new EventFactory(options.idPrefix);
-  const viewers = createViewers(options.viewers, rng);
+  const viewers = audienceOf(options, rng);
   const events: ScheduledEvent[] = [];
   const at = (atMs: number) => options.startAt + atMs;
   const add = (atMs: number, raw: unknown) => events.push({ atMs, raw });
