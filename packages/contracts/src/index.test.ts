@@ -46,6 +46,14 @@ describe('OperatorCommandSchema', () => {
   it('accepts valid commands', () => {
     expect(OperatorCommandSchema.safeParse({ type: 'start_game' }).success).toBe(true);
     expect(OperatorCommandSchema.safeParse({ type: 'reassign_player', playerId: 'p', teamId: 'gelin' }).success).toBe(true);
+    expect(OperatorCommandSchema.safeParse({ type: 'set_setting', key: 'laps', value: 3 }).success).toBe(true);
+  });
+
+  it('rejects a setting change that is not a whole number or has no key', () => {
+    expect(OperatorCommandSchema.safeParse({ type: 'set_setting', key: 'laps', value: 2.5 }).success).toBe(false);
+    expect(OperatorCommandSchema.safeParse({ type: 'set_setting', key: '', value: 3 }).success).toBe(false);
+    expect(OperatorCommandSchema.safeParse({ type: 'set_setting', key: 'laps', value: '3' }).success).toBe(false);
+    expect(OperatorCommandSchema.safeParse({ type: 'set_setting', value: 3 }).success).toBe(false);
   });
 
   it('rejects unknown types and missing fields', () => {

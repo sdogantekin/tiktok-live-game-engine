@@ -70,6 +70,7 @@ For a first test, run against a **private** LIVE of your own and watch the laten
 - [ ] Sound is on and at a sensible volume (operator **Sound** panel); the broadcast window has had its click
 - [ ] The right game is selected (operator **Game** panel; switching needs the game stopped and resets players)
 - [ ] **Comments on screen** is set the way you want (on by default)
+- [ ] Game settings are what you want (operator **Game settings** panel; At Yarışı has the number of laps, 1 to 8, default 6). A change applies to the next race and is refused while a race is running
 - [ ] The simulator is stopped, or TikTok is connected (one provider only)
 - [ ] The broadcast window is visible, at 100% zoom, with the machine awake
 - [ ] You know where **Disconnect TikTok**, **Ignore** and the comments switch are

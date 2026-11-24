@@ -186,6 +186,22 @@ The runtime calls it about ten times a second with the elapsed time (never more 
 - If the scene needs a clip to speed up with something (a horse's stride), pass `followTempo: true` in the beat state of `useClipPlayer.update`.
 - Scenes can also announce moments from the game itself as cues (`cues.emit({ type: 'celebration', effect: 'last_lap' })`), which the sound design maps to effects.
 
+## Operator settings (optional)
+
+A game can let the operator change a few whole numbers (the number of laps in a race, say). Declare them in the config and handle them in the mode; the engine and the operator panel stay game-neutral.
+
+```ts
+settings: [{ key: 'laps', label: 'Laps', min: 1, max: 8, default: 6 }],
+```
+
+```ts
+applySettings(values) { /* read values.laps and use it for the next round */ }
+```
+
+- The engine stores the values (starting at the defaults), validates every `set_setting` command (known key, whole number, inside `min` and `max`), and publishes `defs` and `values` in the HUD. The operator's **Game settings** panel shows whatever the active game declares and is hidden for a game with none.
+- A change is **refused while a round is active** (`round_running`). Anywhere else it is accepted, so your game must apply it to the round that has not started yet and to later ones, and leave a round in progress alone.
+- Values live in server memory and go back to the defaults when the game is switched. Pick limits the rest of the game can live with (At Yarışı stops at 8 laps because the round's time limit would end a longer race early). Every setting is another way to unbalance the game, so add few.
+
 ## Step 7: Run it and check
 
 ```bash
@@ -217,6 +233,7 @@ pnpm test:e2e              # add a spec like e2e/games.spec.ts that plays your g
 - [ ] Assets with a manifest and a validation test (or the primitive fallback only)
 - [ ] An e2e test that plays a round
 - [ ] If it moves on its own: likes, a live simulation and ranked results turned on in the config, a pure seeded simulation with a fairness or balance test, a smoother and a camera with their own tests
+- [ ] If the operator should tune something: `config.settings` and `applySettings`, with limits the game can live with
 - [ ] Game words added to the engine-boundary test
 - [ ] A performance run and a look at both stream sizes
 - [ ] `REQUIREMENTS.md` (game rules and decisions), `PLAN.md`, and an asset README

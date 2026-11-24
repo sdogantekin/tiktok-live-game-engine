@@ -485,3 +485,7 @@ If a dependency, renderer, runtime, event transport, or persistence decision nee
 3. Describe migration and impact on game modes/assets/tests.
 4. Record the decision and update this document.
 5. Obtain user approval before making a breaking change.
+
+### Game settings
+
+A game may declare operator-tunable whole numbers in `config.settings` (`key`, `label`, `min`, `max`, `default`) and implement `GameMode.applySettings(values)`. `GameState` holds the values (defaults at start, reset on a game switch) and the HUD carries `settings { defs, values }`. The operator `set_setting { key, value }` command is validated by the engine (`unknown_setting`, `invalid_value`, `round_running` while a round is active, `nothing_to_change`) and the game is told the new values. The operator panel renders whatever is declared, with no game knowledge. Values are in memory only. The first setting is At Yarışı's `laps` (1 to 8); the lap length stays a fixed 400 m, which the web scene's track geometry assumes.

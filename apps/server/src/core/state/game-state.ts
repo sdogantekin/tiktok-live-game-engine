@@ -3,6 +3,8 @@ import {
   type HudState,
   type ModeId,
   type ChatSettings,
+  type GameSettings,
+  type SettingDef,
   type ProviderInfo,
   type ProviderStatus,
   type PublicSnapshot,
@@ -27,6 +29,8 @@ export interface GameStateOptions {
   /** Whether the game shows viewers' comments, and whether that starts switched on. */
   chatSupported?: boolean;
   chatEnabled?: boolean;
+  /** The game's declared settings; each starts at its default. */
+  settings?: readonly SettingDef[];
   modeId: ModeId;
   teams: readonly TeamDefinition[];
   clock: Clock;
@@ -50,8 +54,11 @@ export class GameState {
   private rankingSource: (() => readonly RankingEntry[]) | undefined;
   private _chat: ChatSettings;
   private _sound: SoundSettings = { ...DEFAULT_SOUND_SETTINGS };
+  private _settings: GameSettings;
 
   constructor(private readonly options: GameStateOptions) {
+    const defs = options.settings ?? [];
+    this._settings = { defs: [...defs], values: Object.fromEntries(defs.map((def) => [def.key, def.default])) };
     this._chat = { supported: options.chatSupported ?? false, enabled: options.chatEnabled ?? false };
     this.players = new PlayerService(
       options.teams.map((team) => team.id),
@@ -153,6 +160,15 @@ export class GameState {
     this._sound = { muted: change.muted ?? this._sound.muted, volume: change.volume ?? this._sound.volume };
   }
 
+  get settings(): GameSettings {
+    return this._settings;
+  }
+
+  /** Stores a value for a declared setting; the caller has already checked it. */
+  setSetting(key: string, value: number): void {
+    this._settings = { ...this._settings, values: { ...this._settings.values, [key]: value } };
+  }
+
   /** Everything except the roster; cheap enough to build several times per second. */
   hud(): HudState {
     return {
@@ -167,6 +183,7 @@ export class GameState {
       chat: this._chat,
       ...(this.providerInfoSource ? { providerInfo: this.providerInfoSource() } : {}),
       sound: this._sound,
+      settings: this._settings,
       teams: this.standings(),
       lastResult: this._lastResult,
     };

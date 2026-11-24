@@ -64,6 +64,8 @@ export const OperatorCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('set_chat'), enabled: z.boolean() }),
   /** Sets the broadcast sound; send `muted`, `volume`, or both. */
   z.object({ type: z.literal('set_sound'), muted: z.boolean().optional(), volume: z.number().min(0).max(1).optional() }),
+  /** Changes one of the active game's declared settings; it applies from the next round. */
+  z.object({ type: z.literal('set_setting'), key: z.string().min(1).max(32), value: z.number().int() }),
   z.object({ type: z.literal('trigger_celebration'), effect: z.string().min(1).max(64) }),
   z.object({ type: z.literal('remove_player'), playerId: PlayerIdSchema }),
   z.object({ type: z.literal('ignore_player'), playerId: PlayerIdSchema }),

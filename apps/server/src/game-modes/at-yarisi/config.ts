@@ -43,6 +43,8 @@ export const atYarisiConfig: AtYarisiConfig = {
   teams: [{ id: RACE_TEAM_ID, name: 'Yarışçılar' }],
   timings: { countdownMs: 15_000, roundMs: 240_000, resultsMs: 20_000, autoNext: true },
   commands: { '1': command(), at: command(), yarış: command(), katıl: command() },
+  /** Up to 8 laps: a lap takes about 24 s, and the round's time limit (`timings.roundMs`) ends a longer race before the horses finish. */
+  settings: [{ key: 'laps', label: 'Laps', min: 1, max: 8, default: 6 }],
   cooldowns: {
     /** Per viewer: how often the "you are waiting for the next race" hint may show. */
     hint: 8_000,

@@ -90,6 +90,23 @@ export const SoundSettingsSchema = z.object({
 export type SoundSettings = z.infer<typeof SoundSettingsSchema>;
 export const DEFAULT_SOUND_SETTINGS: SoundSettings = { muted: false, volume: 0.7 };
 
+/** A number the operator may change for the active game (declared by the game; the core only stores and validates it). */
+export const SettingDefSchema = z.object({
+  key: z.string().min(1).max(32),
+  label: z.string().min(1).max(40),
+  min: z.number().int(),
+  max: z.number().int(),
+  default: z.number().int(),
+});
+export type SettingDef = z.infer<typeof SettingDefSchema>;
+
+/** The active game's declared settings and their current values (empty `defs` when the game has none). */
+export const GameSettingsSchema = z.object({
+  defs: z.array(SettingDefSchema).max(16),
+  values: z.record(z.string(), z.number().int()),
+});
+export type GameSettings = z.infer<typeof GameSettingsSchema>;
+
 /**
  * Everything except the roster. Small, so it is re-sent whole whenever it changes.
  * Clients derive remaining time from `phaseEndsAt - serverNow`.
@@ -108,6 +125,7 @@ export const HudStateSchema = z.object({
   providerInfo: ProviderInfoSchema.optional(),
   chat: ChatSettingsSchema,
   sound: SoundSettingsSchema,
+  settings: GameSettingsSchema,
   teams: z.array(TeamStandingSchema),
   lastResult: RoundResultSchema.nullable(),
 });

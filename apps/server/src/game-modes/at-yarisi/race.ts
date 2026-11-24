@@ -44,9 +44,14 @@ export class RaceSim {
   private nextPlace = 1;
 
   constructor(
-    private readonly tuning: RaceTuning,
+    private tuning: RaceTuning,
     private readonly random: () => number = Math.random,
   ) {}
+
+  /** Changes the number of laps while the grid is still filling; a race that has started keeps its own. */
+  setLaps(laps: number): void {
+    if (this.stage === 'grid') this.tuning = { ...this.tuning, laps };
+  }
 
   get size(): number {
     return this.racers.size;

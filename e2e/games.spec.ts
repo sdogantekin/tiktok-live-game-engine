@@ -65,6 +65,42 @@ test('Takı Takma Töreni can be played from the dashboard: `tak` scores, a bigg
   }
 });
 
+test('the operator sets the laps of the horse race, and it shows on the broadcast; the setting is gone for a game without settings', async ({ context }) => {
+  const operator = await openOperator(context);
+  const broadcast = await openBroadcast(context);
+
+  try {
+    await startFreshGame(operator);
+    await expect(operator.getByTestId('settings')).toHaveCount(0); // Mahalle Halayı declares none
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('at-yarisi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('At Yarışı');
+
+    await expect(operator.getByTestId('setting-laps')).toHaveText('6');
+    await operator.getByLabel('Laps').fill('2');
+    await operator.getByTestId('settings').getByRole('button', { name: 'Apply' }).click();
+    await expect(operator.getByTestId('last-result')).toHaveText('set_setting: ok');
+    await expect(operator.getByTestId('setting-laps')).toHaveText('2');
+
+    await button(operator, 'Start game').click();
+    await addViewers(operator, 4);
+    await button(operator, 'Start round now').click();
+    await expect(operator.getByTestId('phase')).toHaveText('active');
+    await expect(broadcast.getByTestId('lap')).toContainText('Tur 1 / 2');
+
+    // A race in progress keeps its rules.
+    await operator.getByLabel('Laps').fill('3');
+    await operator.getByTestId('settings').getByRole('button', { name: 'Apply' }).click();
+    await expect(operator.getByTestId('last-result')).toHaveText('set_setting: round_running');
+  } finally {
+    await button(operator, 'Stop game').click();
+    await operator.getByLabel('Game', { exact: true }).selectOption('mahalle-halayi');
+    await button(operator, 'Switch game').click();
+    await expect(operator.getByTestId('current-game')).toContainText('Mahalle Halayı');
+  }
+});
+
 test('At Yarışı can be played from the dashboard: viewers join with 1, ten race, the rest wait, likes and gifts boost a horse', async ({ context }) => {
   const operator = await openOperator(context);
   const broadcast = await openBroadcast(context);

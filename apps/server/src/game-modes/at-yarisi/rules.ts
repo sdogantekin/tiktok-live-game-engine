@@ -22,7 +22,9 @@ export function createAtYarisiMode(config: AtYarisiConfig = atYarisiConfig, rand
   }
   const gifts = new Map<string, RaceGift>(Object.entries(config.gifts));
 
-  let race = new RaceSim(config.race, random);
+  /** The race settings in force: the config, with the operator's changes on top. */
+  let tuning = { ...config.race };
+  let race = new RaceSim(tuning, random);
   /** Viewers waiting for a place in the next race, first come first served. */
   let waiting: string[] = [];
   let lastPhase: Phase = 'stopped';
@@ -34,7 +36,7 @@ export function createAtYarisiMode(config: AtYarisiConfig = atYarisiConfig, rand
   function newRace(): void {
     if (race.stage === 'grid') return; // the last race never started (the game was stopped): its grid is still the next one
     const previous = race.standing().map((racer) => racer.id);
-    race = new RaceSim(config.race, random);
+    race = new RaceSim(tuning, random);
     waiting = [...waiting, ...previous.filter((id) => !waiting.includes(id))];
   }
 
@@ -48,6 +50,13 @@ export function createAtYarisiMode(config: AtYarisiConfig = atYarisiConfig, rand
   return {
     id: 'at-yarisi',
     config,
+
+    applySettings(values) {
+      const laps = values.laps;
+      if (laps === undefined || !Number.isInteger(laps) || laps < 1) return;
+      tuning = { ...tuning, laps };
+      race.setLaps(laps); // a grid that has not started takes it now; a race that has started keeps its own
+    },
 
     handleCommand(ctx, action) {
       const player = ctx.player;

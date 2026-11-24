@@ -200,3 +200,23 @@ describe('likes and gifts', () => {
     expect(s.presentation).toEqual([]);
   });
 });
+
+describe('the laps setting', () => {
+  it('leaves a race that is running alone, and gives the next race the new laps', () => {
+    const s = setup();
+    const laps = () => (s.view().kind === 'race' ? (s.view() as { laps: number }).laps : -1);
+    s.engine.step();
+    s.say('a', '1');
+    s.say('b', '1');
+    s.startRace();
+    s.run(1);
+    expect(laps()).toBe(1);
+    expect(s.engine.operator({ type: 'set_setting', key: 'laps', value: 3 })).toEqual({ ok: false, reason: 'round_running' });
+
+    s.run(60); // the 100 m race finishes, results follow
+    expect(s.engine.operator({ type: 'set_setting', key: 'laps', value: 3 })).toEqual({ ok: true });
+    expect(laps()).toBe(1); // the finished race is not rewritten
+    s.run(40); // results end, the next round's countdown opens a fresh grid
+    expect(laps()).toBe(3);
+  });
+});

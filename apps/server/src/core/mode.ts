@@ -1,4 +1,4 @@
-import type { GameAction, LiveViewBody, ModeId, Phase, PresentationEvent, RankingEntry, TeamDefinition } from '@live-game/contracts';
+import type { GameAction, LiveViewBody, ModeId, Phase, PresentationEvent, RankingEntry, SettingDef, TeamDefinition } from '@live-game/contracts';
 import type { Player } from './players/player-service';
 import type { RoundTimings } from './rounds/round-service';
 
@@ -38,6 +38,11 @@ export interface GameModeConfig {
    * `handleLike` no faster than `maxPerSecond`, so a burst of hundreds of taps cannot do more than a steady stream.
    */
   likes?: LikesConfig;
+  /**
+   * Numbers the operator may change for this game (whole numbers within limits). The engine stores and validates them and
+   * hands the values to `GameMode.applySettings`; what they mean is the game's business. A change is refused while a round is active; the game applies it to the round that has not started yet and to later ones.
+   */
+  settings?: readonly SettingDef[];
 }
 
 export interface LikesConfig {
@@ -118,4 +123,6 @@ export interface GameMode {
   handleLike?(ctx: ModeContext, action: LikeAction): LikeEffect[];
   /** For a game that runs a simulation of its own. */
   live?: LiveSim;
+  /** Called with every declared setting's current value whenever the operator changes one. Required for a game that sets `config.settings`. */
+  applySettings?(values: Readonly<Record<string, number>>): void;
 }

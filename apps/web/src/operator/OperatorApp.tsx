@@ -9,6 +9,7 @@ import { GamePanel } from './GamePanel';
 import { PlayersPanel } from './PlayersPanel';
 import { SimulatorPanel } from './SimulatorPanel';
 import { TikTokPanel } from './TikTokPanel';
+import { SettingsPanel } from './SettingsPanel';
 import { SoundPanel } from './SoundPanel';
 
 export type RunCommand = (command: OperatorCommand | SimulatorCommand | TikTokCommand) => void;
@@ -75,6 +76,7 @@ export function OperatorApp() {
       <div className="columns">
         <div className="column">
           <GamePanel run={run} />
+          <SettingsPanel run={run} />
           <GameControls run={run} />
           <SoundPanel run={run} />
           <ChatPanel run={run} />

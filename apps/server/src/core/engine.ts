@@ -177,6 +177,7 @@ export class GameEngine {
       maxPlayers: this.config.maxPlayers,
       chatSupported: mode.config.chat !== undefined,
       chatEnabled: mode.config.chat?.defaultEnabled ?? true,
+      settings: mode.config.settings,
     });
     if (previous) this._state.carryOverFrom(previous);
     this.dedupe = new RecentIdCache(this.config.dedupeCapacity);
@@ -538,6 +539,16 @@ export class GameEngine {
         if (command.muted === undefined && command.volume === undefined) return { ok: false, reason: 'nothing_to_change' };
         this.state.setSound({ muted: command.muted, volume: command.volume });
         return { ok: true };
+      case 'set_setting': {
+        const def = this.state.settings.defs.find((d) => d.key === command.key);
+        if (!def) return { ok: false, reason: 'unknown_setting' };
+        if (command.value < def.min || command.value > def.max) return { ok: false, reason: 'invalid_value' };
+        if (rounds.phase === 'active') return { ok: false, reason: 'round_running' }; // a round in progress keeps its rules; the countdown and the gaps between rounds are fine
+        if (this.state.settings.values[def.key] === command.value) return { ok: false, reason: 'nothing_to_change' };
+        this.state.setSetting(def.key, command.value);
+        this.mode.applySettings?.(this.state.settings.values);
+        return { ok: true };
+      }
       case 'trigger_celebration':
         if (!this.celebrations.has(command.effect)) return { ok: false, reason: 'unknown_effect' };
         this.emit({ type: 'celebration', effect: command.effect });
