@@ -106,7 +106,7 @@ For a first test, run against a **private** LIVE of your own and watch the laten
 
 ### Likes and the race (At Yarışı)
 
-- Viewers join with `1`. **Ten race; everyone else waits** and is shown as "Sırada N". After a race the horses go to the back of the queue, so everyone gets a turn. Viewers are shown by name and a generated colour, never a profile picture.
+- Viewers join with `1`. **Ten race; everyone else waits** and is shown as "Sırada N". After a race the horses go to the back of the queue, so everyone gets a turn. Viewers are shown by name and a silks colour (jockey and saddle) that is different for every horse in the race, never a profile picture. The top-left standings show each horse's gap to the leader in seconds, like a Formula 1 timing screen, and the winner's finishing time.
 - **Likes** reach the game as like events from the TikTok reader. They are summed per viewer and counted at no more than 20 a second each, so a flood of taps cannot decide the race. **Real like events have not been tested on a real LIVE:** whether they arrive in a usable form and rate must be measured on a private test first. If they do not arrive, the race still runs, but nobody gets a speed-up from likes and gifts become the only way to help, which is **not** what the game is balanced for.
 - The simulator can send likes (**Send likes** in the Simulator panel, and a steady stream in its scenarios), so you can rehearse a full race without an audience.
 - The race is run by the server: **Pause** freezes it, and **End round** ends it where it is (horses are ranked by distance).

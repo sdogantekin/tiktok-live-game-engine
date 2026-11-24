@@ -25,7 +25,7 @@ export function raceStub() {
         }
       },
       view(): LiveViewBody {
-        return { kind: 'race', stage: 'racing', laps: 6, lapLength: 400, racers: [{ id: 'test:a', name: 'a', distance, speed: 1, boost: 0, place: null }], waiting: 0, capacity: 10 };
+        return { kind: 'race', stage: 'racing', laps: 6, lapLength: 400, racers: [{ id: 'test:a', name: 'a', distance, speed: 1, boost: 0, place: null, finishTime: null }], waiting: 0, capacity: 10 };
       },
       ranking(): readonly RankingEntry[] {
         return [{ place: 1, playerId: 'test:a', name: 'a' }];

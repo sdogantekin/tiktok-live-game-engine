@@ -6,7 +6,8 @@ import { useClipPlayer } from '../../game-renderer/model-utils';
 import { perf } from '../../game-renderer/perf';
 import { BASE_SPEED, COATS, horseModels, laneOffset, MAX_RACERS, MAX_STRIDE, MIN_STRIDE, shape } from './scene-config';
 import type { ShownRacer } from './smoothing';
-import { racerColor, trackPoint } from './track';
+import { racerColors } from './colors';
+import { trackPoint } from './track';
 import { HORSE_SCALE, MODEL_URLS } from './assets.manifest';
 import type { PipRegistry } from './Pip';
 
@@ -66,8 +67,8 @@ function Horse({ index, frame, pip }: { index: number; frame: { current: HorseFr
       shownId.current = racer.id;
       victoryAt.current = null;
       materials.coat?.color.set(coatOf(racer.id));
-      materials.silks?.color.set(racerColor(racer.id));
-      materials.silks?.emissive.set(racerColor(racer.id));
+      materials.silks?.color.set(racerColors.colorOf(racer.id));
+      materials.silks?.emissive.set(racerColors.colorOf(racer.id));
     }
     materials.silks?.setValues({ emissiveIntensity: Math.min(0.9, racer.boost * 1.2) }); // a boosted jockey glows in his own colours
     const point = trackPoint(shape, racer.distance, laneOffset(index, racers.length));

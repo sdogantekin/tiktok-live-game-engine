@@ -31,3 +31,5 @@ Editable `.blend` files are saved in `source-blend/`. No AI-generated meshes or 
 Our jockey is built from simple shapes but detailed for the distance it is seen from: a tinted jacket with white hoops, darker sleeves, bent arms, a helmet cover with a white band, peak and goggles, white breeches, black boots, stirrups, saddle, bridle, reins and a whip. The racing surface (mown stripes, worn dirt, rails on posts, furlong poles, the starting gate and the photo-finish tower), the grandstands (tiers with painted fronts, benches, a rail, a roof, flags and varied spectators with hats, scarves, children and waving arms) are code-built and instanced.
 
 Placeholders to review: the spectators and the jockey are still simple shapes, and whether the course reads well enough on a real stream.
+
+Silks colours come from a 12-colour palette in `colors.ts`: each racer in a race gets a different one, kept for the whole race, and the standings, name tags, dust and winner banner use the same colour.

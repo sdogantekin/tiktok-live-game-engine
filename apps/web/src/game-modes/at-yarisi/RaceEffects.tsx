@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import type { HorseFrame } from './Horses';
 import { ParticlePool } from './particles';
 import { laneOffset, shape } from './scene-config';
-import { racerColor, trackPoint } from './track';
+import { racerColors } from './colors';
+import { trackPoint } from './track';
 
 /** What the scene can ask of the effects. */
 export interface RaceFx {
@@ -146,7 +147,7 @@ export function RaceEffects({ frame, fxRef }: { frame: { current: HorseFrame }; 
           dummy.updateMatrix();
           streakTarget.setMatrixAt(i, dummy.matrix);
           const racer = frame.current.racers[p.tint];
-          streakTarget.setColorAt(i, color.set(racer ? racerColor(racer.id) : '#ffd35a').lerp(CONFETTI[1]!, 0.5));
+          streakTarget.setColorAt(i, color.set(racer ? racerColors.colorOf(racer.id) : '#ffd35a').lerp(CONFETTI[1]!, 0.5));
         },
         (i) => {
           dummy.scale.setScalar(0);

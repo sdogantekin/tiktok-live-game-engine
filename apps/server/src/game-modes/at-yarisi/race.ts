@@ -194,6 +194,7 @@ export class RaceSim {
         speed: Math.round(r.speed * 10) / 10,
         boost: Math.round(Math.min(1, (r.likeBoost + this.giftBonus(r)) / maxHelp) * 100) / 100,
         place: r.place,
+        finishTime: r.finishedAt === null ? null : Math.round(r.finishedAt * 100) / 100,
       })),
       waiting,
       capacity: tuning.capacity,

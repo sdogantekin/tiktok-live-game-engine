@@ -17,6 +17,8 @@ export const RacerViewSchema = z.object({
   boost: z.number().min(0).max(1),
   /** The finishing place, or null while still racing. */
   place: z.number().int().positive().nullable(),
+  /** Seconds from the start of the race when it crossed the line, or null while still racing (for the gaps between finishers). */
+  finishTime: z.number().nonnegative().max(100_000).nullable(),
 });
 export type RacerView = z.infer<typeof RacerViewSchema>;
 

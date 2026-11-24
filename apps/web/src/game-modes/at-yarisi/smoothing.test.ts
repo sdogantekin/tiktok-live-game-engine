@@ -2,7 +2,7 @@ import type { RaceView } from '@live-game/contracts';
 import { describe, expect, it } from 'vitest';
 import { RaceSmoother } from './smoothing';
 
-const racer = (id: string, distance: number, speed = 16, place: number | null = null) => ({ id, name: id, distance, speed, boost: 0, place });
+const racer = (id: string, distance: number, speed = 16, place: number | null = null) => ({ id, name: id, distance, speed, boost: 0, place, finishTime: place === null ? null : 150 });
 const view = (seq: number, racers: ReturnType<typeof racer>[], stage: RaceView['stage'] = 'racing'): RaceView => ({ kind: 'race', seq, serverNow: seq * 100, stage, laps: 6, lapLength: 400, racers, waiting: 0, capacity: 10 });
 
 describe('RaceSmoother', () => {

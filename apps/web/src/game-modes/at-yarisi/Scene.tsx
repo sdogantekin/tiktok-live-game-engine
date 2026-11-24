@@ -14,6 +14,7 @@ import { laneOffset, shape } from './scene-config';
 import { type RaceFx, RaceEffects } from './RaceEffects';
 import { RACE_CUES, soundDesign } from './sound-design';
 import { leadingRacers, RAIL_TAG_COUNT, railTags } from './railtags';
+import { colorsFor } from './colors';
 import { RaceSmoother } from './smoothing';
 import { Course } from './Course';
 import { HiddenInPip, PipRegistry } from './Pip';
@@ -99,6 +100,7 @@ export function Scene({ live, tags, cues, audio, phase, paused, secondsLeft }: S
     r.last = now;
     const dt = dtMs / 1000;
 
+    colorsFor(smoother.current); // every racer on the grid has a colour of its own before anything is drawn
     const racers = smoother.step(now, dtMs);
     const stage = smoother.stage;
     frame.current = { racers, stage };

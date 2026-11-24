@@ -78,7 +78,7 @@ describe('likes, live views and rankings', () => {
     expect(GameActionSchema.safeParse({ type: 'like', playerId: 'p', count: 0 }).success).toBe(false);
   });
 
-  const racer = { id: 'p', name: 'Ayşe', distance: 120.5, speed: 17, boost: 0.4, place: null };
+  const racer = { id: 'p', name: 'Ayşe', distance: 120.5, speed: 17, boost: 0.4, place: null, finishTime: null };
   const race = { kind: 'race', seq: 3, serverNow: 5, stage: 'racing', laps: 6, lapLength: 400, racers: [racer], waiting: 2, capacity: 10 };
 
   it('parses a race view and rejects malformed ones', () => {
@@ -90,6 +90,8 @@ describe('likes, live views and rankings', () => {
       { ...race, racers: [{ ...racer, boost: 2 }] },
       { ...race, racers: [{ ...racer, distance: -1 }] },
       { ...race, racers: [{ ...racer, place: 0 }] },
+      { ...race, racers: [{ ...racer, finishTime: -1 }] },
+      { ...race, racers: [{ id: 'p', name: 'A', distance: 1, speed: 1, boost: 0, place: null }] }, // a racer must say whether it has finished
       { ...race, laps: 0 },
       null,
       'race',

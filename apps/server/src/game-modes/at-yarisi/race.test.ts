@@ -116,6 +116,19 @@ describe('running the race', () => {
   });
 });
 
+describe('finish times', () => {
+  it('are null while racing and the second each horse crossed the line once it has, in finishing order', () => {
+    const race = sim(6, 3);
+    run(race, 20);
+    expect(race.view(0).racers.every((r) => r.finishTime === null)).toBe(true);
+    run(race, 400);
+    const times = race.view(0).racers.filter((r) => r.place !== null).sort((a, b) => a.place! - b.place!).map((r) => r.finishTime!);
+    expect(times).toHaveLength(3);
+    expect(times[0]!).toBeGreaterThan(100); // a six-lap race takes about 150 s
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+  });
+});
+
 describe('likes and gifts', () => {
   it('likes speed a horse up, with diminishing returns, up to a ceiling, and fade away', () => {
     const race = sim(1, 2, { ...tuning, temperament: 0, luck: 0, catchUp: 0 });
