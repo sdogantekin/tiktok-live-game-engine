@@ -31,7 +31,7 @@ Building your own game on the engine is documented in [`docs/building-a-game.md`
 - **Three games and a game picker.** The operator switches games while the game is stopped.
 - **Viewers' comments on screen:** short, moderated comments from joined players appear as speech bubbles (links, mentions, phone numbers and blocked words are refused; operator on/off switch and per-player Ignore).
 - **A 3D broadcast view** (React Three Fiber, low-poly toy style from Blender scripts) with HUD, name tags, effects and **sound** (original synthesised music and effects, or a music file the game producer supplies).
-- **An operator panel:** game picker, start/pause/end rounds, celebrations, players, sound, comments, the TikTok connection, and the simulator.
+- **An operator panel:** game picker, per-game settings (the number of laps in the horse race), start/pause/end rounds, celebrations, players, sound, comments, the TikTok connection, and the simulator.
 - **A local event simulator** with synthetic viewers, bursts, steady and chaos scenarios and simulated outages. It speaks each game's own words. It is permanent: it works with no TikTok code, credentials or network.
 - **A TikTok LIVE provider** (off by default, one provider at a time, never mixed with the simulator).
 
